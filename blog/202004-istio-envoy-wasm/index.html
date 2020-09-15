@@ -99,7 +99,7 @@
         <div class="container">
             <div class="navbar-header">
                 <a class="navbar-brand home" href="/">
-                    <img src="/img/servicemesher-logo-new.png" alt="Istio1.5 &amp; Envoy 数据面 WASM 实践 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/terraform-logo-new.png" alt="Istio1.5 &amp; Envoy 数据面 WASM 实践 logo" class="hidden-xs hidden-sm">
                     <img src="/img/logosmall-new.png" alt="Istio1.5 &amp; Envoy 数据面 WASM 实践 logo" class="visible-xs visible-sm">
                     <span class="sr-only">Istio1.5 &amp; Envoy 数据面 WASM 实践 - 跳到主页</span>
                 </a>
@@ -576,7 +576,7 @@ wasme deploy envoy webassemblyhub.io/wbpcode/path_rewrite:v0.1 --config &quot;{\
                         </li>
                          
                         <li class="next">
-                        <a href="https://www.servicemesher.com/blog/20200818-google-cloud-mesh/" data-toggle="tooltip" data-placement="top" title="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">更新 &rarr;</a>
+                        <a href="https://www.servicemesher.com/blog/service-mesh-and-api-gateway/" data-toggle="tooltip" data-placement="top" title="Service Mesh和API Gateway关系深度探讨">更新 &rarr;</a>
                         </li>
                         
                         </ul>
@@ -625,13 +625,13 @@ wasme deploy envoy webassemblyhub.io/wbpcode/path_rewrite:v0.1 --config &quot;{\
         
         <li><a href="/blog/201911-envoy-memory-optimize/"><i class="fa fa-link"></i>如何降低Istio服务网格中Envoy的内存开销？</a></li>
          
-        <li><a href="/blog/201910-what-can-service-mesh-learn-from-sdn/"><i class="fa fa-link"></i>Service Mesh是下一代SDN吗？</a></li>
+        <li><a href="/blog/guidance-for-building-a-control-plane-for-envoy-part-3-domain-specific-configuration/"><i class="fa fa-link"></i>为 Envoy 构建控制平面指南第3部分：领域特定配置</a></li>
          
-        <li><a href="/blog/201910-pilot-code-deep-dive/"><i class="fa fa-link"></i>Istio Pilot代码深度解析</a></li>
+        <li><a href="/blog/guidance-for-building-a-control-plane-to-manage-envoy-proxy-at-the-edge-as-a-gateway-or-in-a-mesh/"><i class="fa fa-link"></i>Envoy Proxy构建控制平面指南</a></li>
          
-        <li><a href="/blog/2020-service-mesh-technology-outlook/"><i class="fa fa-link"></i>2020 年 Service Mesh 技术展望</a></li>
+        <li><a href="/blog/istio-envoy-grpc-metrics-winning-with-service-mesh-in-practice/"><i class="fa fa-link"></i>使用Istio和Envoy实践服务网格gRPC度量</a></li>
          
-        <li><a href="/blog/8-ways-a-service-mesh-eases-microservices-deployment/"><i class="fa fa-link"></i>服务网格：8种方式简化微服务部署</a></li>
+        <li><a href="/blog/cncf-udpa-wg/"><i class="fa fa-link"></i>CNCF正在筹建通用数据平面API工作组，以制定数据平面的标准API</a></li>
          
      </ul>
     </div>
@@ -651,25 +651,91 @@ wasme deploy envoy webassemblyhub.io/wbpcode/path_rewrite:v0.1 --config &quot;{\
     <div class="panel-body">
         <ul class="nav nav-pills nav-stacked">
             
-            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (1)</a>
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
             </li>
             
-            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (1)</a>
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
             </li>
             
-            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (1)</a>
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
             </li>
             
-            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (3)</a>
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
             </li>
             
-            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (1)</a>
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
             </li>
             
-            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (5)</a>
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/terraform"><i class="fa fa-navicon"></i>terraform (3)</a>
             </li>
             
             <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
             </li>
             
         </ul>
@@ -721,6 +787,19 @@ wasme deploy envoy webassemblyhub.io/wbpcode/path_rewrite:v0.1 --config &quot;{\
                 
                 <div class="item same-height-row clearfix">
                     <div class="image same-height-always">
+                        <a href="/blog/20200915-alicloud-terraform-openservice/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Terraform 支持自动化开通阿里云产品">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200915-alicloud-terraform-openservice/">Terraform 支持自动化开通阿里云产品</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
                         <a href="/blog/20200818-google-cloud-mesh/">
                           
                           <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
@@ -734,27 +813,14 @@ wasme deploy envoy webassemblyhub.io/wbpcode/path_rewrite:v0.1 --config &quot;{\
                 
                 <div class="item same-height-row clearfix">
                     <div class="image same-height-always">
-                        <a href="/blog/202004-istio-envoy-wasm/">
+                        <a href="/blog/istio-1-7-explanation/">
                           
-                          <img src="/img/blog/banners/006tKfTcly1g0avw2aq99j31an0u0u0y.jpg" class="img-responsive" alt="Istio1.5 &amp; Envoy 数据面 WASM 实践">
-                          
-                        </a>
-                    </div>
-                    <div class="name same-height-always">
-                        <h5><a href="/blog/202004-istio-envoy-wasm/">Istio1.5 &amp; Envoy 数据面 WASM 实践</a></h5>
-                    </div>
-                </div>
-                
-                <div class="item same-height-row clearfix">
-                    <div class="image same-height-always">
-                        <a href="/blog/202003-gitops-progressive-delivery-with-asm/">
-                          
-                          <img src="https://yqfile.alicdn.com/53c8821445676945d9fa00c69fef1549f5755e24.jpeg" class="img-responsive" alt="使用托管服务网格实现应用在多集群中的 GitOps 全自动化渐进式发布">
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
                           
                         </a>
                     </div>
                     <div class="name same-height-always">
-                        <h5><a href="/blog/202003-gitops-progressive-delivery-with-asm/">使用托管服务网格实现应用在多集群中的 GitOps 全自动化渐进式发布</a></h5>
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
                     </div>
                 </div>
                 
@@ -795,7 +861,7 @@ wasme deploy envoy webassemblyhub.io/wbpcode/path_rewrite:v0.1 --config &quot;{\
     <div class="container">
         <div class="col-md-12">
             
-            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            <p class="pull-left">Copyright ©️ 2018 - 2020, Terraform 中国 all rights reserved.</p>
             
             
             <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>

@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Terraform Module 可视化正式发布 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="阿里云, 可视化界面">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="Terraform Module 可视化正式发布" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/20191114-alicloud-publish-visualization//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="阿里云正式发布 Terraform Module 的可视化操作界面，在命令行操作模式的基础上，增加了基于 Terraform 的在线资源编排的能力，持续帮助开发者和企业降低 Terraform Module 的使用门槛。">
+  <meta property="og:description" content="阿里云正式发布 Terraform Module 的可视化操作界面，在命令行操作模式的基础上，增加了基于 Terraform 的在线资源编排的能力，持续帮助开发者和企业降低 Terraform Module 的使用门槛。">
+  <meta name="twitter:description" content="阿里云正式发布 Terraform Module 的可视化操作界面，在命令行操作模式的基础上，增加了基于 Terraform 的在线资源编排的能力，持续帮助开发者和企业降低 Terraform Module 的使用门槛。">
+  <meta property="og:description" content="阿里云正式发布 Terraform Module 的可视化操作界面，在命令行操作模式的基础上，增加了基于 Terraform 的在线资源编排的能力，持续帮助开发者和企业降低 Terraform Module 的使用门槛。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/terraform-logo-new.png" alt="Terraform Module 可视化正式发布 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="Terraform Module 可视化正式发布 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">Terraform Module 可视化正式发布 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="">Terraform 中文版</a></li>
+                      
+                        <li><a href="">阿里云 Provider 中文版</a></li>
+                      
+                        <li><a href="">最佳实践</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="">Meetup</a></li>
+                      
+                        <li><a href="">作者排行</a></li>
+                      
+                        <li><a href="">译者排行</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>Terraform Module 可视化正式发布</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2019年12月18日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://yq.aliyun.com/users/5uwwvffsp7a3i">何贵民</a>
+                            
+                            
+                            
+                            |
+                            1100字 | 阅读大约需要3分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            
+                            归档于 <a href="/categories/terraform">Terraform</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/terraform-provider/"><i>#Terraform Provider</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/alibaba-cloud/"><i>#Alibaba Cloud</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <p><strong>本文已在下方公众号中发布：<a href="https://mp.weixin.qq.com/s/-88QmyQqIoPRdCFgJEYsfQ">Terraform Module 可视化发布</a>，欢迎大家围观</strong></p>
+<p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h2 id="可视化操作界面">可视化操作界面</h2>
+<p>12月12日，阿里云开放平台正式对外推出 Terraform Module 的可视化操作界面：<a href="https://api.aliyun.com/#/cli?tool=Terraform">https://api.aliyun.com/#/cli?tool=Terraform</a>，集合所有在 <a href="https://registry.terraform.io/browse/modules?provider=alicloud">Terraform Registry</a> 上注册过的 Module，对外提供在线运行 Terraform Module 的能力，开发者只需关注 Module 参数本身和所要执行的命令，剩下的工作将由可视化界面来完成。</p>
+<p><img src="https://yqfile.alicdn.com/d18a511a1838a6b4c0dae3aad1e812cf6891c9f5.png" alt="_2019_12_15_5_57_44"></p>
+<p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h2 id="可视化五大亮点">可视化五大亮点</h2>
+<p><strong>亮点一：完全开放，覆盖全量 Terraform Module</strong><!-- raw HTML omitted -->可视化界面中展示的 Terraform Module 与 Terraform 官方 Registry 中注册的保持一致，任何开发者提交和注册的 Module 都会在界面中展示，并被分享给其他所有开发者使用，最大化发挥 Module 的价值。</p>
+<p><strong>亮点二：按活跃度排序，让最优秀的 Module 站 C 位</strong><!-- raw HTML omitted -->跟官方 Terraform Registry 按 Module 注册时间显示不同的是，可视化界面中的  Module 是按照 Module 的下载量排序后显示的，最优秀的 Module 在最显眼的位置上展示，让开发者和用户更容易发现和使用。</p>
+<p><strong>亮点三： 实时展示 Module 运行过程和结果，保持与命令行一致的操作体验</strong><!-- raw HTML omitted -->可视化界面集成了 Terraform 最重要的三个功能操作：Plan（预览），Apply（创建／变更）和 Destroy（销毁）。用户通过界面填写 Module 对应的参数，可视化界面将自动将这些参数填入 Module 模板中，然后通过点击下方的操作按钮即可实现对 Module 中所定义资源的自动创建和编排。在此过程中，右侧的 CloudShell将会实时的显示当前任务的执行情况，这与通过命令行操作 Module 的体验是完全一致的。</p>
+<p><strong>亮点四：同时具备“在线点击”和“在线命令行”两种操作模式</strong><!-- raw HTML omitted -->可视化界面提供了对 Module 的操作按钮，可实现对 Module 中所定义资源的创建，修改和删除操作。如果想要切换到命令行模式，直接点击右侧的 CloudShell 显示界面，借助 CloudShell 对 Terraform 原生集成，可在 CloudShell 中直接通过 Terraform 原生命令来完成资源的持续管理。</p>
+<p><strong>亮点五：更简单的参数输入，无需关心 Terraform 参数使用语法</strong><!-- raw HTML omitted -->可视化界面将 Terraform 对参数的输入语法进行了简化，提供了最易用的参数输入方式，无需关心 Terraform 自身的使用语法。</p>
+<p>阿里云开放平台借助 Terraform 原生的能力，推出的可视化操作界面，持续降低用户和开发者使用 Terraform 成本和门槛，持续带来更简单，更实用和更开放的极致使用体验。Terraform Module 可视化界面只是一个开始，是对命令行操作模式的补充和扩展，未来将在持续满足客户使用需求的前提下，将 Terraform 的能力在阿里云上进一步的释放和扩充，实现阿里云开放能力与 Terraform 开源特性更好的结合。</p>
+<p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h2 id="最后">最后</h2>
+<p>**欢迎所有对 Terraform 和阿里云感兴趣的开发者，积极地加入到阿里云开源生态的建设中来。**动手实践，乐于分享，让自己的想法被更多的人看到，让自己写的 Module 得到更多的人引用。</p>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/20191218-alicloud-manage-stock-resources/" data-toggle="tooltip" data-placement="top" title="一文揭秘存量云资源的管理难题">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/20200915-alicloud-terraform-openservice/" data-toggle="tooltip" data-placement="top" title="Terraform 支持自动化开通阿里云产品">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/20191218-alicloud-manage-stock-resources/"><i class="fa fa-link"></i>一文揭秘存量云资源的管理难题</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/terraform"><i class="fa fa-navicon"></i>terraform (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            Terraform 在中国的布道者和领航者，请关注我们的微信公众号<!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200915-alicloud-terraform-openservice/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Terraform 支持自动化开通阿里云产品">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200915-alicloud-terraform-openservice/">Terraform 支持自动化开通阿里云产品</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20191114-alicloud-publish-visualization/">
+                          
+                          <img src="/img/blog/banners/006tKfTcgy1ft5zajjdomj30rs0kutbu.jpg" class="img-responsive" alt="Terraform Module 可视化正式发布">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20191114-alicloud-publish-visualization/">Terraform Module 可视化正式发布</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20191218-alicloud-manage-stock-resources/">
+                          
+                          <img src="/img/blog/banners/006tKfTcgy1ft5wypaul5j31ji15ob2b.jpg" class="img-responsive" alt="一文揭秘存量云资源的管理难题">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20191218-alicloud-manage-stock-resources/">一文揭秘存量云资源的管理难题</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            微信扫码加入交流讨论群<!-- raw HTML omitted -->请备注姓名-公司信息<!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, Terraform all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

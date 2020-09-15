@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>一文揭秘存量云资源的管理难题 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="阿里云, 存量资源导出, import">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="一文揭秘存量云资源的管理难题" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/20191218-alicloud-manage-stock-resources//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="开源生态工具Terraform通过简单的客户端命令即可实现对阿里云资源的创建，更改和删除等操作，但对于很多以非Terraform创建的云资源，是否有办法统一管理呢？本文将向你揭秘如何使用Terraform Import命令来实现对存量云资源的导入和统一管理。">
+  <meta property="og:description" content="开源生态工具Terraform通过简单的客户端命令即可实现对阿里云资源的创建，更改和删除等操作，但对于很多以非Terraform创建的云资源，是否有办法统一管理呢？本文将向你揭秘如何使用Terraform Import命令来实现对存量云资源的导入和统一管理。">
+  <meta name="twitter:description" content="开源生态工具Terraform通过简单的客户端命令即可实现对阿里云资源的创建，更改和删除等操作，但对于很多以非Terraform创建的云资源，是否有办法统一管理呢？本文将向你揭秘如何使用Terraform Import命令来实现对存量云资源的导入和统一管理。">
+  <meta property="og:description" content="开源生态工具Terraform通过简单的客户端命令即可实现对阿里云资源的创建，更改和删除等操作，但对于很多以非Terraform创建的云资源，是否有办法统一管理呢？本文将向你揭秘如何使用Terraform Import命令来实现对存量云资源的导入和统一管理。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/terraform-logo-new.png" alt="一文揭秘存量云资源的管理难题 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="一文揭秘存量云资源的管理难题 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">一文揭秘存量云资源的管理难题 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="">Terraform 中文版</a></li>
+                      
+                        <li><a href="">阿里云 Provider 中文版</a></li>
+                      
+                        <li><a href="">最佳实践</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="">Meetup</a></li>
+                      
+                        <li><a href="">作者排行</a></li>
+                      
+                        <li><a href="">译者排行</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>一文揭秘存量云资源的管理难题</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2019年11月14日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://yq.aliyun.com/users/5uwwvffsp7a3i">何贵民</a>
+                            
+                            
+                            
+                            |
+                            2900字 | 阅读大约需要6分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            
+                            归档于 <a href="/categories/terraform">Terraform</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/terraform-provider/"><i>#Terraform Provider</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/alibaba-cloud/"><i>#Alibaba Cloud</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <p><strong>本文已在下方公众号中发布：<a href="https://mp.weixin.qq.com/s/bkql-1Bd3b41KNUPMvtgNw">一文揭秘存量云资源的管理难题</a>，欢迎大家围观</strong></p>
+<p>前两篇文章《<a href="https://yq.aliyun.com/articles/720970">一分钟部署阿里云ECS集群</a>》和《<a href="https://yq.aliyun.com/articles/723410">五分钟入门阿里云Terraform OSS Backend</a>》分别向大家详细介绍了Terraform的一些基本概念，用法和State的工作原理。通过这两篇的介绍，相信大家一定可以感受到Terraform 在资源编排，多云管理，团队协作，简单易用等方面的优势，在持续提升企业上云效率，降低运维成本等方面的强大能力。本文将继续向大家介绍Terraform的一个高级功能-Terraform Import。</p>
+<p>在开始阅读本文之前，先介绍四种运维场景：<!-- raw HTML omitted -->**场景一：<strong>我是Terraform的新人，从来没有使用Terraform管控过任何资源，当前所有的存量云资源都是通过控制台，阿里云CLI，ROS或者直接调用API创建和管理的，现在想要切换为Terraform，如何实现对这些存量资源的管理？<!-- raw HTML omitted --></strong>场景二：<strong>我们团队所有的云资源都是通过Terraform来管理的，某一天团队的新人通过控制台对其中某个云资源做了属性变更，导致原有的资源状态State不一致，该如何处理？<!-- raw HTML omitted --></strong>场景三：<strong>我的所有资源都定义在一个模板中，随着资源数的不断增多，模板和state的管理复杂度也在持续增大，现在想要对原有模板进行重构，将其进行拆分，如何在不影响资源正常使用的前提下实现？<!-- raw HTML omitted --></strong>场景四：**阿里云的Provider进行了兼容性升级，新版Provider对原有模板中所定义的资源支持了更多的参数，如何把新加入的参数值同步进来？</p>
+<p>面对以上四种甚至更多类似的场景，在阅读完本文后，都可以找到对应的解决方案。</p>
+<p>Terraform基于资源模板定义不仅可以实现对新资源的创建，变更，删除等操作，还可以通过简单的命令将那些游离在Terraform管理体系之外的云资源进行导入和纳管，进而实现对所有云资源的统一管理。
+<!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h2 id="1-terraform-导入存量资源">1 Terraform 导入存量资源</h2>
+<p>Terraform对资源的导入可以分为三个部分：</p>
+<ul>
+<li>获取资源ID<!-- raw HTML omitted -->基于资源ID查询资源并获取其属性</li>
+<li>模板声明所要导入的资源<!-- raw HTML omitted -->模板驱动，即使是要导入的资源，也需要在模板中进行声明</li>
+<li>补齐资源模板定义<!-- raw HTML omitted -->导入成功后，需要根据资源属性补齐已经在模板中声明的资源定义</li>
+</ul>
+<p>接下来，将详细介绍以上三个部分。
+<!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h3 id="11获取资源id">1.1 获取资源ID</h3>
+<p>在Terraform中，每个被管理的资源有且仅有一个资源ID。Terraform对模板中所定义的资源完成创建之后，都会将所创建的资源ID存储到 <code>Terraform State</code> 中，并通过资源ID来精确地实现对特定资源的查找，变更，删除等持续地管理操作。</p>
+<p>阿里云Provider所产生的资源ID通常有两种格式：阿里云后端系统自动生成的ID和阿里云Provider生成的ID。大部分的资源ID都属于前一种，即每个资源在通过阿里云API完成创建之后，系统都会自动生成一个资源的唯一标识符，Provider会将其直接作为资源ID保存在State文件中。第二种格式通常出现在资源关系所对应的 <code>resource</code> 中，如磁盘挂载 <code>alicloud_disk_attachment</code> ，EIP的绑定 <code>alicloud_eip_association</code>  等，这类资源的ID都是通过关系两端的资源ID和特殊字符 <code>:</code> 拼接起来的。在阿里云每个Resource文档最后的 <code>Attribute Reference</code> 部分都会显示当前资源的ID及其格式描述。</p>
+<p>对资源ID的获取可以通过Web控制台，CLI，API等多种方式，最简单的方式是通过Terraform的DataSource，输入简单的查询条件，如获取一个负载均衡实例：</p>
+<pre><code class="language-hcl-terraform" data-lang="hcl-terraform">data &quot;alicloud_slbs&quot; &quot;default&quot; {
+  name_regex  = &quot;for-demo*&quot;
+}
+output &quot;slb_ids&quot; {
+  value = data.alicloud_slbs.default.ids
+}
+</code></pre><p>运行 <code>terraform apply</code> 命令即可展示所有符合条件的SLB的ID：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ terraform apply
+data.alicloud_slbs.default: Refreshing state...
+
+Apply complete! Resources: <span style="color:#ae81ff">0</span> added, <span style="color:#ae81ff">0</span> changed, <span style="color:#ae81ff">0</span> destroyed.
+
+Outputs:
+
+slb_ids <span style="color:#f92672">=</span> <span style="color:#f92672">[</span>
+  <span style="color:#e6db74">&#34;lb-gw8vinrqxxxxxxxxxxx&#34;</span>,
+  <span style="color:#e6db74">&#34;lb-gw8axostxxxxxxxxxxx&#34;</span>,
+<span style="color:#f92672">]</span>
+
+</code></pre></div><p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h3 id="12模板声明所要导入的资源">1.2 模板声明所要导入的资源</h3>
+<p>和创建资源一样，在导入资源前，也需要在模板中进行资源声明，以便指定所要导入的资源在State中的存放路径。如下所示，声明一个负载均衡实例：</p>
+<pre><code class="language-hcl-terraform" data-lang="hcl-terraform">resource &quot;alicloud_slb&quot; &quot;this&quot; {}
+</code></pre><p>简单的声明之后，无需定义具体的参数即可开始资源的导入操作。在Terraform中，导入一个资源的操作通过 <code>import</code> 命令来完成，完整的命令格式为 <code>terraform import &lt;资源类型&gt;.&lt;资源标识&gt; &lt;资源ID&gt;</code> ，详细操作如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ terraform import alicloud_slb.this lb-gw8vinrqxxxxxxxxxxx
+alicloud_slb.this: Importing from ID <span style="color:#e6db74">&#34;lb-gw8vinrqxxxxxxxxxxx&#34;</span>...
+alicloud_slb.this: Import prepared!
+  Prepared alicloud_slb <span style="color:#66d9ef">for</span> import
+alicloud_slb.this: Refreshing state... <span style="color:#f92672">[</span>id<span style="color:#f92672">=</span>lb-gw8vinrqxxxxxxxxxxx<span style="color:#f92672">]</span>
+
+Import successful!
+
+The resources that were imported are shown above. These resources are now in
+your Terraform state and will henceforth be managed by Terraform.
+</code></pre></div><p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h3 id="13补齐资源模板定义">1.3 补齐资源模板定义</h3>
+<p>由于模板中没有完成对所导入资源的详细定义，因此，资源导入成功后，模板内容与State存储的内容存在差异，此时如果直接运行 <code>plan</code> 命令，将会看到一个update：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ terraform plan
+Refreshing Terraform state in-memory prior to plan...
+The refreshed state will be used to calculate this plan, but will not be
+persisted to local or remote state storage.
+
+data.alicloud_slbs.default: Refreshing state...
+alicloud_slb.this: Refreshing state... <span style="color:#f92672">[</span>id<span style="color:#f92672">=</span>lb-gw8vinrqxxxxxxxxxxx<span style="color:#f92672">]</span>
+
+------------------------------------------------------------------------
+
+An execution plan has been generated and is shown below.
+Resource actions are indicated with the following symbols:
+  ~ update in-place
+
+Terraform will perform the following actions:
+
+  <span style="color:#75715e"># alicloud_slb.this will be updated in-place</span>
+  ~ resource <span style="color:#e6db74">&#34;alicloud_slb&#34;</span> <span style="color:#e6db74">&#34;this&#34;</span> <span style="color:#f92672">{</span>
+        address              <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;47.254.181.122&#34;</span>
+        ...
+      ~ delete_protection    <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;on&#34;</span> -&gt; <span style="color:#e6db74">&#34;off&#34;</span>
+        id                   <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;id=lb-gw8vinrqxxxxxxxxxxx&#34;</span>
+        ...
+      ~ name                 <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;for_demo-test&#34;</span> -&gt; <span style="color:#e6db74">&#34;tf-lb-20191108144235105700000001&#34;</span>
+        ...
+    <span style="color:#f92672">}</span>
+
+Plan: <span style="color:#ae81ff">0</span> to add, <span style="color:#ae81ff">1</span> to change, <span style="color:#ae81ff">0</span> to destroy.
+
+------------------------------------------------------------------------
+
+Note: You didn<span style="color:#e6db74">&#39;t specify an &#34;-out&#34; parameter to save this plan, so Terraform
+</span><span style="color:#e6db74">can&#39;</span>t guarantee that exactly these actions will be performed <span style="color:#66d9ef">if</span>
+<span style="color:#e6db74">&#34;terraform apply&#34;</span> is subsequently run.
+
+</code></pre></div><p>为了保持资源模板与资源状态的一致，需要在模板中手动补齐缺失的参数定义，直到运行 <code>plan</code> 不会再有变更信息为止：</p>
+<pre><code class="language-hcl-terraform" data-lang="hcl-terraform">resource &quot;alicloud_slb&quot; &quot;this&quot; {
+  delete_protection = &quot;on&quot;
+  name              = &quot;for_demo-test&quot;
+}
+</code></pre><p>所要补齐的内容主要以那些引起更新的字段为主，补齐完成后运行<code>terraform plan</code> 进行测试：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ terraform plan
+Refreshing Terraform state in-memory prior to plan...
+The refreshed state will be used to calculate this plan, but will not be
+persisted to local or remote state storage.
+
+data.alicloud_slbs.default: Refreshing state...
+alicloud_slb.this: Refreshing state... <span style="color:#f92672">[</span>id<span style="color:#f92672">=</span>lb-gw8vinrqtqx1ro1r94c96<span style="color:#f92672">]</span>
+
+------------------------------------------------------------------------
+
+No changes. Infrastructure is up-to-date.
+
+This means that Terraform did not detect any differences between your
+configuration and real physical resources that exist. As a result, no
+actions need to be performed.
+</code></pre></div><p>可以看到，此时已经没有任何需要变更的信息。至此完成了对一个资源的完整导入。
+<!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h2 id="2-terraform-移除存量资源">2 Terraform 移除存量资源</h2>
+<p>在实际操作场景中，经常会遇到资源的误导入，导入路径不符，想要调整资源路径，想要永久保留某资源等多种复杂情况。面对这些情况，整体的实现思路也是非常简单：先将导入后的资源从State中移除，然后重新导入。</p>
+<p>资源的移除操作可以通过 <code>state rm</code> 命令来完成，完整的命令格式为 <code>terraform state rm &lt;资源类型&gt;.&lt;资源标识&gt;</code> ，详细操作如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ terraform state rm alicloud_slb.this
+Removed alicloud_slb.this
+Successfully removed <span style="color:#ae81ff">1</span> resource instance<span style="color:#f92672">(</span>s<span style="color:#f92672">)</span>.
+</code></pre></div><p><code>state rm</code> 命令只是将指定的资源从State文件中移除，并不会将其真正删除，这也正是为后续的导入操作做好了铺垫。</p>
+<p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h2 id="3-回顾使用场景">3 回顾使用场景</h2>
+<p>在阅读完前面两部分的内容后，再来回顾文章开始提到的四种场景，相信大家都已经找到了答案，本文做一个小结：<!-- raw HTML omitted --><strong>场景一的解决方案：<strong>不论是Terraform的新手还是“老司机”，都可以通过 <code>terraform import</code> 命令来完成对存量资源的导入，进而使用Terraform统一管理。<!-- raw HTML omitted --></strong>场景二的解决方案</strong>：在确定清楚参数属性的具体值之后，如果以模板参数值为准，那么只需要运行 <code>apply</code> 命令再变更回来即可；如果以控制台的值为准，那么只需要补充／修改模板参数值即可。<!-- raw HTML omitted -->**场景三的解决方案：<strong>可以先通过 <code>terraform state rm</code> 命令将所有需要重组的资源移出State，等模板重构结束后，再使用 <code>terraform import</code> 将其导入即可。<!-- raw HTML omitted --></strong>场景四的解决方案：**和上一解决方案一样，通过“先移出再导入”调整一番即可。</p>
+<p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h2 id="4-写在最后">4 写在最后</h2>
+<p>从如上的操作可以看出，Terraform的命令非常灵活和简单，基于模板和State一致性的原理，借助Terraform Import 可以轻松地实现对存量资源的统一管理，不用再担心那些游离在Terraform管理体系之外资源无法管理的痛点，也无需惧怕某个资源从State中移除后无法继续管理的问题，所有的云资源都可以被Terraform统一管理起来，感兴趣的同学赶快动手试试吧。</p>
+<p><img src="https://yqfile.alicdn.com/7b662368102217664080fa42d82136fadf9f423e.png" alt="aliyun_"></p>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/20191114-alicloud-publish-visualization/" data-toggle="tooltip" data-placement="top" title="Terraform Module 可视化正式发布">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/terraform"><i class="fa fa-navicon"></i>terraform (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            Terraform 在中国的布道者和领航者，请关注我们的微信公众号<!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200915-alicloud-terraform-openservice/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Terraform 支持自动化开通阿里云产品">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200915-alicloud-terraform-openservice/">Terraform 支持自动化开通阿里云产品</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20191114-alicloud-publish-visualization/">
+                          
+                          <img src="/img/blog/banners/006tKfTcgy1ft5zajjdomj30rs0kutbu.jpg" class="img-responsive" alt="Terraform Module 可视化正式发布">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20191114-alicloud-publish-visualization/">Terraform Module 可视化正式发布</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20191218-alicloud-manage-stock-resources/">
+                          
+                          <img src="/img/blog/banners/006tKfTcgy1ft5wypaul5j31ji15ob2b.jpg" class="img-responsive" alt="一文揭秘存量云资源的管理难题">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20191218-alicloud-manage-stock-resources/">一文揭秘存量云资源的管理难题</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            微信扫码加入交流讨论群<!-- raw HTML omitted -->请备注姓名-公司信息<!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, Terraform all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

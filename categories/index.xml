@@ -6,71 +6,17 @@
     <description>Recent content in Categories on ServiceMesher</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Wed, 26 Aug 2020 12:00:00 +0800</lastBuildDate>
+    <lastBuildDate>Tue, 15 Sep 2020 12:00:00 +0800</lastBuildDate>
     
 	<atom:link href="https://www.servicemesher.com/categories/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
-      <title>service mesh</title>
-      <link>https://www.servicemesher.com/categories/service-mesh/</link>
-      <pubDate>Wed, 26 Aug 2020 12:00:00 +0800</pubDate>
+      <title>Terraform</title>
+      <link>https://www.servicemesher.com/categories/terraform/</link>
+      <pubDate>Tue, 15 Sep 2020 12:00:00 +0800</pubDate>
       
-      <guid>https://www.servicemesher.com/categories/service-mesh/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>envoy</title>
-      <link>https://www.servicemesher.com/categories/envoy/</link>
-      <pubDate>Sat, 11 Apr 2020 11:40:00 +0800</pubDate>
-      
-      <guid>https://www.servicemesher.com/categories/envoy/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>gitops</title>
-      <link>https://www.servicemesher.com/categories/gitops/</link>
-      <pubDate>Thu, 19 Mar 2020 14:08:21 +0800</pubDate>
-      
-      <guid>https://www.servicemesher.com/categories/gitops/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>translation</title>
-      <link>https://www.servicemesher.com/categories/translation/</link>
-      <pubDate>Mon, 16 Mar 2020 07:16:13 +0800</pubDate>
-      
-      <guid>https://www.servicemesher.com/categories/translation/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>cloud native</title>
-      <link>https://www.servicemesher.com/categories/cloud-native/</link>
-      <pubDate>Sat, 15 Feb 2020 10:57:00 +0800</pubDate>
-      
-      <guid>https://www.servicemesher.com/categories/cloud-native/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>istio</title>
-      <link>https://www.servicemesher.com/categories/istio/</link>
-      <pubDate>Mon, 18 Nov 2019 11:40:00 +0800</pubDate>
-      
-      <guid>https://www.servicemesher.com/categories/istio/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>microservices</title>
-      <link>https://www.servicemesher.com/categories/microservices/</link>
-      <pubDate>Mon, 02 Sep 2019 07:15:43 +0800</pubDate>
-      
-      <guid>https://www.servicemesher.com/categories/microservices/</guid>
+      <guid>https://www.servicemesher.com/categories/terraform/</guid>
       <description></description>
     </item>
     

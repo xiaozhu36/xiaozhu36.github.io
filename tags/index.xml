@@ -6,98 +6,26 @@
     <description>Recent content in Tags on ServiceMesher</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Wed, 26 Aug 2020 12:00:00 +0800</lastBuildDate>
+    <lastBuildDate>Tue, 15 Sep 2020 12:00:00 +0800</lastBuildDate>
     
 	<atom:link href="https://www.servicemesher.com/tags/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
-      <title>Anthos Service Mesh</title>
-      <link>https://www.servicemesher.com/tags/anthos-service-mesh/</link>
-      <pubDate>Wed, 26 Aug 2020 12:00:00 +0800</pubDate>
+      <title>Alibaba Cloud</title>
+      <link>https://www.servicemesher.com/tags/alibaba-cloud/</link>
+      <pubDate>Tue, 15 Sep 2020 12:00:00 +0800</pubDate>
       
-      <guid>https://www.servicemesher.com/tags/anthos-service-mesh/</guid>
+      <guid>https://www.servicemesher.com/tags/alibaba-cloud/</guid>
       <description></description>
     </item>
     
     <item>
-      <title>Google Cloud</title>
-      <link>https://www.servicemesher.com/tags/google-cloud/</link>
-      <pubDate>Wed, 26 Aug 2020 12:00:00 +0800</pubDate>
+      <title>Terraform Provider</title>
+      <link>https://www.servicemesher.com/tags/terraform-provider/</link>
+      <pubDate>Tue, 15 Sep 2020 12:00:00 +0800</pubDate>
       
-      <guid>https://www.servicemesher.com/tags/google-cloud/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Istio</title>
-      <link>https://www.servicemesher.com/tags/istio/</link>
-      <pubDate>Wed, 26 Aug 2020 12:00:00 +0800</pubDate>
-      
-      <guid>https://www.servicemesher.com/tags/istio/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>service mesh</title>
-      <link>https://www.servicemesher.com/tags/service-mesh/</link>
-      <pubDate>Wed, 26 Aug 2020 12:00:00 +0800</pubDate>
-      
-      <guid>https://www.servicemesher.com/tags/service-mesh/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Traffic Director</title>
-      <link>https://www.servicemesher.com/tags/traffic-director/</link>
-      <pubDate>Wed, 26 Aug 2020 12:00:00 +0800</pubDate>
-      
-      <guid>https://www.servicemesher.com/tags/traffic-director/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>gitops</title>
-      <link>https://www.servicemesher.com/tags/gitops/</link>
-      <pubDate>Thu, 19 Mar 2020 14:08:21 +0800</pubDate>
-      
-      <guid>https://www.servicemesher.com/tags/gitops/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>network service mesh</title>
-      <link>https://www.servicemesher.com/tags/network-service-mesh/</link>
-      <pubDate>Sat, 15 Feb 2020 10:57:00 +0800</pubDate>
-      
-      <guid>https://www.servicemesher.com/tags/network-service-mesh/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>kubernetes</title>
-      <link>https://www.servicemesher.com/tags/kubernetes/</link>
-      <pubDate>Fri, 11 Oct 2019 18:00:00 +0800</pubDate>
-      
-      <guid>https://www.servicemesher.com/tags/kubernetes/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>microservices</title>
-      <link>https://www.servicemesher.com/tags/microservices/</link>
-      <pubDate>Mon, 02 Sep 2019 07:15:43 +0800</pubDate>
-      
-      <guid>https://www.servicemesher.com/tags/microservices/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>spring boot</title>
-      <link>https://www.servicemesher.com/tags/spring-boot/</link>
-      <pubDate>Mon, 02 Sep 2019 07:15:43 +0800</pubDate>
-      
-      <guid>https://www.servicemesher.com/tags/spring-boot/</guid>
+      <guid>https://www.servicemesher.com/tags/terraform-provider/</guid>
       <description></description>
     </item>
     
