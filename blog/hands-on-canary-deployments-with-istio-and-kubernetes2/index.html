@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>教程|使用Istio在Kubernetes集群中实现金丝雀部署 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="service mesh, 服务网格, kubernetes">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="教程|使用Istio在Kubernetes集群中实现金丝雀部署" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/hands-on-canary-deployments-with-istio-and-kubernetes2//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="作为Kublr推出的Istio教程第二篇文章本教程将一步步带领你熟悉Istio指令并解释指令的作用，并在Kubernetes集群中实现金丝雀部署。">
+  <meta property="og:description" content="作为Kublr推出的Istio教程第二篇文章本教程将一步步带领你熟悉Istio指令并解释指令的作用，并在Kubernetes集群中实现金丝雀部署。">
+  <meta name="twitter:description" content="作为Kublr推出的Istio教程第二篇文章本教程将一步步带领你熟悉Istio指令并解释指令的作用，并在Kubernetes集群中实现金丝雀部署。">
+  <meta property="og:description" content="作为Kublr推出的Istio教程第二篇文章本教程将一步步带领你熟悉Istio指令并解释指令的作用，并在Kubernetes集群中实现金丝雀部署。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="教程|使用Istio在Kubernetes集群中实现金丝雀部署 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="教程|使用Istio在Kubernetes集群中实现金丝雀部署 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">教程|使用Istio在Kubernetes集群中实现金丝雀部署 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>教程|使用Istio在Kubernetes集群中实现金丝雀部署</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2018年9月13日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://kublr.com">Kublr team</a>
+                            
+                            
+                            | 译者 <a href="https://github.com/meua">甄中元</a>
+                            
+                            
+                            | 审校者
+                            
+                            <a href="https://jimmysong.io"><i>宋净超</i></a>
+                            
+                            
+                            |
+                            5300字 | 阅读大约需要11分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            <a href="https://kublr.com/blog/hands-on-canary-deployments-with-istio-and-kubernetes/">查看原文</a>
+                            |
+                            
+                            
+                            归档于 <a href="/categories/istio">istio</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/istio/"><i>#istio</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/kublr/"><i>#kublr</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/tutorial/"><i>#”tutorial&#34;</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/kubernetes/"><i>#kubernetes</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/hands-on-canary-deployments-with-istio-and-kubernetes2/0069RVTdgy1fv873bgdexj30to0dbgnw.jpg" alt=""></p>
+<p>作为Istio教程第二篇文章本教程将一步步带领你熟悉指令并解释指令的作用。我们的<a href="http://www.servicemesher.com/blog/hands-on-canary-deployments-with-istio-and-kubernetes/">前一篇文章</a>解析了istio原理、示例，以及使用它给开发和运维带来的好处。我们也已经演示在如何在kubernetes集群安装Service Mesh。</p>
+<p>在看这篇文章之前，如果你还没有istio的开发或测试集群，你可以使用我们自主开发的“Kublr in a box”工具，在aws、azure云环境或VirtualBox上运行的物理机上创建自己的kubernetes集群。</p>
+<p>启动至少两个节点的集群。可以按照“快速入门”指南在你的集群上安装service mesh。</p>
+<p>安装完成后，你能在你的kubernetes dashboard的左侧边栏pods中查看已部署的istio组件。如下图所示：</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/hands-on-canary-deployments-with-istio-and-kubernetes2/0069RVTdgy1fv87am5p4hj30j90hd40g.jpg" alt=""></p>
+<p>我们将会启动一个自动化sidecar注入器，避免手动将Istio sidecar配置添加到每个部署的本地YAML文件中。“istio kube-inject”命令我们在前面的教程中已经介绍过。如果你的kubernetes的版本小于1.9，应该使用手动的方式执行“kubectl create *.yaml”在我们的开始后续教程之前。</p>
+<h4 id="智能路由金丝雀部署">智能路由、金丝雀部署</h4>
+<p>教程的这部分我们的场景需要针对已经创建好的集群实现金丝雀部署。</p>
+<p>可以想象一下你的组织有成百上千微服务，像Hadoop一样依赖几个大的数据仓库。或者，应用程序还有其他特定要求，这些要求将导致您复制大量数据并使用大量资源和预算来保留独立的“脚手架”集群以测试应用程序。保留这种脚手架环境是代价昂贵的。你能基于kubernetes上的Service Mesh实现金丝雀发布。</p>
+<p>前一篇文章中，我们的实例程序有三个版本的pod，这只是我们演示的复杂实例的一部分。我们需要在现有生产集群上测试新版本，而不会影响任何真实客户和用户，然而，我们希望利用完全相同的数据集群和其他依赖的微服务，这是一个真正的生产版本。这就是为什么我们不在单独的脚手架环境中测试它，而是进行金丝雀部署的原因。</p>
+<p>首先创建“service”路由流量到pod上并创建四个Deployment副本，以模仿生产部署。yaml文件如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: apps/v1beta1
+<span style="color:#66d9ef">kind</span>: Deployment
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: web-v1
+  <span style="color:#66d9ef">namespace</span>: default
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">replicas</span>: <span style="color:#ae81ff">4</span>
+  <span style="color:#66d9ef">template</span>:
+    <span style="color:#66d9ef">metadata</span>:
+      <span style="color:#66d9ef">labels</span>:
+        <span style="color:#66d9ef">app</span>: website
+        <span style="color:#66d9ef">version</span>: website-version<span style="color:#ae81ff">-1</span>
+    <span style="color:#66d9ef">spec</span>:
+      <span style="color:#66d9ef">containers</span>:
+      - <span style="color:#66d9ef">name</span>: website-version<span style="color:#ae81ff">-1</span>
+        <span style="color:#66d9ef">image</span>: kublr/kublr-tutorial-images:v1
+        <span style="color:#66d9ef">resources</span>:
+          <span style="color:#66d9ef">requests</span>:
+            <span style="color:#66d9ef">cpu</span>: <span style="color:#ae81ff">0.1</span>
+            <span style="color:#66d9ef">memory</span>: <span style="color:#ae81ff">200</span>
+---
+<span style="color:#66d9ef">apiVersion</span>: v1
+<span style="color:#66d9ef">kind</span>: Service
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: website
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">ports</span>:
+  - <span style="color:#66d9ef">port</span>: <span style="color:#ae81ff">80</span>
+    <span style="color:#66d9ef">targetPort</span>: <span style="color:#ae81ff">80</span>
+    <span style="color:#66d9ef">protocol</span>: TCP
+    <span style="color:#66d9ef">name</span>: http
+  <span style="color:#66d9ef">selector</span>:
+    <span style="color:#66d9ef">app</span>: website
+</code></pre></div><p>在集群中执行如下命令生成相应服务。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl create -f my-application.yaml
+</code></pre></div><p>如果您已经在以前的Istio教程中的执行过，只需通过对用于部署的旧文件运行kubectl delete来清理老的资源。因为本教程我们将使用不同的路由规则，旧的路由规则将干扰新的设置。</p>
+<p>检查是否在仪表板中创建了deployment和service：</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/hands-on-canary-deployments-with-istio-and-kubernetes2/0069RVTdgy1fv87a7rmw9j30z40nl41z.jpg" alt=""></p>
+<p>在发布下一个版本之前，我们希望准备Istio Service Mesh以将大多数请求路由到版本1，并且只将特定的请求发送到版本2。我们可以通过创建仅指向版本1的默认路由并基于HTTP头创建其他规则来实现。Envoy代理将会把请求流量路由到应用程序的不同版本。</p>
+<p>为Service Mesh入口节点的基本功能创建<a href="https://istio.io/docs/reference/config/istio.networking.v1alpha3/">Istio Gateway</a>和<a href="https://istio.io/docs/reference/config/istio.networking.v1alpha3/">Virtual Service</a>，所以我们能够通过Istio Gateway负载均衡器访问我们的应用程序。yaml文件如下所示：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: networking.istio.io/v1alpha3
+<span style="color:#66d9ef">kind</span>: Gateway
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: website-gateway
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">selector</span>:
+    <span style="color:#66d9ef">istio</span>: ingressgateway
+  <span style="color:#66d9ef">servers</span>:
+  - <span style="color:#66d9ef">port</span>:
+      <span style="color:#66d9ef">number</span>: <span style="color:#ae81ff">80</span>
+      <span style="color:#66d9ef">name</span>: http
+      <span style="color:#66d9ef">protocol</span>: HTTP
+    <span style="color:#66d9ef">hosts</span>:
+    - <span style="color:#e6db74">&#34;*&#34;</span>
+---
+<span style="color:#66d9ef">apiVersion</span>: networking.istio.io/v1alpha3
+<span style="color:#66d9ef">kind</span>: VirtualService
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: website-virtual-service
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">hosts</span>:
+  - <span style="color:#e6db74">&#34;*&#34;</span>
+  <span style="color:#66d9ef">gateways</span>:
+  - website-gateway
+  <span style="color:#66d9ef">http</span>:
+  - <span style="color:#66d9ef">route</span>:
+    - <span style="color:#66d9ef">destination</span>:
+        <span style="color:#66d9ef">host</span>: website
+</code></pre></div><p>执行如下命令部署：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl create -f istio-access.yaml
+</code></pre></div><p>如果你看过上一篇文章，你应该知道我们还没有在VirtualService下定义“subset”，因为我们只部署了一个版本。仍然没有创建路由规则。</p>
+<p>通过Istio ingress gateway节点测试访问。你能在这个节点的“istio-system”的namespace下发现服务列表。</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/hands-on-canary-deployments-with-istio-and-kubernetes2/0069RVTdgy1fv879ri2arj30zc0f741f.jpg" alt=""></p>
+<p>当导航到这个节点时，你应该看到实例程序的v1版本，因为它是唯一部署和在VirtualService中唯一可路由的版本。</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/hands-on-canary-deployments-with-istio-and-kubernetes2/0069RVTdgy1fv879yvt7mj30r207emxx.jpg" alt=""></p>
+<p>让我们分解您的请求在到达“version-1”pod之前经过的步骤：</p>
+<ol>
+<li>外部负载均衡器将请求传递给istio-ingressgateway服务。我们的“website-gateway”被配置为拦截任何请求（hosts:“*”）并路由它们。</li>
+<li>“VirtualService”是任何请求的网关和目标pod之间的链接，任何“host”（服务在集群内相互寻址时的DNS或Kubernetes DNS）只能在一个VirtualService中定义。现在我们VirtualService对所有请求（hosts:&quot;*&quot;）应用它的规则。所以它将收到的请求路由到它所拥有的单个目的地：“website-version-1”。</li>
+</ol>
+<p>在VirtualService定义中使用的host是kuberntes的“service”对象使用的一个名字，Destination可以分为subsets。如果我们想通过label区分我们的pods并分别在不同的场景定位他们（基于URI路径或者http头详细）。这种情况我们要添加subset如下所示：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">http</span>:
+  - <span style="color:#66d9ef">route</span>:
+    - <span style="color:#66d9ef">destination</span>:
+        <span style="color:#66d9ef">host</span>: website
+        <span style="color:#66d9ef">subset</span>: something-that-is-defined-in-DestinationRule
+</code></pre></div><p>在DestinationRule中定义的“Subsets”用于路由，此外通过label区分一个服务的pod，我们可以使用自定义负载均衡策略，例如像下面一样，我们可以有名为“version-1”的subset。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: networking.istio.io/v1alpha3
+<span style="color:#66d9ef">kind</span>: DestinationRule
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: website
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">host</span>: website
+  <span style="color:#66d9ef">subsets</span>:
+  - <span style="color:#66d9ef">name</span>: version<span style="color:#ae81ff">-1</span>
+    <span style="color:#66d9ef">labels</span>:
+      <span style="color:#66d9ef">version</span>: website-version<span style="color:#ae81ff">-1</span>
+</code></pre></div><p>当“VirtualService”使用我们在“spec.host”里的定义的目标服务名称时，将会路由到“version”为website-version-1的任意pod（它是我们在“VirtualService”中“spec.http.route.destination.host”使用的kubernetes的service对象名称）。</p>
+<p>请注意我们在“VirtualService”对象中的“spec.gateways”字段，我们的示例程序中没有mesh关键字，mesh关键字将会使得在网格中的内部流量遵循已经定义的规则。在这种情况下，我们只为通过网关的外部流量设置规则。我们对内部和外部都设置流量路由规则（微服务之间，通过Service mesh相互寻址并访问彼此）。“gateways”定义部分看起来应该向下面一样。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">...
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">hosts</span>:
+  - <span style="color:#e6db74">&#34;*&#34;</span>
+  <span style="color:#66d9ef">gateways</span>:
+  - website-gateway
+  - mesh
+</code></pre></div><p>“mesh”是保留字，与“website-gateway”相对应，这是我们的网关自定义名称。</p>
+<p>下一步是为新版本示例网站的deployment准备Service Mesh。我们假设这是一个有真实流量流入的生产级别的集群，服务版本为website-version-1，四个pod接受流量。通过创建一个单独的版本为“website-version-2”的网站pod，如果这时要实现流量分割，可能会影响到已经存在的用户，这是应该避免发生的。提示一下，我们的“service”资源看起来应该是下面这样的：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">kind</span>: Service
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: website
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">ports</span>:
+  - <span style="color:#66d9ef">port</span>: <span style="color:#ae81ff">80</span>
+    <span style="color:#66d9ef">targetPort</span>: <span style="color:#ae81ff">80</span>
+    <span style="color:#66d9ef">protocol</span>: TCP
+    <span style="color:#66d9ef">name</span>: http
+  <span style="color:#66d9ef">selector</span>:
+    <span style="color:#66d9ef">app</span>: website
+</code></pre></div><p>任何有“app: website” label的pod都会从这个service分到流量。它是我们在“VirtualService”定义中唯一指定的“service”，不管“version”存在不存在以及它的值是什么？</p>
+<p>部署新的pod版本前，我们要创建vservice subsets。此刻所有的Envoy数据面平面代理和istio ingress已经知道不要把生产流量路由到这个新的pod上（version-2），应该我们设置只有版本为“version-1”的pods才会接收我们没有特殊设置HTTP头的常规请求（QA团队将在现实生活中使用它来测试生产集群环境中的金丝雀版本）。</p>
+<p>为了学习需要，我们先创建一个只有单个subset的“DestinationRule”（只有version-1版本）。部署version-2的pod，然后测试subsets规则是否起作用，发现我们没法访问“version-2”的网站。我们更新“DestinationRule”设置使用自定义HTTP头访问“version-2”。相关设置文件website-versions.yaml如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: networking.istio.io/v1alpha3
+<span style="color:#66d9ef">kind</span>: DestinationRule
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: website
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">host</span>: website
+  <span style="color:#66d9ef">subsets</span>:
+  - <span style="color:#66d9ef">name</span>: version<span style="color:#ae81ff">-1</span>
+    <span style="color:#66d9ef">labels</span>:
+      <span style="color:#66d9ef">version</span>: website-version<span style="color:#ae81ff">-1</span>
+
+</code></pre></div><p>执行如下命令部署：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">kubectl create -f website-versions.yaml
+</code></pre></div><p>这样我们将创建一个名为“version-1”的subset，该subset是具有“version：website-version-1”标签的任何pod以及在“website”服务定义中定义的任何其他标签。现在我们创建少量“version-2”的pod，我们的金丝雀部署了一个新的、可能是错误的、我们不希望用户看到的版本，但我们必须在真实的生产环境中进行测试验证。下面是version-2-deployment.yaml文件：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: apps/v1beta1
+<span style="color:#66d9ef">kind</span>: Deployment
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: web-v2
+  <span style="color:#66d9ef">namespace</span>: default
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">replicas</span>: <span style="color:#ae81ff">1</span>
+  <span style="color:#66d9ef">template</span>:
+    <span style="color:#66d9ef">metadata</span>:
+      <span style="color:#66d9ef">labels</span>:
+        <span style="color:#66d9ef">app</span>: website
+        <span style="color:#66d9ef">version</span>: website-version<span style="color:#ae81ff">-2</span>
+    <span style="color:#66d9ef">spec</span>:
+      <span style="color:#66d9ef">containers</span>:
+      - <span style="color:#66d9ef">name</span>: website-version<span style="color:#ae81ff">-2</span>
+        <span style="color:#66d9ef">image</span>: kublr/kublr-tutorial-images:v2
+        <span style="color:#66d9ef">resources</span>:
+          <span style="color:#66d9ef">requests</span>:
+            <span style="color:#66d9ef">cpu</span>: <span style="color:#ae81ff">0.1</span>
+            <span style="color:#66d9ef">memory</span>: <span style="color:#ae81ff">200</span>
+</code></pre></div><p>如果我们在此阶段部署“version-2” pod，会发生什么？我们不是通过创建“DestinationRule”仅仅路由到标有的“version：website-version-1”的pod来准备服务网格吗？是的，但是记住subset已经被添加到我的“VirtualService”定义中，不然它将会被忽略。“DestinationRule”资源只不过是“VirtualService”可以使用的“record”，然而，如果我们在VirtualService定义中没有提及它，则完全忽略它。我们需要更新虚拟服务定义，运行“kubectl get virtualservices”列出现有的资源，然后运行“kubectl edit virtualservice website-virtual-service”添加subset。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">...
+  <span style="color:#66d9ef">http</span>:
+  - <span style="color:#66d9ef">route</span>:
+    - <span style="color:#66d9ef">destination</span>:
+        <span style="color:#66d9ef">host</span>: website
+        <span style="color:#66d9ef">subset</span>: version<span style="color:#ae81ff">-1</span>
+</code></pre></div><p>保存并退出文件编辑模式以应用修改后的资源。测试一下。在这个阶段，我们仍然可以加载网站，并刷新几次。现在，使用“kubectl create -f version-2-deployment.yaml”部署“version-2”并在仪表板中检查结果：</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/hands-on-canary-deployments-with-istio-and-kubernetes2/0069RVTdgy1fv87b2qxtyj30xo0lpgp1.jpg" alt=""></p>
+<p>在此刻我们有四个“version-1”pod和一个“version-2”的金丝雀pod。刷新几次ingress endpoint确信你被路由到“version-2”。现在我们准备去修改路由规则，并发送HTTP头中“qa”包含“canary-test”值的任何HTTP请求到“version-2”。</p>
+<p>在此编辑“website-virtual-service”，这次添加匹配header部分：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">  <span style="color:#66d9ef">http</span>:
+  - <span style="color:#66d9ef">match</span>:
+    - <span style="color:#66d9ef">headers</span>:
+        <span style="color:#66d9ef">qa</span>:
+          <span style="color:#66d9ef">exact</span>: canary-test
+    <span style="color:#66d9ef">route</span>:
+    - <span style="color:#66d9ef">destination</span>:
+        <span style="color:#66d9ef">host</span>: website
+        <span style="color:#66d9ef">subset</span>: version<span style="color:#ae81ff">-2</span>
+  - <span style="color:#66d9ef">route</span>:
+    - <span style="color:#66d9ef">destination</span>:
+        <span style="color:#66d9ef">host</span>: website
+        <span style="color:#66d9ef">subset</span>: version<span style="color:#ae81ff">-1</span>
+</code></pre></div><p>保存并退出，应用这些更改。要完成“version-2”的设置，我们还需要做一件事。你可能已经注意到，我们添加了一个匹配规则，该规则使用目标主机“website”及其subset“version-2”，但此subset不存在。我们需要将它添加到“DestinationRule”中。使用“kubectl edit destinationrule website”进行编辑并添加新的subset：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">host</span>: website
+  <span style="color:#66d9ef">subsets</span>:
+  - <span style="color:#66d9ef">name</span>: version<span style="color:#ae81ff">-1</span>
+    <span style="color:#66d9ef">labels</span>:
+      <span style="color:#66d9ef">version</span>: website-version<span style="color:#ae81ff">-1</span>
+  - <span style="color:#66d9ef">name</span>: version<span style="color:#ae81ff">-2</span>
+    <span style="color:#66d9ef">labels</span>:
+      <span style="color:#66d9ef">version</span>: website-version<span style="color:#ae81ff">-2</span>
+</code></pre></div><p>现在可以使用任何支持轻松修改发送到服务器的HTTP请求的工具来访问“version-2”。你可以使用postman,或者它的chorme插件，它是非常有名的api和http测试工具，但是它的返回结果页却是文本类型的。所以我们将会使用另外一个chrome插件“<a href="https://chrome.google.com/webstore/search/modify%20headers%20extension?hl=en">Modify Headers for Google Chrome</a>”。通过单击其图标安装并打开设置后，您可以添加任何页面请求的自定义header（并轻松打开和关闭）：</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/hands-on-canary-deployments-with-istio-and-kubernetes2/0069RVTdgy1fv87cwrrpij30yf06jmy2.jpg" alt=""></p>
+<p>单击右上角的“加号”添加标题，填写名称和值，选择“添加”操作，然后单击“保存”。单击左上角的“开始播放”按钮（在我们的屏幕截图上显示“停止”的那个，因为它已经处于活动状态）。然后单击右侧规则“操作”部分中的“激活”按钮。使用此设置，再次加载入口页面以查看“version-2”蓝页！</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/hands-on-canary-deployments-with-istio-and-kubernetes2/0069RVTdgy1fv87db0lk9j30r207ndgn.jpg" alt=""></p>
+<p>使用这个金丝雀部署，我们有一个带有新版应用程序的活跃pod，与所有其他pod一样驻留在相同的负载均衡器下，在相同的环境（生产）中，我们可以在不影响真实用户的情况下执行所需的测试。</p>
+<p>如果应用程序已通过所有内部测试并准备向用户显示，该怎么办？如果您还没准备好完全部署新版本，并且只想向小组用户展示它，请选择我们的“客户端应用程序”已经定期使用的特定标头（如果是移动客户端，例如使用标头发送其国家）并将其用作subset。或根据每个目的地的权重选择不同的路由策略，以便为每个版本发送确切的流量百分比。</p>
+<p>要对此进行测试，请尝试将20％的流量发送到“version-2”，将80％的流量发送到“version-1”，使用“kubectl edit virtualservice website-virtual-service”修改虚拟服务。它应如下所示：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">...
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">gateways</span>:
+  - website-gateway
+  <span style="color:#66d9ef">hosts</span>:
+  - <span style="color:#e6db74">&#39;*&#39;</span>
+  <span style="color:#66d9ef">http</span>:
+  - <span style="color:#66d9ef">route</span>:
+    - <span style="color:#66d9ef">destination</span>:
+        <span style="color:#66d9ef">host</span>: website
+        <span style="color:#66d9ef">subset</span>: version<span style="color:#ae81ff">-2</span>
+      <span style="color:#66d9ef">weight</span>: <span style="color:#ae81ff">20</span>
+    - <span style="color:#66d9ef">destination</span>:
+        <span style="color:#66d9ef">host</span>: website
+        <span style="color:#66d9ef">subset</span>: version<span style="color:#ae81ff">-1</span>
+      <span style="color:#66d9ef">weight</span>: <span style="color:#ae81ff">80</span>
+</code></pre></div><p>现在尝试刷新页面。您会注意到蓝页（version-2）显示的频率低于绿页（version-1）。您可以尝试其他值并查看它如何影响路由。</p>
+<p>这是我们的Istio服务网格教程系列的第二部分。如有其他Kublr问题，需要特定方案和应用程序的帮助，或提供反馈，请联系Kublr。</p>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/the-importance-of-control-planes-with-service-mesh/" data-toggle="tooltip" data-placement="top" title="服务网格的控制平面和边缘代理的重要性">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/serverless-vs-containers/" data-toggle="tooltip" data-placement="top" title="Serverless vs Container——开发人员向左，DevOps向右">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/hands-on-canary-deployments-with-istio-and-kubernetes/"><i class="fa fa-link"></i>教程|使用Istio实现一个Service Mesh以简化微服务间的通信模式</a></li>
+         
+        <li><a href="/blog/knative-serving-autoscaler-single-tenancy-deep-dive/"><i class="fa fa-link"></i>基于Kubernetes和Istio的Serverless框架Knative解析之Autoscaler</a></li>
+         
+        <li><a href="/blog/envoy-sidecar-injection-in-istio-service-mesh-deep-dive/"><i class="fa fa-link"></i>理解 Istio Service Mesh 中 Envoy 代理 Sidecar 注入及流量劫持</a></li>
+         
+        <li><a href="/blog/aspen-mesh-released/"><i class="fa fa-link"></i>F5公司Aspen Mesh 1.0发布，基于Istio 1.0</a></li>
+         
+        <li><a href="/blog/service-mesh-architecture-radicalizes-container-networking/"><i class="fa fa-link"></i>服务网格架构激活了容器网络管理—来自于服务网格创建者们的见解与展望</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

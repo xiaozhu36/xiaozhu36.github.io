@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Istio 庖丁解牛三：galley · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="service mesh, 服务网格, istio">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="Istio 庖丁解牛三：galley" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/istio-analysis-3//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="今天我们来解析istio控制面组件Galley。Galley Pod是一个单容器单进程组件，没有sidecar，结构独立，职责明确。">
+  <meta property="og:description" content="今天我们来解析istio控制面组件Galley。Galley Pod是一个单容器单进程组件，没有sidecar，结构独立，职责明确。">
+  <meta name="twitter:description" content="今天我们来解析istio控制面组件Galley。Galley Pod是一个单容器单进程组件，没有sidecar，结构独立，职责明确。">
+  <meta property="og:description" content="今天我们来解析istio控制面组件Galley。Galley Pod是一个单容器单进程组件，没有sidecar，结构独立，职责明确。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="Istio 庖丁解牛三：galley logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="Istio 庖丁解牛三：galley logo" class="visible-xs visible-sm">
+                    <span class="sr-only">Istio 庖丁解牛三：galley - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>Istio 庖丁解牛三：galley</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2019年4月1日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://imfox.io">钟华</a>
+                            
+                            
+                            
+                            |
+                            4700字 | 阅读大约需要10分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            
+                            归档于 <a href="/categories/istio">istio</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/istio/"><i>#istio</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <blockquote>
+<p>作者: 钟华，腾讯云容器产品中心高级工程师，热衷于容器、微服务、service mesh、istio、devops 等领域技术。</p>
+</blockquote>
+<p>今天我们来解析istio控制面组件Galley。Galley Pod是一个单容器单进程组件, 没有sidecar, 结构独立，职责明确。</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/istio-analysis-3/006tKfTcly1g1nihj4ybjj31850u0dld.jpg" alt=""></p>
+<p><a href="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/istio-analysis-3/006tKfTcgy1g187dn7s1tj315m0u0x6t.jpg">查看高清原图</a></p>
+<p>前不久istio 1.1 版本正式发布, 其中istio的配置管理机制有较大的改进, 以下是<a href="https://istio.io/about/notes/1.1/">1.1 release note</a> 中部分说明:</p>
+<blockquote>
+<p>Added <a href="https://istio.io/docs/concepts/what-is-istio/#galley">Galley</a> as the primary configuration ingestion and distribution mechanism within Istio. It provides a robust model to validate, transform, and distribute configuration states to Istio components insulating the Istio components from Kubernetes details. Galley uses the <a href="https://github.com/istio/api/tree/release-1.1/mcp">Mesh Configuration Protocol (MCP)</a> to interact with components</p>
+</blockquote>
+<p>Galley 原来仅负责进行配置验证, 1.1 后升级为整个控制面的配置管理中心, 除了继续提供配置验证功能外, Galley还负责配置的管理和分发, Galley 使用 <strong>网格配置协议</strong>(Mesh Configuration Protocol) 和其他组件进行配置的交互.</p>
+<p>今天对Galley的剖析大概有以下方面:</p>
+<ul>
+<li>Galley 演进的背景</li>
+<li>Galley 配置验证功能</li>
+<li>MCP 协议</li>
+<li>Galley 配置管理实现浅析</li>
+</ul>
+<h2 id="galley-演进的背景">Galley 演进的背景</h2>
+<p>在 k8s 场景下, 「配置(Configuration)」一词主要指yaml编写的Resource Definition, 如service、pod, 以及扩展的CRD( Custom Resource Definition), 如 istio的 VirtualService、DestinationRule 等.</p>
+<p><strong>本文中「配置」一词可以等同于 k8s Resource Definition + istio CRD</strong></p>
+<p>声明式 API 是 Kubernetes 项目编排能力“赖以生存”的核心所在, 而「配置」是声明式 API的承载方式.</p>
+<blockquote>
+<p>Istio 项目的设计与实现，其实都依托于 Kubernetes 的声明式 API 和它所提供的各种编排能力。可以说，Istio 是在 Kubernetes 项目使用上的一位“集大成者”</p>
+<p>Istio 项目有多火热，就说明 Kubernetes 这套“声明式 API”有多成功</p>
+</blockquote>
+<p>k8s 内置了几十个Resources, istio 创造了50多个CRD, 其复杂度可见一斑, 所以有人说面向k8s编程近似于面向yaml编程.</p>
+<p>早期的Galley 仅仅负责对「配置」进行运行时验证, istio 控制面各个组件各自去list/watch 各自关注的「配置」, 以下是istio早期的Configuration flow:</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/istio-analysis-3/006tKfTcly1g1nii10vwuj31d20swjv7.jpg" alt=""></p>
+<p>越来越多且复杂的「配置」给istio 用户带来了诸多不便, 主要体现在:</p>
+<ul>
+<li>「配置」的缺乏统一管理, 组件各自订阅, 缺乏统一回滚机制, 配置问题难以定位</li>
+<li>「配置」可复用度低, 比如在1.1之前, 每个mixer adpater 就需要定义个新的CRD.</li>
+<li>另外「配置」的隔离, ACL 控制, 一致性, 抽象程度, 序列化等等问题都还不太令人满意.</li>
+</ul>
+<p>随着istio功能的演进, 可预见的istio CRD数量还会继续增加, 社区计划将Galley 强化为istio 「配置」控制层, Galley 除了继续提供「配置」验证功能外, 还将提供配置管理流水线, 包括输入, 转换, 分发, 以及适合istio控制面的「配置」分发协议(MCP).</p>
+<p>本文对Galley的分析基于istio tag 1.1.1 (commit 2b13318)</p>
+<h2 id="galley-配置验证功能">Galley 配置验证功能</h2>
+<p>在<a href="https://imfox.io/2019/03/19/istio-analysis-2/">istio 庖丁解牛(二) sidecar injector</a>中我分析了istio-sidecar-injector 如何利用 MutatingWebhook 来实现sidecar注入, Galley 使用了k8s提供的另一个Admission Webhooks: ValidatingWebhook, 来做配置的验证:</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/istio-analysis-3/006tKfTcgy1g1mcwsf5ggj30sz0ecjt4.jpg" alt="img"></p>
+<p>istio 需要一个关于ValidatingWebhook的配置项, 用于告诉k8s api server, 哪些CRD应该发往哪个服务的哪个接口去做验证, 该配置名为istio-galley, 简化的内容如下:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#f92672">%</span><span style="color:#a6e22e">kubectl</span> <span style="color:#a6e22e">get</span> <span style="color:#a6e22e">ValidatingWebhookConfiguration</span> <span style="color:#a6e22e">istio</span><span style="color:#f92672">-</span><span style="color:#a6e22e">galley</span> <span style="color:#f92672">-</span><span style="color:#a6e22e">oyaml</span>
+
+<span style="color:#a6e22e">apiVersion</span>: <span style="color:#a6e22e">admissionregistration</span>.<span style="color:#a6e22e">k8s</span>.<span style="color:#a6e22e">io</span><span style="color:#f92672">/</span><span style="color:#a6e22e">v1beta1</span>
+<span style="color:#a6e22e">kind</span>: <span style="color:#a6e22e">ValidatingWebhookConfiguration</span>
+<span style="color:#a6e22e">metadata</span>:
+  <span style="color:#a6e22e">name</span>: <span style="color:#a6e22e">istio</span><span style="color:#f92672">-</span><span style="color:#a6e22e">galley</span>
+<span style="color:#a6e22e">webhooks</span>:
+<span style="color:#f92672">-</span> <span style="color:#a6e22e">clientConfig</span>:
+  <span style="color:#f92672">......</span>
+    <span style="color:#a6e22e">service</span>:
+      <span style="color:#a6e22e">name</span>: <span style="color:#a6e22e">istio</span><span style="color:#f92672">-</span><span style="color:#a6e22e">galley</span>
+      <span style="color:#a6e22e">namespace</span>: <span style="color:#a6e22e">istio</span><span style="color:#f92672">-</span><span style="color:#a6e22e">system</span>
+      <span style="color:#a6e22e">path</span>: <span style="color:#f92672">/</span><span style="color:#a6e22e">admitpilot</span>
+  <span style="color:#a6e22e">failurePolicy</span>: <span style="color:#a6e22e">Fail</span>
+  <span style="color:#a6e22e">name</span>: <span style="color:#a6e22e">pilot</span>.<span style="color:#a6e22e">validation</span>.<span style="color:#a6e22e">istio</span>.<span style="color:#a6e22e">io</span>
+  <span style="color:#a6e22e">rules</span>:
+  <span style="color:#f92672">...</span><span style="color:#a6e22e">pilot关注的CRD</span><span style="color:#f92672">...</span>
+    <span style="color:#f92672">-</span> <span style="color:#a6e22e">gateways</span>
+    <span style="color:#f92672">-</span> <span style="color:#a6e22e">virtualservices</span>
+  <span style="color:#f92672">......</span>
+<span style="color:#f92672">-</span> <span style="color:#a6e22e">clientConfig</span>:
+  <span style="color:#f92672">......</span>
+    <span style="color:#a6e22e">service</span>:
+      <span style="color:#a6e22e">name</span>: <span style="color:#a6e22e">istio</span><span style="color:#f92672">-</span><span style="color:#a6e22e">galley</span>
+      <span style="color:#a6e22e">namespace</span>: <span style="color:#a6e22e">istio</span><span style="color:#f92672">-</span><span style="color:#a6e22e">system</span>
+      <span style="color:#a6e22e">path</span>: <span style="color:#f92672">/</span><span style="color:#a6e22e">admitmixer</span>
+  <span style="color:#a6e22e">name</span>: <span style="color:#a6e22e">mixer</span>.<span style="color:#a6e22e">validation</span>.<span style="color:#a6e22e">istio</span>.<span style="color:#a6e22e">io</span>
+  <span style="color:#a6e22e">rules</span>:
+  <span style="color:#f92672">...</span><span style="color:#a6e22e">mixer关注的CRD</span><span style="color:#f92672">...</span>
+    <span style="color:#f92672">-</span> <span style="color:#a6e22e">rules</span>
+    <span style="color:#f92672">-</span> <span style="color:#a6e22e">metrics</span>
+  <span style="color:#f92672">......</span>
+</code></pre></div><p>可以看到, 该配置将pilot和mixer关注的CRD, 分别发到了服务istio-galley的<code>/admitpilot</code>和<code>/admitmixer</code>, 在Galley 源码中可以很容易找到这2个path Handler的入口:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/admitpilot&#34;</span>, <span style="color:#a6e22e">wh</span>.<span style="color:#a6e22e">serveAdmitPilot</span>)
+<span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/admitmixer&#34;</span>, <span style="color:#a6e22e">wh</span>.<span style="color:#a6e22e">serveAdmitMixer</span>)
+</code></pre></div><h2 id="mcp协议">MCP协议</h2>
+<p>MCP 提供了一套配置订阅和分发的API, 在MCP中, 可以抽象为以下模型:</p>
+<ul>
+<li>source: 「配置」的提供端, 在Istio中Galley 即是source</li>
+<li>sink: 「配置」的消费端, 在isito中典型的sink包括Pilot和Mixer组件</li>
+<li>resource: source和sink关注的资源体, 也就是isito中的「配置」</li>
+</ul>
+<p>当sink和source之间建立了对某些resource的订阅和分发关系后, source 会将指定resource的变化信息推送给sink, sink端可以选择接受或者不接受resource更新(比如格式错误的情况), 并对应返回ACK/NACK 给source端.</p>
+<p>MCP 提供了gRPC 的实现, 实现代码参见: <a href="https://github.com/istio/api/tree/master/mcp/v1alpha1">https://github.com/istio/api/tree/master/mcp/v1alpha1</a>,</p>
+<p>其中包括2个services: <code>ResourceSource</code> 和 <code>ResourceSink</code>, 通常情况下, source 会作为 gRPC的server 端, 提供<code>ResourceSource</code>服务, sink 作为 gRPC的客户端, sink主动发起请求连接source; 不过有的场景下, source 会作为gRPC的client端, sink作为gRPC的server端提供<code>ResourceSink</code>服务, source主动发起请求连接sink.</p>
+<p>以上2个服务, 内部功能逻辑都是一致的, 都是sink需要订阅source管理的resource, 区别仅仅是哪端主动发起的连接请求.</p>
+<p>具体到istio的场景中:</p>
+<ul>
+<li>在单k8s集群的istio mesh中, Galley默认实现了<code>ResourceSource</code> service, Pilot和Mixer会作为该service的client主动连接Galley进行配置订阅.</li>
+<li>Galley 可以配置去主动连接远程的其他sink, 比如说在多k8s集群的mesh中, 主集群中的Galley可以为多个集群的Pilot/Mixer提供配置管理, 跨集群的Pilot/Mixer无法主动连接主集群Galley, 这时候Galley就可以作为gRPC的client 主动发起连接, 跨集群的Pilot/Mixer作为gRPC server 实现<code>ResourceSink</code>服务,</li>
+</ul>
+<p>两种模式的示意图如下:</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/istio-analysis-3/006tKfTcgy1g1n7omb7vrj30uk0u0452.jpg" alt="img"></p>
+<h2 id="galley-配置管理实现浅析">Galley 配置管理实现浅析</h2>
+<p>galley 进程对外暴露了若干服务, 最重要的就是基于gRPC的mcp服务, 以及http的验证服务, 除此之外还提供了 prometheus exporter接口以及Profiling接口:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">serverArgs</span>.<span style="color:#a6e22e">EnableServer</span> { <span style="color:#75715e">// 配置管理服务
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">go</span> <span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">RunServer</span>(<span style="color:#a6e22e">serverArgs</span>, <span style="color:#a6e22e">livenessProbeController</span>, <span style="color:#a6e22e">readinessProbeController</span>)
+}
+<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">validationArgs</span>.<span style="color:#a6e22e">EnableValidation</span> { <span style="color:#75715e">// 验证服务
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">go</span> <span style="color:#a6e22e">validation</span>.<span style="color:#a6e22e">RunValidation</span>(<span style="color:#a6e22e">validationArgs</span>, <span style="color:#a6e22e">kubeConfig</span>, <span style="color:#a6e22e">livenessProbeController</span>, <span style="color:#a6e22e">readinessProbeController</span>)
+}
+
+<span style="color:#75715e">// 提供 prometheus exporter
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">go</span> <span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">StartSelfMonitoring</span>(<span style="color:#a6e22e">galleyStop</span>, <span style="color:#a6e22e">monitoringPort</span>)
+
+<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">enableProfiling</span> {
+    <span style="color:#75715e">// 使用包net/http/pprof
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 通过http server提供runtime profiling数据
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">go</span> <span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">StartProfiling</span>(<span style="color:#a6e22e">galleyStop</span>, <span style="color:#a6e22e">pprofPort</span>)
+}
+<span style="color:#75715e">// 开始探针更新
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">go</span> <span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">StartProbeCheck</span>(<span style="color:#a6e22e">livenessProbeController</span>, <span style="color:#a6e22e">readinessProbeController</span>, <span style="color:#a6e22e">galleyStop</span>)
+</code></pre></div><p>接下来主要分析下「配置」管理服务的实现:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">go</span> <span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">RunServer</span>(<span style="color:#a6e22e">serverArgs</span>, <span style="color:#a6e22e">livenessProbeController</span>, <span style="color:#a6e22e">readinessProbeController</span>)
+</code></pre></div><p>下面是Galley 配置服务结构示意图:</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/istio-analysis-3/006tKfTcgy1g1mzi3oe9xj31r10u0qgp.jpg" alt="img"></p>
+<p><a href="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/istio-analysis-3/006tKfTcgy1g1n8o76s8yj31r10u0trx.jpg">查看高清原图</a></p>
+<p>从上图可以看到, Galley 配置服务主要包括 Processor 和 负责mcp通信的grpc Server.</p>
+<p>其中 Processor 又由以下部分组成:</p>
+<ul>
+<li>Source: 代表Galley管理的配置的来源</li>
+<li>Handler: 对「配置」事件的处理器</li>
+<li>State: Galley管理的「配置」在内存中状态</li>
+</ul>
+<h3 id="source">Source</h3>
+<p>interface Source 代表istio关注的配置的来源, 其<code>Start</code>方法需要实现对特定资源的变化监听.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// Source to be implemented by a source configuration provider.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Source</span> <span style="color:#66d9ef">interface</span> {
+	<span style="color:#75715e">// Start the source interface, provided the EventHandler. The initial state of the underlying
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// config store should be reflected as a series of Added events, followed by a FullSync event.
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">Start</span>(<span style="color:#a6e22e">handler</span> <span style="color:#a6e22e">resource</span>.<span style="color:#a6e22e">EventHandler</span>) <span style="color:#66d9ef">error</span>
+
+	<span style="color:#75715e">// Stop the source interface. Upon return from this method, the channel should not be accumulating any
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// more events.
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">Stop</span>()
+}
+</code></pre></div><p>在Galley中, 有多个Source的实现, 主要包括</p>
+<ul>
+<li><code>source/fs.source</code></li>
+<li><code>source/kube/builtin.source</code></li>
+<li><code>source/kube/dynamic.source</code></li>
+<li><code>source/kube.aggregate</code></li>
+</ul>
+<p>其中<code>source/fs</code>代表从文件系统中获取配置, 这种形式常用于开发和测试过程中, 不需要创建实际的k8s CRD, 只需要CRD文件即可, 同时<code>source/fs</code>也是实现了更新watch(使用<a href="https://github.com/howeyc/fsnotify">https://github.com/howeyc/fsnotify</a>)</p>
+<p><code>source/kube/builtin.source</code>处理k8s 内置的配置来源, 包括<code>Service</code>, <code>Node</code>, <code>Pod</code>, <code>Endpoints</code>等, <code>source/kube/dynamic.source</code>处理其他的istio 关注的CRD, <code>source/kube.aggregate</code>是多个Source 的聚合, 其本身也实现了Source interface:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">aggregate</span> <span style="color:#66d9ef">struct</span> {
+	<span style="color:#a6e22e">mu</span>      <span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">Mutex</span>
+	<span style="color:#a6e22e">sources</span> []<span style="color:#a6e22e">runtime</span>.<span style="color:#a6e22e">Source</span>
+}
+
+<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">aggregate</span>) <span style="color:#a6e22e">Start</span>(<span style="color:#a6e22e">handler</span> <span style="color:#a6e22e">resource</span>.<span style="color:#a6e22e">EventHandler</span>) <span style="color:#66d9ef">error</span> {
+	<span style="color:#f92672">......</span>
+	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">source</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">sources</span> {
+		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">source</span>.<span style="color:#a6e22e">Start</span>(<span style="color:#a6e22e">syncHandler</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+			<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
+		}
+	}
+	<span style="color:#f92672">......</span>
+</code></pre></div><p><code>source/kube/builtin.source</code>、<code>source/kube/dynamic.source</code>本身都包含一个k8s SharedIndexInformer:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// source is a simplified client interface for listening/getting Kubernetes resources in an unstructured way.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">source</span> <span style="color:#66d9ef">struct</span> {
+	<span style="color:#f92672">......</span>
+	<span style="color:#75715e">// SharedIndexInformer for watching/caching resources
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">informer</span> <span style="color:#a6e22e">cache</span>.<span style="color:#a6e22e">SharedIndexInformer</span>
+
+	<span style="color:#a6e22e">handler</span> <span style="color:#a6e22e">resource</span>.<span style="color:#a6e22e">EventHandler</span>
+}
+</code></pre></div><p>二者的<code>Start</code>方法的实现, 正是用到了k8s典型的 Informer+list/watch 模式, 获取关注「配置」的变化事件, 在此不再赘述.</p>
+<p>Source 获得「配置」更新事件后, 会将其推送到Processor 的events chan 中, events 长度为1024, 通过<code>go p.process()</code>, <code>Proccesor</code>的<code>handler</code>会对事件进行异步处理.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">p</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Processor</span>) <span style="color:#a6e22e">Start</span>() <span style="color:#66d9ef">error</span> {
+	<span style="color:#f92672">......</span>
+    <span style="color:#a6e22e">events</span> <span style="color:#f92672">:=</span> make(<span style="color:#66d9ef">chan</span> <span style="color:#a6e22e">resource</span>.<span style="color:#a6e22e">Event</span>, <span style="color:#ae81ff">1024</span>)
+	<span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">source</span>.<span style="color:#a6e22e">Start</span>(<span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">e</span> <span style="color:#a6e22e">resource</span>.<span style="color:#a6e22e">Event</span>) {
+		<span style="color:#a6e22e">events</span> <span style="color:#f92672">&lt;-</span> <span style="color:#a6e22e">e</span>
+	})
+    <span style="color:#f92672">......</span>
+	<span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">events</span> = <span style="color:#a6e22e">events</span>
+
+	<span style="color:#66d9ef">go</span> <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">process</span>()
+	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+}
+
+<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">p</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Processor</span>) <span style="color:#a6e22e">process</span>() {
+<span style="color:#a6e22e">loop</span>:
+	<span style="color:#66d9ef">for</span> {
+		<span style="color:#66d9ef">select</span> {
+		<span style="color:#75715e">// Incoming events are received through p.events
+</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">case</span> <span style="color:#a6e22e">e</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">events</span>:
+			<span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">processEvent</span>(<span style="color:#a6e22e">e</span>)
+
+		<span style="color:#66d9ef">case</span> <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">strategy</span>.<span style="color:#a6e22e">Publish</span>:
+			<span style="color:#a6e22e">scope</span>.<span style="color:#a6e22e">Debug</span>(<span style="color:#e6db74">&#34;Processor.process: publish&#34;</span>)
+			<span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">publish</span>()
+
+		<span style="color:#75715e">// p.done signals the graceful Shutdown of the processor.
+</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">case</span> <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">done</span>:
+			<span style="color:#a6e22e">scope</span>.<span style="color:#a6e22e">Debug</span>(<span style="color:#e6db74">&#34;Processor.process: done&#34;</span>)
+			<span style="color:#66d9ef">break</span> <span style="color:#a6e22e">loop</span>
+		}
+
+		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">postProcessHook</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+			<span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">postProcessHook</span>()
+		}
+	}
+    <span style="color:#f92672">......</span>
+}
+</code></pre></div><h3 id="handler-和-state">Handler 和 State</h3>
+<p>interface Handler 代表对「配置」变化事件的处理器:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// Handler handles an incoming resource event.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Handler</span> <span style="color:#66d9ef">interface</span> {
+	<span style="color:#a6e22e">Handle</span>(<span style="color:#a6e22e">e</span> <span style="color:#a6e22e">resource</span>.<span style="color:#a6e22e">Event</span>)
+}
+</code></pre></div><p>在istio中有多个Handler的实现, 典型的有:</p>
+<ul>
+<li>Dispatcher</li>
+<li>State</li>
+</ul>
+<p>Dispatcher 是多个Handler的集合:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Dispatcher</span> <span style="color:#66d9ef">struct</span> {
+	<span style="color:#a6e22e">handlers</span> <span style="color:#66d9ef">map</span>[<span style="color:#a6e22e">resource</span>.<span style="color:#a6e22e">Collection</span>][]<span style="color:#a6e22e">Handler</span>
+}
+</code></pre></div><p>State 是对Galley的内存中的状态, 包括了Galley 当前持有「配置」的schema、发布策略以及内容快照等:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// State is the in-memory state of Galley.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">State</span> <span style="color:#66d9ef">struct</span> {
+	<span style="color:#a6e22e">name</span>   <span style="color:#66d9ef">string</span>
+	<span style="color:#a6e22e">schema</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">resource</span>.<span style="color:#a6e22e">Schema</span>
+
+	<span style="color:#a6e22e">distribute</span>  <span style="color:#66d9ef">bool</span>
+	<span style="color:#a6e22e">strategy</span>    <span style="color:#f92672">*</span><span style="color:#a6e22e">publish</span>.<span style="color:#a6e22e">Strategy</span>
+	<span style="color:#a6e22e">distributor</span> <span style="color:#a6e22e">publish</span>.<span style="color:#a6e22e">Distributor</span>
+
+	<span style="color:#a6e22e">config</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Config</span>
+
+	<span style="color:#75715e">// version counter is a nonce that generates unique ids for each updated view of State.
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">versionCounter</span> <span style="color:#66d9ef">int64</span>
+
+	<span style="color:#75715e">// entries for per-message-type State.
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">entriesLock</span> <span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">Mutex</span>
+	<span style="color:#a6e22e">entries</span>     <span style="color:#66d9ef">map</span>[<span style="color:#a6e22e">resource</span>.<span style="color:#a6e22e">Collection</span>]<span style="color:#f92672">*</span><span style="color:#a6e22e">resourceTypeState</span>
+
+	<span style="color:#75715e">// Virtual version numbers for Gateways &amp; VirtualServices for Ingress projected ones
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">ingressGWVersion</span>   <span style="color:#66d9ef">int64</span>
+	<span style="color:#a6e22e">ingressVSVersion</span>   <span style="color:#66d9ef">int64</span>
+	<span style="color:#a6e22e">lastIngressVersion</span> <span style="color:#66d9ef">int64</span>
+
+	<span style="color:#75715e">// pendingEvents counts the number of events awaiting publishing.
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">pendingEvents</span> <span style="color:#66d9ef">int64</span>
+
+	<span style="color:#75715e">// lastSnapshotTime records the last time a snapshot was published.
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">lastSnapshotTime</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>
+}
+</code></pre></div><p>同时State 也实现了interface <code>Handler</code>, 最终「配置」资源将会作为快照存储到State的<code>distributor</code>中, <code>distributor</code>实际的实现是mcp包中的<code>Cache</code>, 实际会调用mcp中的<code>Cache#SetSnapshot</code>.</p>
+<h3 id="distributor-watcher-和-cache">Distributor 、Watcher 和 Cache</h3>
+<p>在mcp包中, 有2个interface 值得特别关注: Distributor 和 Watcher</p>
+<p>interface Distributor 定义了「配置」快照存储需要实现的接口, State 最终会调用<code>SetSnapshot</code>将配置存储到快照中.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// Distributor interface allows processor to distribute snapshots of configuration.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Distributor</span> <span style="color:#66d9ef">interface</span> {
+	<span style="color:#a6e22e">SetSnapshot</span>(<span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">snapshot</span> <span style="color:#a6e22e">sn</span>.<span style="color:#a6e22e">Snapshot</span>)
+
+	<span style="color:#a6e22e">ClearSnapshot</span>(<span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>)
+}
+</code></pre></div><p>interface Watcher 功能有点类似k8s的 list/watch, Watch方法会注册 mcp sink 的watch 请求和处理函数:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// Watcher requests watches for configuration resources by node, last
+</span><span style="color:#75715e">// applied version, and type. The watch should send the responses when
+</span><span style="color:#75715e">// they are ready. The watch can be canceled by the consumer.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Watcher</span> <span style="color:#66d9ef">interface</span> {
+	<span style="color:#75715e">// Watch returns a new open watch for a non-empty request.
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">//
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// Cancel is an optional function to release resources in the
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// producer. It can be called idempotently to cancel and release resources.
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">Watch</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">Request</span>, <span style="color:#a6e22e">PushResponseFunc</span>) <span style="color:#a6e22e">CancelWatchFunc</span>
+}
+</code></pre></div><p>struct <code>mcp/snapshot.Cache</code> 同时实现了Distributor 和 Watcher interface:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Cache</span> <span style="color:#66d9ef">struct</span> {
+	<span style="color:#a6e22e">mu</span>         <span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">RWMutex</span>
+	<span style="color:#a6e22e">snapshots</span>  <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#a6e22e">Snapshot</span>
+	<span style="color:#a6e22e">status</span>     <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#f92672">*</span><span style="color:#a6e22e">StatusInfo</span>
+	<span style="color:#a6e22e">watchCount</span> <span style="color:#66d9ef">int64</span>
+
+	<span style="color:#a6e22e">groupIndex</span> <span style="color:#a6e22e">GroupIndexFn</span>
+}
+</code></pre></div><p>mcp 服务端在接口 <code>StreamAggregatedResources</code>和<code>EstablishResourceStream</code>中, 会调用Watch方法, 注册sink连接的watch请求:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">sr</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">source</span>.<span style="color:#a6e22e">Request</span>{
+	<span style="color:#a6e22e">SinkNode</span>:    <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">SinkNode</span>,
+	<span style="color:#a6e22e">Collection</span>:  <span style="color:#a6e22e">collection</span>,
+	<span style="color:#a6e22e">VersionInfo</span>: <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">VersionInfo</span>,
+}
+<span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">cancel</span> = <span style="color:#a6e22e">con</span>.<span style="color:#a6e22e">watcher</span>.<span style="color:#a6e22e">Watch</span>(<span style="color:#a6e22e">sr</span>, <span style="color:#a6e22e">con</span>.<span style="color:#a6e22e">queueResponse</span>)
+</code></pre></div><p><code>mcp/snapshot.Cache</code> 实现了interface Distributor 的<code>SetSnapshot</code>方法, 该方法在State状态变化后会被调用, 该方法会遍历之前watch注册的responseWatch, 并将WatchResponse传递给各个处理方法.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// SetSnapshot updates a snapshot for a group.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Cache</span>) <span style="color:#a6e22e">SetSnapshot</span>(<span style="color:#a6e22e">group</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">snapshot</span> <span style="color:#a6e22e">Snapshot</span>) {
+	<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">Lock</span>()
+	<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">Unlock</span>()
+
+	<span style="color:#75715e">// update the existing entry
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">snapshots</span>[<span style="color:#a6e22e">group</span>] = <span style="color:#a6e22e">snapshot</span>
+
+	<span style="color:#75715e">// trigger existing watches for which version changed
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">info</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">status</span>[<span style="color:#a6e22e">group</span>]; <span style="color:#a6e22e">ok</span> {
+		<span style="color:#a6e22e">info</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">Lock</span>()
+		<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">info</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">Unlock</span>()
+
+		<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">id</span>, <span style="color:#a6e22e">watch</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">info</span>.<span style="color:#a6e22e">watches</span> {
+			<span style="color:#a6e22e">version</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">snapshot</span>.<span style="color:#a6e22e">Version</span>(<span style="color:#a6e22e">watch</span>.<span style="color:#a6e22e">request</span>.<span style="color:#a6e22e">Collection</span>)
+			<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">version</span> <span style="color:#f92672">!=</span> <span style="color:#a6e22e">watch</span>.<span style="color:#a6e22e">request</span>.<span style="color:#a6e22e">VersionInfo</span> {
+				<span style="color:#a6e22e">scope</span>.<span style="color:#a6e22e">Infof</span>(<span style="color:#e6db74">&#34;SetSnapshot(): respond to watch %d for %v @ version %q&#34;</span>,
+					<span style="color:#a6e22e">id</span>, <span style="color:#a6e22e">watch</span>.<span style="color:#a6e22e">request</span>.<span style="color:#a6e22e">Collection</span>, <span style="color:#a6e22e">version</span>)
+
+				<span style="color:#a6e22e">response</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">source</span>.<span style="color:#a6e22e">WatchResponse</span>{
+					<span style="color:#a6e22e">Collection</span>: <span style="color:#a6e22e">watch</span>.<span style="color:#a6e22e">request</span>.<span style="color:#a6e22e">Collection</span>,
+					<span style="color:#a6e22e">Version</span>:    <span style="color:#a6e22e">version</span>,
+					<span style="color:#a6e22e">Resources</span>:  <span style="color:#a6e22e">snapshot</span>.<span style="color:#a6e22e">Resources</span>(<span style="color:#a6e22e">watch</span>.<span style="color:#a6e22e">request</span>.<span style="color:#a6e22e">Collection</span>),
+					<span style="color:#a6e22e">Request</span>:    <span style="color:#a6e22e">watch</span>.<span style="color:#a6e22e">request</span>,
+				}
+				<span style="color:#a6e22e">watch</span>.<span style="color:#a6e22e">pushResponse</span>(<span style="color:#a6e22e">response</span>)
+
+				<span style="color:#75715e">// discard the responseWatch
+</span><span style="color:#75715e"></span>				delete(<span style="color:#a6e22e">info</span>.<span style="color:#a6e22e">watches</span>, <span style="color:#a6e22e">id</span>)
+
+				<span style="color:#a6e22e">scope</span>.<span style="color:#a6e22e">Debugf</span>(<span style="color:#e6db74">&#34;SetSnapshot(): watch %d for %v @ version %q complete&#34;</span>,
+					<span style="color:#a6e22e">id</span>, <span style="color:#a6e22e">watch</span>.<span style="color:#a6e22e">request</span>.<span style="color:#a6e22e">Collection</span>, <span style="color:#a6e22e">version</span>)
+			}
+		}
+	}
+}
+</code></pre></div><p>提供给Watch的处理函数<code>queueResponse</code>会将WatchResponse放入连接的响应队列, 最终会推送给mcp sink端.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// Queue the response for sending in the dispatch loop. The caller may provide
+</span><span style="color:#75715e">// a nil response to indicate that the watch should be closed.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">con</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">connection</span>) <span style="color:#a6e22e">queueResponse</span>(<span style="color:#a6e22e">resp</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">WatchResponse</span>) {
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">resp</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#a6e22e">con</span>.<span style="color:#a6e22e">queue</span>.<span style="color:#a6e22e">Close</span>()
+	} <span style="color:#66d9ef">else</span> {
+		<span style="color:#a6e22e">con</span>.<span style="color:#a6e22e">queue</span>.<span style="color:#a6e22e">Enqueue</span>(<span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Collection</span>, <span style="color:#a6e22e">resp</span>)
+	}
+}
+</code></pre></div><p>最后上一张Galley mcp 服务相关模型UML:</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/istio-analysis-3/006tKfTcly1g1nik3wvyyj30u012w14d.jpg" alt=""></p>
+<p><a href="https://imfox.io/assets/images/istio-a/galley_uml.png">查看高清原图</a></p>
+<p>Galley 源代码展示了面向抽象(interface)编程的好处, Source 是对「配置」数据源的抽象, Distributor 是「配置」快照存储的抽象, Watcher 是对「配置」订阅端的抽象. 抽象的具体实现可以组合起来使用. 另外Galley组件之间也充分解耦, 组件之间的数据通过chan/watcher等流转.</p>
+<p>关于早期 istio 配置管理的演进计划, 可以参考2018年5月 CNCF KubeCon talk <a href="https://www.youtube.com/watch?v=x1Tyw8dFKjI&amp;index=2&amp;t=0s&amp;list=LLQ2StCCdx81xHxHxBO0foGA">Introduction to Istio Configuration - Joy Zhang</a> (需.翻.墙), 1.1 版本中Galley 也还未完全实现该文中的roadmap, 如 configuration pipeline 等. 未来Galley 还会继续演进.</p>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li><a href="https://www.youtube.com/watch?v=x1Tyw8dFKjI&amp;index=2&amp;t=0s&amp;list=LLQ2StCCdx81xHxHxBO0foGA">Introduction to Istio Configuration</a></li>
+<li><a href="https://docs.google.com/document/d/1o2-V4TLJ8fJACXdlsnxKxDv2Luryo48bAhR8ShxE5-k/edit#heading=h.qex63c29z2to">google doc Mesh Configuration Protocol (MCP)</a></li>
+<li><a href="https://github.com/istio/api/tree/master/mcp">github Mesh Configuration Protocol (MCP)</a></li>
+</ul>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/do-i-need-a-service-mesh/" data-toggle="tooltip" data-placement="top" title="你真的需要服务网格吗？">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/redefining-application-communications-with-aws-app-mesh/" data-toggle="tooltip" data-placement="top" title="用AWS App Mesh重新定义应用通讯">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/microprofile-the-microservice-programming-model-made-for-istio/"><i class="fa fa-link"></i>MicroProfile——为Istio创建的微服务编程模型</a></li>
+         
+        <li><a href="/blog/circuit-breaking-and-outlier-detection-in-istio/"><i class="fa fa-link"></i>熔断与异常检测在 Istio 中的应用</a></li>
+         
+        <li><a href="/blog/building-a-control-plane-for-envoy/"><i class="fa fa-link"></i>为 Envoy 赋能——如何基于 Envoy 构建一个多用途控制平面</a></li>
+         
+        <li><a href="/blog/istio-rbac-quick-start/"><i class="fa fa-link"></i>Istio安全之服务间访问控制RBAC</a></li>
+         
+        <li><a href="/blog/back-to-microservices-with-istio-part-2-authentication-authorization/"><i class="fa fa-link"></i>使用Istio打造微服务（第2部分）——认证和授权</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

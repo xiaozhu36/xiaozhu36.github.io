@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Istio不仅为微服务而生—使用Istio Service Mesh保护Kubernetes中的服务 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="service mesh, istio, 微服务">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="Istio不仅为微服务而生—使用Istio Service Mesh保护Kubernetes中的服务" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/istio-is-not-just-for-microservices//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="通过使用 Istio Service Mesh 来保障 Kubernetes 平台服务。通常可以运行示例代码有助于用户更清晰的理解并将概念应用到实际的案例中。该项目围绕一个简单的 Node.js 应用程序演示了以 Istio Service Mesh 为 ETCD 的持久化数据服务的能力。">
+  <meta property="og:description" content="通过使用 Istio Service Mesh 来保障 Kubernetes 平台服务。通常可以运行示例代码有助于用户更清晰的理解并将概念应用到实际的案例中。该项目围绕一个简单的 Node.js 应用程序演示了以 Istio Service Mesh 为 ETCD 的持久化数据服务的能力。">
+  <meta name="twitter:description" content="通过使用 Istio Service Mesh 来保障 Kubernetes 平台服务。通常可以运行示例代码有助于用户更清晰的理解并将概念应用到实际的案例中。该项目围绕一个简单的 Node.js 应用程序演示了以 Istio Service Mesh 为 ETCD 的持久化数据服务的能力。">
+  <meta property="og:description" content="通过使用 Istio Service Mesh 来保障 Kubernetes 平台服务。通常可以运行示例代码有助于用户更清晰的理解并将概念应用到实际的案例中。该项目围绕一个简单的 Node.js 应用程序演示了以 Istio Service Mesh 为 ETCD 的持久化数据服务的能力。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="Istio不仅为微服务而生—使用Istio Service Mesh保护Kubernetes中的服务 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="Istio不仅为微服务而生—使用Istio Service Mesh保护Kubernetes中的服务 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">Istio不仅为微服务而生—使用Istio Service Mesh保护Kubernetes中的服务 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>Istio不仅为微服务而生—使用Istio Service Mesh保护Kubernetes中的服务</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2018年6月28日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://github.com/todkap">Todd Kaplinger</a>
+                            
+                            
+                            | 译者 <a href="https://github.com/shaobai">陈冬</a>
+                            
+                            
+                            |
+                            2700字 | 阅读大约需要6分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            <a href="https://github.com/todkap/istio-index-conf2018/blob/master/README.md">查看原文</a>
+                            |
+                            
+                            
+                            归档于 <a href="/categories/istio">istio</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/istio/"><i>#istio</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/service-mesh/"><i>#service mesh</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <p>通过使用 Istio Service Mesh 来保障 Kubernetes 平台服务。通常可以运行示例代码有助于用户更清晰的理解并将概念应用到实际的案例中。该项目围绕一个简单的 Node.js 应用程序演示了以 Istio Service Mesh 为 ETCD 的持久化数据服务的能力。</p>
+<h2 id="istio-背景">Istio 背景</h2>
+<p>Istio 是一个 连接、管理以及保障微服务的开放平台。如需要了解更多 Istio 的信息，请访问<a href="https://istio.io/about/intro.html">介绍页面</a> 。</p>
+<h2 id="安装">安装</h2>
+<p>假设已对 Kubernetes 有了初步了解。在这个项目中，有一组脚本，假设已预先安装了 Docker、Kubernetes CLI 以及JQ，用于操作 Kubernetes commands 返回的各种 JSON 对象。且有一定层度的 Node.js 知识。</p>
+<p><strong>各种工具的连接如下：</strong></p>
+<p>Docker 安装：https://docs.docker.com/install/</p>
+<p>Kubernetes 安装：https://kubernetes.io/docs/tasks/tools/install-kubectl/</p>
+<p>jq 下载地址：https://stedolan.github.io/jq/download/</p>
+<p>Node.js 下载地址：https://nodejs.org/en/download/</p>
+<h2 id="kubernetes-private">Kubernetes Private</h2>
+<p>下面的代码应该可以在任何兼容 Kubernetes 的提供者上运行，并且已经在 Minikube 和私有 IBM Cloud Private 上进行过测试。根据选择的提供者的不同，指令会略有不同。</p>
+<h3 id="minikube">Minikube</h3>
+<p>Minikube 可用与下载和安装的地址：<a href="https://kubernetes.io/docs/tasks/tools/install-minikube/">点我</a>。Minikube 为学习 Kubernetes 提供了一个简单易用的开发环境。</p>
+<h3 id="ibm-私有云">IBM 私有云</h3>
+<p>IBM 为开发者提供了其 Kubernetes 运行时的免费社区版，并包含了与企业版生产版本相同的大多数功能，高可用性例外。安装 IBM 私有云服务，请查看  <a href="https://www.ibm.com/support/knowledgecenter/en/SSBS6K_2.1.0/installing/install_containers_CE.html">2.1.0安装向导</a>。</p>
+<h2 id="istio-index-conference-2018-application">Istio Index Conference 2018 Application</h2>
+<p>从代码入手, 可克隆如下仓库 <code>git clone git@github.com:todkap/istio-index-conf2018.git</code></p>
+<h3 id="kubernetes-安装">Kubernetes 安装</h3>
+<ul>
+<li><strong>Minikube：</strong> 请先部署并第一个启动 Minikube 。在这个项目的根目录下，有一个脚本 <code>createMinikubeEnv.sh</code> ，用于销毁之前创建的 Minikube 环境，并用适当的 Kubernetes 上下文初始化一个新的环境。</li>
+<li><strong>IBM 私有云:</strong> IBM 私有云提供了 <a href="https://www.ibm.com/support/knowledgecenter/en/SSBS6K_2.1.0/manage_cluster/cfc_cli.html">configure client</a>，将配置 Kubernetes CLI 指向一个给定的 IBM 私有云设备。</li>
+</ul>
+<h3 id="部署">部署</h3>
+<h4 id="kubernetes-安装-1">Kubernetes 安装</h4>
+<p>本项目提供了一个名叫 <code>deploy.sh</code> 的脚本部署 Istio 和应用到 Kubernetes 中。脚本给定了一些冗余的输出，输出各种执行步骤，等待整个系统在退出之前处于 <code>Running</code> 。</p>
+<h4 id="helm-安装">Helm 安装</h4>
+<p>从 IBM 私有云版本 2.1.0.3 开始，Istio 控制面板可以通过 Helm chart 作为初始化安装的一部分或通过目录安装后安装。该项目包含一个名为 <code>icp-helm-deploy</code> 的附加脚本，利用 IBM 私有云 CLI、Helm CLI 和 Kubernetes CLI 进行组合来安装 Istio 的索引程序。未来简化部署过程，同时促进 Istio 的一些最新的特性，可以为应用程序自动注入 sidecar <a href="https://istio.io/docs/setup/kubernetes/sidecar-injection.html#automatic-sidecar-injection">automatic sidecar injection</a>。</p>
+<h3 id="测试">测试</h3>
+<p>该项目包含两个用于测试的脚本，这取决于所使用的 Kubernetes 提供者。两个脚本的不同之处在于 IBM 私有云入口地址的设置。根据你选择的提供者选择 <code>testICPEnv.sh</code> 或 <code>testMinikubeEnv.sh</code>。</p>
+<p>除了脚本之外，还有一个轻量级的 web 界面，用于与其他api进行交互。</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/istio-is-not-just-for-microservices/00704eQkgy1fsqw64mg34j325o0m0n0h.jpg" alt=""></p>
+<h3 id="verification">Verification</h3>
+<p>为了验证 Istio 的集成成功，脚本执行了一组测试。</p>
+<ul>
+<li>第一个测试验证一个简单的 put 测试到 ETCD 服务节点上，以验证 ETCD 的连接性。</li>
+</ul>
+<p><strong>例子输出</strong></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">简单 etcd 测试
+*   Trying 192.168.64.20...
+* TCP_NODELAY set
+* Connected to 192.168.64.20 <span style="color:#f92672">(</span>192.168.64.20<span style="color:#f92672">)</span> port <span style="color:#ae81ff">32012</span> <span style="color:#f92672">(</span><span style="color:#75715e">#0)</span>
+&gt; PUT /v2/keys/message HTTP/1.1
+&gt; Host: 192.168.64.20:32012
+&gt; User-Agent: curl/7.54.0
+&gt; Accept: */*
+&gt; Content-Length: <span style="color:#ae81ff">17</span>
+&gt; Content-Type: application/x-www-form-urlencoded
+&gt; 
+* upload completely sent off: <span style="color:#ae81ff">17</span> out of <span style="color:#ae81ff">17</span> bytes
+&lt; HTTP/1.1 <span style="color:#ae81ff">201</span> Created
+&lt; content-type: application/json
+&lt; x-etcd-cluster-id: cdf818194e3a8c32
+&lt; x-etcd-index: <span style="color:#ae81ff">14</span>
+&lt; x-raft-index: <span style="color:#ae81ff">15</span>
+&lt; x-raft-term: <span style="color:#ae81ff">2</span>
+&lt; date: Wed, <span style="color:#ae81ff">14</span> Feb <span style="color:#ae81ff">2018</span> 19:45:24 GMT
+&lt; content-length: <span style="color:#ae81ff">102</span>
+&lt; x-envoy-upstream-service-time: <span style="color:#ae81ff">1</span>
+&lt; server: envoy
+&lt; x-envoy-decorator-operation: default-route
+&lt; 
+<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;action&#34;</span>:<span style="color:#e6db74">&#34;set&#34;</span>,<span style="color:#e6db74">&#34;node&#34;</span>:<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;key&#34;</span>:<span style="color:#e6db74">&#34;/message&#34;</span>,<span style="color:#e6db74">&#34;value&#34;</span>:<span style="color:#e6db74">&#34;Hello world&#34;</span>,<span style="color:#e6db74">&#34;modifiedIndex&#34;</span>:14,<span style="color:#e6db74">&#34;createdIndex&#34;</span>:14<span style="color:#f92672">}}</span>
+* Connection <span style="color:#75715e">#0 to host 192.168.64.20 left intact</span>
+</code></pre></div><ul>
+<li>第二个测试验证节点应用程序可以使用节点应用程序的节点端口处理简单的 ping 请求以及对 ETCD 的代理请求。</li>
+</ul>
+<p><strong>例子输出</strong></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">-------------------------------
+simple ping test
+*   Trying 192.168.64.20...
+* TCP_NODELAY set
+* Connected to 192.168.64.20 <span style="color:#f92672">(</span>192.168.64.20<span style="color:#f92672">)</span> port <span style="color:#ae81ff">32380</span> <span style="color:#f92672">(</span><span style="color:#75715e">#0)</span>
+&gt; GET / HTTP/1.1
+&gt; Host: 192.168.64.20:32380
+&gt; User-Agent: curl/7.54.0
+&gt; Accept: */*
+&gt; 
+&lt; HTTP/1.1 <span style="color:#ae81ff">200</span> OK
+&lt; x-powered-by: Express
+&lt; content-type: text/html; charset<span style="color:#f92672">=</span>utf-8
+&lt; content-length: <span style="color:#ae81ff">46</span>
+&lt; etag: W/<span style="color:#e6db74">&#34;2e-FL84XHNKKzHT+F1kbgSNIW2RslI&#34;</span>
+&lt; date: Wed, <span style="color:#ae81ff">14</span> Feb <span style="color:#ae81ff">2018</span> 19:45:24 GMT
+&lt; x-envoy-upstream-service-time: <span style="color:#ae81ff">1</span>
+&lt; server: envoy
+&lt; x-envoy-decorator-operation: default-route
+&lt; 
+* Connection <span style="color:#75715e">#0 to host 192.168.64.20 left intact</span>
+Simple test <span style="color:#66d9ef">for</span> liveliness of the application!
+-------------------------------
+test etcd service API call from node app
+*   Trying 192.168.64.20...
+* TCP_NODELAY set
+* Connected to 192.168.64.20 <span style="color:#f92672">(</span>192.168.64.20<span style="color:#f92672">)</span> port <span style="color:#ae81ff">32380</span> <span style="color:#f92672">(</span><span style="color:#75715e">#0)</span>
+&gt; PUT /storage HTTP/1.1
+&gt; Host: 192.168.64.20:32380
+&gt; User-Agent: curl/7.54.0
+&gt; Accept: */*
+&gt; Content-Type: application/json
+&gt; Content-Length: <span style="color:#ae81ff">60</span>
+&gt; 
+* upload completely sent off: <span style="color:#ae81ff">60</span> out of <span style="color:#ae81ff">60</span> bytes
+&lt; HTTP/1.1 <span style="color:#ae81ff">201</span> Created
+&lt; x-powered-by: Express
+&lt; date: Wed, <span style="color:#ae81ff">14</span> Feb <span style="color:#ae81ff">2018</span> 19:45:24 GMT
+&lt; x-envoy-upstream-service-time: <span style="color:#ae81ff">12</span>
+&lt; server: envoy
+&lt; x-envoy-decorator-operation: default-route
+&lt; transfer-encoding: chunked
+&lt; 
+* Connection <span style="color:#75715e">#0 to host 192.168.64.20 left intact</span>
+nodeAppTesting created<span style="color:#f92672">(</span>etcd-service<span style="color:#f92672">)</span> -&gt;<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;key&#34;</span>:<span style="color:#e6db74">&#34;istioTest&#34;</span>,<span style="color:#e6db74">&#34;value&#34;</span>:<span style="color:#e6db74">&#34;Testing Istio using NodePort&#34;</span><span style="color:#f92672">}</span>:<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;action&#34;</span>:<span style="color:#e6db74">&#34;set&#34;</span>,<span style="color:#e6db74">&#34;node&#34;</span>:<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;key&#34;</span>:<span style="color:#e6db74">&#34;/istioTest&#34;</span>,<span style="color:#e6db74">&#34;value&#34;</span>:<span style="color:#e6db74">&#34;Testing Istio using NodePort&#34;</span>,<span style="color:#e6db74">&#34;modifiedIndex&#34;</span>:15,<span style="color:#e6db74">&#34;createdIndex&#34;</span>:15<span style="color:#f92672">}</span>,<span style="color:#e6db74">&#34;prevNode&#34;</span>:<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;key&#34;</span>:<span style="color:#e6db74">&#34;/istioTest&#34;</span>,<span style="color:#e6db74">&#34;value&#34;</span>:<span style="color:#e6db74">&#34;Testing Istio using Ingress&#34;</span>,<span style="color:#e6db74">&#34;modifiedIndex&#34;</span>:13,<span style="color:#e6db74">&#34;createdIndex&#34;</span>:13<span style="color:#f92672">}}</span>
+*   Trying 192.168.64.20...
+* TCP_NODELAY set
+* Connected to 192.168.64.20 <span style="color:#f92672">(</span>192.168.64.20<span style="color:#f92672">)</span> port <span style="color:#ae81ff">32380</span> <span style="color:#f92672">(</span><span style="color:#75715e">#0)</span>
+&gt; GET /storage/istioTest HTTP/1.1
+&gt; Host: 192.168.64.20:32380
+&gt; User-Agent: curl/7.54.0
+&gt; Accept: */*
+&gt; 
+&lt; HTTP/1.1 <span style="color:#ae81ff">200</span> OK
+&lt; x-powered-by: Express
+&lt; date: Wed, <span style="color:#ae81ff">14</span> Feb <span style="color:#ae81ff">2018</span> 19:45:24 GMT
+&lt; x-envoy-upstream-service-time: <span style="color:#ae81ff">14</span>
+&lt; server: envoy
+&lt; x-envoy-decorator-operation: default-route
+&lt; transfer-encoding: chunked
+&lt; 
+* Connection <span style="color:#75715e">#0 to host 192.168.64.20 left intact</span>
+nodeAppTesting<span style="color:#f92672">(</span>etcd-service<span style="color:#f92672">)</span> -&gt;<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;action&#34;</span>:<span style="color:#e6db74">&#34;get&#34;</span>,<span style="color:#e6db74">&#34;node&#34;</span>:<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;key&#34;</span>:<span style="color:#e6db74">&#34;/istioTest&#34;</span>,<span style="color:#e6db74">&#34;value&#34;</span>:<span style="color:#e6db74">&#34;Testing Istio using NodePort&#34;</span>,<span style="color:#e6db74">&#34;modifiedIndex&#34;</span>:15,<span style="color:#e6db74">&#34;createdIndex&#34;</span>:15<span style="color:#f92672">}}</span>
+-------------------------------
+</code></pre></div><ul>
+<li>下一级测试开始测试 Istio ，将流量路由到 Istio Ingress，再到节点应用程序的。</li>
+</ul>
+<p><strong>例子输出</strong></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">simple hello test
+*   Trying 192.168.64.20...
+* TCP_NODELAY set
+* Connected to 192.168.64.20 <span style="color:#f92672">(</span>192.168.64.20<span style="color:#f92672">)</span> port <span style="color:#ae81ff">32612</span> <span style="color:#f92672">(</span><span style="color:#75715e">#0)</span>
+&gt; GET / HTTP/1.1
+&gt; Host: 192.168.64.20:32612
+&gt; User-Agent: curl/7.54.0
+&gt; Accept: */*
+&gt; 
+&lt; HTTP/1.1 <span style="color:#ae81ff">200</span> OK
+&lt; x-powered-by: Express
+&lt; content-type: text/html; charset<span style="color:#f92672">=</span>utf-8
+&lt; content-length: <span style="color:#ae81ff">46</span>
+&lt; etag: W/<span style="color:#e6db74">&#34;2e-FL84XHNKKzHT+F1kbgSNIW2RslI&#34;</span>
+&lt; date: Wed, <span style="color:#ae81ff">14</span> Feb <span style="color:#ae81ff">2018</span> 19:45:24 GMT
+&lt; x-envoy-upstream-service-time: <span style="color:#ae81ff">6</span>
+&lt; server: envoy
+&lt; 
+* Connection <span style="color:#75715e">#0 to host 192.168.64.20 left intact</span>
+Simple test <span style="color:#66d9ef">for</span> liveliness of the application!
+-------------------------------
+test etcd service API call from node app
+*   Trying 192.168.64.20...
+* TCP_NODELAY set
+* Connected to 192.168.64.20 <span style="color:#f92672">(</span>192.168.64.20<span style="color:#f92672">)</span> port <span style="color:#ae81ff">32612</span> <span style="color:#f92672">(</span><span style="color:#75715e">#0)</span>
+&gt; PUT /storage HTTP/1.1
+&gt; Host: 192.168.64.20:32612
+&gt; User-Agent: curl/7.54.0
+&gt; Accept: */*
+&gt; Content-Type: application/json
+&gt; Content-Length: <span style="color:#ae81ff">59</span>
+&gt; 
+* upload completely sent off: <span style="color:#ae81ff">59</span> out of <span style="color:#ae81ff">59</span> bytes
+&lt; HTTP/1.1 <span style="color:#ae81ff">201</span> Created
+&lt; x-powered-by: Express
+&lt; date: Wed, <span style="color:#ae81ff">14</span> Feb <span style="color:#ae81ff">2018</span> 19:45:24 GMT
+&lt; x-envoy-upstream-service-time: <span style="color:#ae81ff">15</span>
+&lt; server: envoy
+&lt; transfer-encoding: chunked
+&lt; 
+* Connection <span style="color:#75715e">#0 to host 192.168.64.20 left intact</span>
+nodeAppTesting created<span style="color:#f92672">(</span>etcd-service<span style="color:#f92672">)</span> -&gt;<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;key&#34;</span>:<span style="color:#e6db74">&#34;istioTest&#34;</span>,<span style="color:#e6db74">&#34;value&#34;</span>:<span style="color:#e6db74">&#34;Testing Istio using Ingress&#34;</span><span style="color:#f92672">}</span>:<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;action&#34;</span>:<span style="color:#e6db74">&#34;set&#34;</span>,<span style="color:#e6db74">&#34;node&#34;</span>:<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;key&#34;</span>:<span style="color:#e6db74">&#34;/istioTest&#34;</span>,<span style="color:#e6db74">&#34;value&#34;</span>:<span style="color:#e6db74">&#34;Testing Istio using Ingress&#34;</span>,<span style="color:#e6db74">&#34;modifiedIndex&#34;</span>:16,<span style="color:#e6db74">&#34;createdIndex&#34;</span>:16<span style="color:#f92672">}</span>,<span style="color:#e6db74">&#34;prevNode&#34;</span>:<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;key&#34;</span>:<span style="color:#e6db74">&#34;/istioTest&#34;</span>,<span style="color:#e6db74">&#34;value&#34;</span>:<span style="color:#e6db74">&#34;Testing Istio using NodePort&#34;</span>,<span style="color:#e6db74">&#34;modifiedIndex&#34;</span>:15,<span style="color:#e6db74">&#34;createdIndex&#34;</span>:15<span style="color:#f92672">}}</span>
+*   Trying 192.168.64.20...
+* TCP_NODELAY set
+* Connected to 192.168.64.20 <span style="color:#f92672">(</span>192.168.64.20<span style="color:#f92672">)</span> port <span style="color:#ae81ff">32612</span> <span style="color:#f92672">(</span><span style="color:#75715e">#0)</span>
+&gt; GET /storage/istioTest HTTP/1.1
+&gt; Host: 192.168.64.20:32612
+&gt; User-Agent: curl/7.54.0
+&gt; Accept: */*
+&gt; 
+&lt; HTTP/1.1 <span style="color:#ae81ff">200</span> OK
+&lt; x-powered-by: Express
+&lt; date: Wed, <span style="color:#ae81ff">14</span> Feb <span style="color:#ae81ff">2018</span> 19:45:24 GMT
+&lt; x-envoy-upstream-service-time: <span style="color:#ae81ff">13</span>
+&lt; server: envoy
+&lt; transfer-encoding: chunked
+&lt; 
+* Connection <span style="color:#75715e">#0 to host 192.168.64.20 left intact</span>
+nodeAppTesting<span style="color:#f92672">(</span>etcd-service<span style="color:#f92672">)</span> -&gt;<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;action&#34;</span>:<span style="color:#e6db74">&#34;get&#34;</span>,<span style="color:#e6db74">&#34;node&#34;</span>:<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;key&#34;</span>:<span style="color:#e6db74">&#34;/istioTest&#34;</span>,<span style="color:#e6db74">&#34;value&#34;</span>:<span style="color:#e6db74">&#34;Testing Istio using Ingress&#34;</span>,<span style="color:#e6db74">&#34;modifiedIndex&#34;</span>:16,<span style="color:#e6db74">&#34;createdIndex&#34;</span>:16<span style="color:#f92672">}}</span>
+-------------------------------
+</code></pre></div><ul>
+<li>最后一组测试对 istio-proxy 的日志进行检索，搜索客户端和服务端代理的访问日志，以验证是通过 Istio 路由的流量。</li>
+</ul>
+<p><strong>例子输出</strong></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">client logs from istio-proxy
+<span style="color:#f92672">[</span>2018-02-14T16:28:24.640Z<span style="color:#f92672">]</span> <span style="color:#e6db74">&#34;PUT /v2/keys/istioTest HTTP/1.1&#34;</span> <span style="color:#ae81ff">201</span> - <span style="color:#ae81ff">40</span> <span style="color:#ae81ff">119</span> <span style="color:#ae81ff">6</span> <span style="color:#ae81ff">5</span> <span style="color:#e6db74">&#34;-&#34;</span> <span style="color:#e6db74">&#34;-&#34;</span> <span style="color:#e6db74">&#34;45dd6431-49cf-9bcf-b611-1d319c56eb2e&#34;</span> <span style="color:#e6db74">&#34;etcd-service:2379&#34;</span> <span style="color:#e6db74">&#34;172.17.0.9:2379&#34;</span>
+<span style="color:#f92672">[</span>2018-02-14T16:28:24.672Z<span style="color:#f92672">]</span> <span style="color:#e6db74">&#34;GET /v2/keys/istioTest HTTP/1.1&#34;</span> <span style="color:#ae81ff">200</span> - <span style="color:#ae81ff">0</span> <span style="color:#ae81ff">119</span> <span style="color:#ae81ff">3</span> <span style="color:#ae81ff">3</span> <span style="color:#e6db74">&#34;-&#34;</span> <span style="color:#e6db74">&#34;-&#34;</span> <span style="color:#e6db74">&#34;8aa0f7d8-caac-9065-bb4c-d11c7af7d93f&#34;</span> <span style="color:#e6db74">&#34;etcd-service:2379&#34;</span> <span style="color:#e6db74">&#34;172.17.0.9:2379&#34;</span>
+server logs from istio-proxy
+<span style="color:#f92672">[</span>2018-02-14T16:28:24.640Z<span style="color:#f92672">]</span> <span style="color:#e6db74">&#34;PUT /v2/keys/istioTest HTTP/1.1&#34;</span> <span style="color:#ae81ff">201</span> - <span style="color:#ae81ff">40</span> <span style="color:#ae81ff">119</span> <span style="color:#ae81ff">4</span> <span style="color:#ae81ff">1</span> <span style="color:#e6db74">&#34;-&#34;</span> <span style="color:#e6db74">&#34;-&#34;</span> <span style="color:#e6db74">&#34;45dd6431-49cf-9bcf-b611-1d319c56eb2e&#34;</span> <span style="color:#e6db74">&#34;etcd-service:2379&#34;</span> <span style="color:#e6db74">&#34;127.0.0.1:2379&#34;</span>
+<span style="color:#f92672">[</span>2018-02-14T16:28:24.673Z<span style="color:#f92672">]</span> <span style="color:#e6db74">&#34;GET /v2/keys/istioTest HTTP/1.1&#34;</span> <span style="color:#ae81ff">200</span> - <span style="color:#ae81ff">0</span> <span style="color:#ae81ff">119</span> <span style="color:#ae81ff">3</span> <span style="color:#ae81ff">0</span> <span style="color:#e6db74">&#34;-&#34;</span> <span style="color:#e6db74">&#34;-&#34;</span> <span style="color:#e6db74">&#34;8aa0f7d8-caac-9065-bb4c-d11c7af7d93f&#34;</span> <span style="color:#e6db74">&#34;etcd-service:2379&#34;</span> <span style="color:#e6db74">&#34;127.0.0.1:2379&#34;</span>
+</code></pre></div><h3 id="istio-metrics">Istio Metrics</h3>
+<p>Istio 为网络活动的跟踪度量提供了本地的支持。为驱动一些额外的度量，可以运行一个简单的类似下面的测试脚本来填充 Grafana 和 Promotheus 的图标。
+<strong>测试脚本</strong></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e">## 使用 loadtest (https://www.npmjs.com/package/loadtest) 加载测试</span>
+<span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> -x <span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>command -v loadtest<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">]</span>; <span style="color:#66d9ef">then</span>
+	loadtest -n <span style="color:#ae81ff">400</span> -c <span style="color:#ae81ff">10</span> --rps <span style="color:#ae81ff">20</span> http://$ingressIP:$ingressPort/storage/istioTest
+	loadtest -n <span style="color:#ae81ff">400</span> -c <span style="color:#ae81ff">10</span> --rps <span style="color:#ae81ff">10</span> http://$ingressIP:$ingressPort/storage/istioTest
+	loadtest -n <span style="color:#ae81ff">400</span> -c <span style="color:#ae81ff">10</span> --rps <span style="color:#ae81ff">40</span> http://$ingressIP:$ingressPort/storage/istioTest
+<span style="color:#66d9ef">fi</span>
+</code></pre></div><h4 id="grafana">Grafana</h4>
+<p>在你的 Kubernetes 环境中，执行如下命令:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl -n istio-system port-forward <span style="color:#66d9ef">$(</span>kubectl -n istio-system get <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>   pod -l app<span style="color:#f92672">=</span>grafana -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.items[0].metadata.name}&#39;</span><span style="color:#66d9ef">)</span> 3000:3000 &amp;
+</code></pre></div><p>在你的浏览器中访问 http://localhost:3000/dashboard/db/istio-dashboard. Istio Dashboard 类似下图:</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/istio-is-not-just-for-microservices/00704eQkgy1fsqw7ej3xrj32gq1iitkr.jpg" alt=""></p>
+<h4 id="prometheus">Prometheus</h4>
+<p>在你的 Kubernetes 环境中，执行如下命令:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl -n istio-system port-forward <span style="color:#66d9ef">$(</span>kubectl -n istio-system get <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    pod -l app<span style="color:#f92672">=</span>prometheus -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.items[0].metadata.name}&#39;</span><span style="color:#66d9ef">)</span> 9090:9090 &amp;   
+</code></pre></div><p>在你的浏览器中访问 http://localhost:9090/graph。Istio Dashboard 类似下图:</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/istio-is-not-just-for-microservices/00704eQkgy1fsqw7p953dj32oy0ykn5i.jpg" alt=""></p>
+<h4 id="weave-scope">Weave Scope</h4>
+<p>在部署脚本期间，Weave Scope 也会被部署到环境中。在控制台中，Weave Scope 的端口已被记录，但也可以使用命令。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get service weave-scope-app --namespace<span style="color:#f92672">=</span>weave -o <span style="color:#e6db74">&#39;jsonpath={.spec.ports[0].nodePort}&#39;</span>; echo <span style="color:#e6db74">&#39;&#39;</span>  
+</code></pre></div><p>Weave Scope 提供了服务图，将用来展示测试过程中执行测试的请求流。Weave Scope Dashboard 类似下图:</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/istio-is-not-just-for-microservices/00704eQkgy1fsqw89uu0wj320619ado4.jpg" alt=""></p>
+<h4 id="kiali">Kiali</h4>
+<p>Kiali 是一个比较新的项目，专注于 Service Mesh 的可观察性，支持 Istio 0.7.1 或更高版本。这个项目的内部是一个单独的脚本 <code>setupKiali.s</code>  ，它将构建和安装 Kiali，并应用在 IBM 私有云上运行所需的角色。在你的环境中查看控制台，你需要服务的节点端口。可以使用如下的命令检索 Kiali 的端口。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get service kiali --namespace<span style="color:#f92672">=</span>istio-system -o <span style="color:#e6db74">&#39;jsonpath={.spec.ports[0].nodePort}&#39;</span>; echo <span style="color:#e6db74">&#39;&#39;</span>  
+</code></pre></div><p>Kiali 提供了类似于 Weave Scope 的服务图型用于展示历史的请求流以及 K8 环境中其他有趣的视图，例如服务和跟踪。如果要查看此操作的能力，可以在执行加载测试脚本后查看服务图。Kiali Dashboard 类似下图:</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/istio-is-not-just-for-microservices/00704eQkgy1fsqw8n20ugj325e18ejy5.jpg" alt=""></p>
+<h3 id="幻灯片">幻灯片</h3>
+<p><strong>Istio 不仅为 Slideshare 上的 microservices :</strong> <a href="https://www.slideshare.net/ToddKaplinger/istio-is-not-just-for-microservices">https://www.slideshare.net/ToddKaplinger/istio-is-not-just-for-microservices</a></p>
+<h3 id="注释">注释</h3>
+<ul>
+<li>本项目是2017年基于一个中期文章 <a href="https://medium.com/ibm-cloud/istio-is-not-just-for-microservices-4ed199322bf4">Istio 不仅为微服务</a> 编写和更新的，以支持最新版本的 Istio 和 Kubernetes 。由于大部分内容都嵌入在原始文章中，所以这个项目是为了鼓励开发人员克隆本项目并修改它，以了解更多关于 Kubernetes, Istio and etcd 的信息。</li>
+<li>Node.js 应用程序的源码包含在项目的子目录中，还包括部署到 Docker registry 的 Dockerfile 和编译脚本。需要修改然后将镜像发布到你的 Docker registry 中，并部署 yaml 来引用新的镜像，如果有需要的话，应该相对更容易理解。</li>
+</ul>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/istio-envoy-cert-manager-lets-encrypt-for-tls/" data-toggle="tooltip" data-placement="top" title="利用Let&#39;s Encrypt 为Istio（Envoy）添加TLS 支持">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/rate-limiting-a-useful-tool-with-distributed-systems-part1/" data-toggle="tooltip" data-placement="top" title="速率限制part1—分布式系统的一个实用工具">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/the-rise-of-the-istio-service-mesh/"><i class="fa fa-link"></i>Istio服务网格的崛起</a></li>
+         
+        <li><a href="/blog/deepin-service-mesh-tech-details/"><i class="fa fa-link"></i>深入解读Service Mesh背后的技术细节</a></li>
+         
+        <li><a href="/blog/istio-envoy-cert-manager-lets-encrypt-for-tls/"><i class="fa fa-link"></i>利用Let&#39;s Encrypt 为Istio（Envoy）添加TLS 支持</a></li>
+         
+        <li><a href="/blog/soft-multitenancy-in-istio-service-mesh/"><i class="fa fa-link"></i>Istio的软性多租户支持</a></li>
+         
+        <li><a href="/blog/istio-service-mesh-pilot-xds-note/"><i class="fa fa-link"></i>服务网格Istio之pilot-xDS接口笔记</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

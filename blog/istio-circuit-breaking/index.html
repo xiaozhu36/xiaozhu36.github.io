@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Istio熔断器解析 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="service mesh, 服务网格">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="Istio熔断器解析" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/istio-circuit-breaking//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="本文展示了如果通过Backyards创建熔断。">
+  <meta property="og:description" content="本文展示了如果通过Backyards创建熔断。">
+  <meta name="twitter:description" content="本文展示了如果通过Backyards创建熔断。">
+  <meta property="og:description" content="本文展示了如果通过Backyards创建熔断。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="Istio熔断器解析 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="Istio熔断器解析 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">Istio熔断器解析 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>Istio熔断器解析</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2019年9月24日
+                            </i>
+                            |
+                            
+                            作者 Laszlo Bence Nagy
+                            
+                            
+                            | 译者 <a href="https://github.com/malphi">马若飞</a>
+                            
+                            
+                            | 审校者
+                            
+                            <a href="https://github.com/GuangmingLuo"><i>罗广明</i></a>
+                            
+                            
+                            |
+                            5200字 | 阅读大约需要11分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            <a href="https://banzaicloud.com/blog/istio-circuit-breaking/">查看原文</a>
+                            |
+                            
+                            
+                            归档于 <a href="/categories/istio">istio</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/istio/"><i>#istio</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/circuit-breaking/"><i>#circuit breaking</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <h2 id="编者按">编者按</h2>
+<p>作者简要介绍了熔断的概念，然后以实战演练的方式分别演示了如何通过Backyards UI、CLI等方式创建并设置熔断功能。注：Backyards是Banzai Cloud开发的一款基于Istio的服务网格产品，本文是该产品功能介绍系列中的一篇。</p>
+<h2 id="前言">前言</h2>
+<p>Istio因灵活的可观察性和安全的服务间通信受到了赞许。然而，其他更重要的功能才真正使得Istio成为了服务网格里的瑞士军刀，当遇到运行时长、延迟和错误率等SLO问题时，服务间的流量管理能力是至关重要的。</p>
+<p>在今年早些时候发布 <a href="https://github.com/banzaicloud/istio-operator">Istio operator</a> 时，我们的目标（除了管理Istio的安装和升级）是为这些出色的流量路由特性提供支持，同时使所有的功能都更加易用。最后，我们创建了一个简单且自动化的服务网格<a href="https://banzaicloud.com/blog/istio-the-easy-way/">Backyards</a>，它在Istio operator之上提供了管理UI、<a href="https://github.com/banzaicloud/backyards-cli">CLI</a> 和GraphQL API的能力。Backyards集成到了Banzai Cloud的容器管理平台 <a href="https://github.com/banzaicloud/pipeline">Pipeline</a>中，也可以作为一个单一的产品独立工作。当然，将Backyards与Pipeline一起使用会为用户提供特别的好处（比如在<a href="https://banzaicloud.com/blog/istio-multicluster-the-easy-way/">多云和混合云</a>环境中管理应用程序），Backyards也可以被用于任何Kubernetes的安装环境。</p>
+<blockquote>
+<p>我们已经发布了一些Backyards相关特性的文章比如：</p>
+<ul>
+<li><a href="https://banzaicloud.com/blog/istio-canary/">使用Backyards自动金丝雀部署</a></li>
+<li><a href="https://banzaicloud.com/blog/istio-traffic-shifting/">流量切换</a></li>
+</ul>
+</blockquote>
+<h2 id="熔断失败是一个选项">熔断：失败是一个选项</h2>
+<p>在微服务架构中，服务可能会用不同的语言实现并部署在多个节点或集群上，具有不同的响应时间或故障率。如果服务成功（并且及时地）响应了请求，那么它的性能就算是令人满意的。但现实情况并非如此，下游客户端应该在上游服务过于缓慢时受到保护。反之，上游服务也必须被保护，以免被积压的请求拖垮。在多客户端下情况会更加复杂，并可能导致整个基础设施出现一系列的连锁故障。这一问题的解决方案是采用经过时间检验的熔断器模式。</p>
+<p>一个熔断器可以有三种状态：关闭、打开和半开，默认情况下处于关闭状态。在关闭状态下，无论请求成功或失败，到达预先设定的故障数量阈值前，都不会触发熔断。而当达到阈值时，熔断器就会打开。当调用处于打开状态的服务时，熔断器将断开请求，这意味着它会直接返回一个错误，而不去执行调用。通过在客户端断开下游请求的方式，可以在生产环境中防止级联故障的发生。在经过事先配置的超时时长后，熔断器进入半开状态，这种状态下故障服务有时间从其中断的行为中恢复。如果请求在这种状态下继续失败，则熔断器将再次打开并继续阻断请求。否则熔断器将关闭，服务将被允许再次处理请求。</p>
+<p><img src="https://banzaicloud.com/img/blog/istio/circuit-breaking.png" alt="Circuit Breaking"></p>
+<h2 id="istiohttpsistioio中的熔断"><a href="https://istio.io/">Istio</a>中的熔断</h2>
+<p>Istio的 <a href="https://istio.io/docs/tasks/traffic-management/circuit-breaking/">熔断</a> 可以在 <a href="https://istio.io/docs/reference/config/networking/v1alpha3/destination-rule/#TrafficPolicy">流量策略</a> 中配置。Istio的 <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/">自定义资源</a><code>Destination Rule</code>里，<code>TrafficPolicy</code>字段下有两个和熔断相关的配置： <a href="https://istio.io/docs/reference/config/networking/v1alpha3/destination-rule/#ConnectionPoolSettings">ConnectionPoolSettings</a> 和 <a href="https://istio.io/docs/reference/config/networking/v1alpha3/destination-rule/#OutlierDetection">OutlierDetection</a>。</p>
+<p><code>ConnectionPoolSettings</code>可以为服务配置连接的数量。<code>OutlierDetection</code>用来控制从负载均衡池中剔除不健康的实例。</p>
+<p>例如，<code>ConnectionPoolSettings</code>控制请求的最大数量，挂起请求，重试或者超时；<code>OutlierDetection</code> 设置服务被从连接池剔除时发生错误的请求数，可以设置最小逐出时间和最大逐出百分比。有关完整的字段列表，请参考<a href="https://istio.io/docs/reference/config/networking/v1alpha3/destination-rule/#TrafficPolicy">文档</a>.</p>
+<blockquote>
+<p>Istio在底层使用了<a href="https://www.envoyproxy.io/learn/circuit-breaking">Envoy的熔断特性</a>。</p>
+</blockquote>
+<p>让我们来看看<code>Destination Rule</code>中有关熔断的配置：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: networking.istio.io/v1alpha3
+<span style="color:#66d9ef">kind</span>: DestinationRule
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: notifications
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">host</span>: notifications
+  <span style="color:#66d9ef">trafficPolicy</span>:
+    <span style="color:#66d9ef">connectionPool</span>:
+      <span style="color:#66d9ef">tcp</span>:
+        <span style="color:#66d9ef">maxConnections</span>: <span style="color:#ae81ff">1</span>
+      <span style="color:#66d9ef">http</span>:
+        <span style="color:#66d9ef">http1MaxPendingRequests</span>: <span style="color:#ae81ff">1</span>
+        <span style="color:#66d9ef">maxRequestsPerConnection</span>: <span style="color:#ae81ff">1</span>
+    <span style="color:#66d9ef">outlierDetection</span>:
+      <span style="color:#66d9ef">consecutiveErrors</span>: <span style="color:#ae81ff">1</span>
+      <span style="color:#66d9ef">interval</span>: 1s
+      <span style="color:#66d9ef">baseEjectionTime</span>: 3m
+      <span style="color:#66d9ef">maxEjectionPercent</span>: <span style="color:#ae81ff">100</span>
+</code></pre></div><p>使用<code>ConnectionPoolSettings</code>字段中的这些设置，在给定的时间内只能和<code>notifications</code> 服务建立一个连接：每个连接最多只能有一个挂起的请求。如果达到阈值，熔断器将开始阻断请求。</p>
+<p><code>OutlierDetection</code>部分的设置用来检查每秒调用服务是否有错误发生。如果有，则将服务从负载均衡池中逐出至少三分钟（100%最大弹出百分比表示，如果需要，所有的服务实例都可以同时被逐出）。</p>
+<blockquote>
+<p>在手动创建<code>Destination Rule</code>资源时有一件事需要特别注意，那就是是否为该服务启用了mTLS。如果是的话，还需要在<code>Destination Rule</code>中设置如下字段，否则当调用<code>movies</code>服务时，调用方可能会收到503错误：</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">trafficPolicy</span>:
+   <span style="color:#66d9ef">tls</span>:
+  <span style="color:#66d9ef">mode</span>: ISTIO_MUTUAL
+</code></pre></div><blockquote>
+<p>还可以为特定<a href="https://istio.io/docs/tasks/security/authn-policy/#namespace-wide-policy">namespace</a> 或特定<a href="https://istio.io/docs/tasks/security/authn-policy/#service-specific-policy">服务</a>启用<a href="https://istio.io/docs/tasks/security/authn-policy/#globally-enabling-istio-mutual-tls">全局</a>的mTLS。你应该了解这些设置以便确定是否把<code>trafficPolicy.tls.mode</code>设置为 <code>ISTIO_MUTUAL</code>。更重要的是，当你试图配置一个完全不同的功能（例如熔断）时，很容易忘记设置此字段。</p>
+<p>提示：在创建<code>Destination Rule</code>前总是考虑mTLS！</p>
+</blockquote>
+<p>为了触发熔断，让我们同时从两个连接来调用 <code>notifications</code>服务。<code>maxConnections</code>字段被设置为1。这时应该会看到503与200的响应同时到达。</p>
+<p>当一个服务从客户端接收到的负载大于它所能处理的负载（如熔断器中配置的那样），它会在调用之前返回503错误。这是防止错误级联的一种方法。</p>
+<h3 id="监控">监控</h3>
+<p>在生产环境中必须要监控你的服务，以便得到通知并能够在系统发生错误时进行检查。因此，如果你已经为你的服务配置了一个熔断器，你就会想知道它什么时候跳闸；熔断器拦截了百分之多少的请求；何时触发，来自哪个下游客户端？如果能够回答这些问题，你就可以确定熔断器是否工作正常，并根据需要微调配置，或者优化服务来处理额外的并发请求。</p>
+<blockquote>
+<p>提示：如果你继续阅读，可以在Backyards UI中看到和配置所有的这些设置。</p>
+</blockquote>
+<p>让我们看看怎样在Istio里确定熔断器跳闸：</p>
+<p>熔断器跳闸时的响应码是503，因此你无法仅根据该响应与其他的503错误区分开来。在Envoy中，有一个计数器叫<code>upstream_rq_pending_overflow</code>，它记录了熔断且失败的请求总数。如果为你的服务深入研究Envoy的统计数据就可以获得这些信息，但这并不容易。</p>
+<p>除了响应代码，Envoy还返回<a href="https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log#config-access-log-format-response-flags">响应标志</a> ，并且存在一个专用响应标志来表示熔断器跳闸：<strong>UO</strong>。如果这个标志只能通过Envoy的日志获得，这将不会特别有用。幸运的是，它在Istio中<a href="https://github.com/istio/istio/pull/9945">实现</a>了，因此响应标志在Istio指标中是可用的并且能被Prometheus获取到。</p>
+<p>熔断器的跳闸可以像这样查询到：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-basic" data-lang="basic">sum(istio_requests_total{response_code<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;503&#34;</span>, response_flags<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;UO&#34;</span>}) by (source_workload, destination_workload, response_code)
+</code></pre></div><h2 id="backyardshttpsbanzaicloudcomblogistio-the-easy-way的熔断更简单"><a href="https://banzaicloud.com/blog/istio-the-easy-way/">Backyards</a>的熔断更简单</h2>
+<p>使用Backyards时，你不需要手动编辑<code>Destination Rules</code>来设置熔断。可以通过一个方便的UI界面或者（如果你愿意的话）是<a href="https://github.com/banzaicloud/backyards-cli">Backyards CLI</a> 命令行工具来达到相同的结果。</p>
+<p>不必担心由于忘记把<code>trafficPolicy.tls.mode</code> 设置为 <code>ISTIO_MUTUAL</code>而配错了<code>Destination Rules</code>。Backyards会为你解决这个问题；它会找到启用了mTLS的服务并相应地设置上述字段。</p>
+<blockquote>
+<p>上面只是Backyards验证特性的一个例子，这能避免你设置错误。后面还有更多的特性。</p>
+</blockquote>
+<p>在此之上，你可以看到服务和请求的可视化界面和活动仪表板，因此可以轻松地确定有多少请求被熔断器触发，以及它来自哪个调用者和何时触发。</p>
+<h2 id="熔断实战">熔断实战</h2>
+<h3 id="创建一个集群">创建一个集群</h3>
+<p>首先，我们需要一个Kubernetes集群。</p>
+<blockquote>
+<p>我通过<a href="https://beta.banzaicloud.io/">Pipeline platform</a>的免费开发版本在GKE上创建了一个Kubernetes集群。如果你也想这样做，可以在我们支持的五个云提供商或使用<a href="https://beta.banzaicloud.io/">Pipeline</a>在本地创建集群。否则，你需要提供自己的Kubernetes集群。</p>
+</blockquote>
+<h3 id="安装backyards">安装BACKYARDS</h3>
+<p>在一个新集群安装Istio，Backyards和demo应用的最简单的办法是使用<a href="https://github.com/banzaicloud/backyards-cli">Backyards CLI</a>。</p>
+<p>你只需要执行下面的命令（集群必须设置了<code>KUBECONFIG</code>）：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ backyards install -a --run-demo
+</code></pre></div><p>该命令首先使用我们开源的<a href="https://github.com/banzaicloud/istio-operator">Istio operator</a>安装Istio，然后安装Backyards和demo应用程序。安装完成后，Backyards UI将自动打开并向demo应用发送一些流量。通过这个简单的命令，你可以看到Backyards在几分钟内启动了一个全新的Istio集群！试试吧！</p>
+<blockquote>
+<p>你也可以按顺序执行所有这些步骤。Backyards需要一个Istio集群——如果没有，可以通过<code>$ backyards istio install</code>安装。一旦安装了Istio，就可以使用<code>$ backyards install</code>安装Backyards。最后，使用<code>$ backyards demoapp install</code>部署demo应用程序。</p>
+<p>提示：Backyards是<a href="https://github.com/banzaicloud/pipeline">Pipeline</a>平台的核心组件——可以尝试<a href="https://beta.banzaicloud.io/">开发者版本</a>（Service Mesh 标签页）。</p>
+</blockquote>
+<h3 id="使用backyards-ui创建熔断">使用BACKYARDS UI创建熔断</h3>
+<h4 id="配置熔断器">配置熔断器</h4>
+<p>你不需要手动创建或编辑<code>Destination Rule</code>，可以很容易的在UI界面中改变熔断的配置。让我们先创建一个demo。</p>
+<blockquote>
+<p>正如你将看到的，Backyards（与Kiali相比）不仅是为可观察性构建的web UI，而且是具有丰富功能的服务网格管理工具，支持单集群和多集群，并且具有强大的CLI和GraphQL API。</p>
+</blockquote>
+<p><img src="https://banzaicloud.com/img/blog/istio/circuit-breaking-set.png" alt="Circuit Breaking set"></p>
+<h4 id="查看熔断器设置">查看熔断器设置</h4>
+<p>你不需要通过<code>Destination Rule</code>（例如通过kubectl）来查看熔断器的配置，当你点击<code>notification</code> 服务图标并切换<code>SHOW CONFIGS</code>滑块时，可以在Backyards UI的右侧看到它们。</p>
+<p><img src="https://banzaicloud.com/img/blog/istio/circuit-breaking-view.png" alt="Circuit Breaking view"></p>
+<h4 id="监控熔断器">监控熔断器</h4>
+<p>根据刚才的设置，当两个连接同时产生流量时，熔断器将发出跳闸请求。在Backyards UI中，你将看到图形的边缘出现了红色。如果单击该服务，你将了解有关错误的更多信息，并将看到两个专门用来显示熔断器跳闸的实时Grafana仪表板。</p>
+<p>第一个仪表板展示了熔断器触发的总请求的百分比。当没有熔断器错误，而你的服务工作正常，这张图将显示<code>0%</code>。否则，你将能够立即看到有多少请求被熔断器触发。</p>
+<p>第二个仪表板提供了由源熔断器引起的跳闸故障。如果没有发生跳闸，则此图中不会出现尖峰。否则，你将看到哪个服务导致了跳闸，何时跳闸，以及跳闸次数。可以通过此图来追踪恶意的客户端。</p>
+<p><img src="https://banzaicloud.com/img/blog/istio/circuit-breaking-trip.png" alt="Circuit Breaking trip"></p>
+<blockquote>
+<p>这些是实时的Grafana仪表盘，用于显示熔断相关的信息。在默认情况下Backyards集成了Grafana和Prometheus——还有更多的仪表板可以帮助你深入查看服务的指标。</p>
+</blockquote>
+<h4 id="移除熔断器配置">移除熔断器配置</h4>
+<p>可以通过 <code>Remove</code> 按钮很容易的移除熔断配置。</p>
+<h4 id="backyards-ui-的熔断实战">Backyards UI 的熔断实战</h4>
+<p>这个<a href="https://www.youtube.com/embed/JH2xRv4a37M">视频</a>总结了所有这些UI操作（译者注：视频来自YouTube）</p>
+<h3 id="使用backyards-clihttpsgithubcombanzaicloudbackyards-cli创建熔断">使用<a href="https://github.com/banzaicloud/backyards-cli">BACKYARDS-CLI</a>创建熔断</h3>
+<p>从经验来看，可以从UI界面做的事一定也可以通过 <a href="https://github.com/banzaicloud/backyards-cli">Backyards CLI</a> 命令行工具完成。</p>
+<h4 id="配置熔断">配置熔断</h4>
+<p>让我们再做一次创建熔断的测试，这次通过CLI命令行。</p>
+<p>可以以交互模式进行：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ backyards r cb set backyards-demo/notifications
+? Maximum number of HTTP1/TCP connections <span style="color:#ae81ff">1</span>
+? TCP connection timeout 3s
+? Maximum number of pending HTTP requests <span style="color:#ae81ff">1</span>
+? Maximum number of requests <span style="color:#ae81ff">1024</span>
+? Maximum number of requests per connection <span style="color:#ae81ff">1</span>
+? Maximum number of retries <span style="color:#ae81ff">1024</span>
+? Number of errors before a host is ejected <span style="color:#ae81ff">1</span>
+? Time interval between ejection sweep analysis 1s
+? Minimum ejection duration 3m
+? Maximum ejection percentage <span style="color:#ae81ff">100</span>
+INFO<span style="color:#f92672">[</span>0043<span style="color:#f92672">]</span> circuit breaker rules successfully applied to <span style="color:#e6db74">&#39;backyards-demo/notifications&#39;</span>
+Connections  Timeout  Pending Requests  Requests  RPC  Retries  Errors  Interval  Ejection time  percentage
+<span style="color:#ae81ff">1</span>            3s       <span style="color:#ae81ff">1</span>                 <span style="color:#ae81ff">1024</span>      <span style="color:#ae81ff">1</span>    <span style="color:#ae81ff">1024</span>     <span style="color:#ae81ff">1</span>       1s        3m             <span style="color:#ae81ff">100</span>
+</code></pre></div><p>或者用非交互模式，指定要设置的值：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ backyards r cb set backyards-demo/notifications --non-interactive --max-connections<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> --max-pending-requests<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> --max-requests-per-connection<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> --consecutiveErrors<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> --interval<span style="color:#f92672">=</span>1s --baseEjectionTime<span style="color:#f92672">=</span>3m --maxEjectionPercent<span style="color:#f92672">=</span><span style="color:#ae81ff">100</span>
+Connections  Timeout  Pending Requests  Requests  RPC  Retries  Errors  Interval  Ejection time  percentage
+<span style="color:#ae81ff">1</span>            3s       <span style="color:#ae81ff">1</span>                 <span style="color:#ae81ff">1024</span>      <span style="color:#ae81ff">1</span>    <span style="color:#ae81ff">1024</span>     <span style="color:#ae81ff">5</span>       1s        3m             <span style="color:#ae81ff">100</span>
+</code></pre></div><p>命令执行后，熔断配置会立刻获取到并显示出来。</p>
+<h4 id="查看熔断设置">查看熔断设置</h4>
+<p>你可以用下面的命令通过namespace来列出熔断的设置：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ backyards r cb get backyards-demo/notifications
+  Connections  Timeout  Pending Requests  Requests  RPC  Retries  Errors  Interval  Ejection time  percentage
+  <span style="color:#ae81ff">1</span>            3s       <span style="color:#ae81ff">1</span>                 <span style="color:#ae81ff">1024</span>      <span style="color:#ae81ff">1</span>    <span style="color:#ae81ff">1024</span>     <span style="color:#ae81ff">5</span>       1s        3m             <span style="color:#ae81ff">100</span>
+</code></pre></div><p>默认情况结果以表格的方式显示，也支持JSON或者YMAL格式：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ backyards r cb get backyards-demo/notifications -o json
+  <span style="color:#f92672">{</span>
+    <span style="color:#e6db74">&#34;maxConnections&#34;</span>: 1,
+    <span style="color:#e6db74">&#34;connectTimeout&#34;</span>: <span style="color:#e6db74">&#34;3s&#34;</span>,
+    <span style="color:#e6db74">&#34;http1MaxPendingRequests&#34;</span>: 1,
+    <span style="color:#e6db74">&#34;http2MaxRequests&#34;</span>: 1024,
+    <span style="color:#e6db74">&#34;maxRequestsPerConnection&#34;</span>: 1,
+    <span style="color:#e6db74">&#34;maxRetries&#34;</span>: 1024,
+    <span style="color:#e6db74">&#34;consecutiveErrors&#34;</span>: 5,
+    <span style="color:#e6db74">&#34;interval&#34;</span>: <span style="color:#e6db74">&#34;1s&#34;</span>,
+    <span style="color:#e6db74">&#34;baseEjectionTime&#34;</span>: <span style="color:#e6db74">&#34;3m&#34;</span>,
+    <span style="color:#e6db74">&#34;maxEjectionPercent&#34;</span>: <span style="color:#ae81ff">100</span>
+  <span style="color:#f92672">}</span>
+
+$ backyards r cb get backyards-demo/notifications -o yaml
+  maxConnections: <span style="color:#ae81ff">1</span>
+  connectTimeout: 3s
+  http1MaxPendingRequests: <span style="color:#ae81ff">1</span>
+  http2MaxRequests: <span style="color:#ae81ff">1024</span>
+  maxRequestsPerConnection: <span style="color:#ae81ff">1</span>
+  maxRetries: <span style="color:#ae81ff">1024</span>
+  consecutiveErrors: <span style="color:#ae81ff">5</span>
+  interval: 1s
+  baseEjectionTime: 3m
+  maxEjectionPercent: <span style="color:#ae81ff">100</span>
+</code></pre></div><h4 id="监控熔断">监控熔断</h4>
+<p>要从CLI中查看和前面Grafana UI界面类似的仪表板，可以通过从多个连接调用服务来触发跳闸，执行命令：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ backyards r cb graph backyards-demo/notifications
+</code></pre></div><p>可以看到类似下面的结果：</p>
+<p><img src="https://banzaicloud.com/img/blog/istio/circuit-breaking-trip-cli.png" alt="Circuit Breaking trip cli"></p>
+<h4 id="移除熔断配置">移除熔断配置</h4>
+<p>移除熔断执行下面的命令：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ backyards r cb delete backyards-demo/notifications
+INFO<span style="color:#f92672">[</span>0000<span style="color:#f92672">]</span> current settings
+Connections  Timeout  Pending Requests  Requests  RPC  Retries  Errors  Interval  Ejection time  percentage
+<span style="color:#ae81ff">1</span>            3s       <span style="color:#ae81ff">1</span>                 <span style="color:#ae81ff">1024</span>      <span style="color:#ae81ff">1</span>    <span style="color:#ae81ff">1024</span>     <span style="color:#ae81ff">5</span>       1s        3m             <span style="color:#ae81ff">100</span>
+? Do you want to DELETE the circuit breaker rules? Yes
+INFO<span style="color:#f92672">[</span>0008<span style="color:#f92672">]</span> circuit breaker rules set to backyards-demo/notifications successfully deleted
+</code></pre></div><p>使用下面的命令验证是否成功：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ backyards r cb get backyards-demo/notifications
+  INFO<span style="color:#f92672">[</span>0001<span style="color:#f92672">]</span> no circuit breaker rules set <span style="color:#66d9ef">for</span> backyards-demo/notifications
+</code></pre></div><h3 id="使用backyards-graphql-api创建熔断">使用BACKYARDS GRAPHQL API创建熔断</h3>
+<p>Backyards由多个组件组成，比如Istio、Banzai Cloud的<a href="https://github.com/banzaicloud/istio-operator">Istio operator</a>，多集群<a href="https://banzaicloud.com/blog/istio-canary/">Canary release operator</a>，以及多个后端基础设施。所有的这些都在<strong>Backyards’ GraphQL API</strong>的后面。</p>
+<p>Backyards UI和CLI都使用Backyards的GraphQL API，它将在9月底与GA版本一起发布。用户将很快能够使用我们的工具来管理Istio和构建他们自己的客户端。</p>
+<h3 id="清理">清理</h3>
+<p>从你的集群移除demo应用、Backyards和Istio，执行下面的命令，它将按顺序卸载这些组件：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ backyards uninstall -a
+</code></pre></div><h2 id="总结">总结</h2>
+<p>使用Backyards，你可以通过UI或CLI命令行工具轻松的配置熔断器。然后通过嵌入的Grafana仪表板从Backyards UI实时的监控熔断器，来查看跳闸率和按源计算的跳闸次数。</p>
+<p>下一次我们将介绍错误注入，请继续关注！</p>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/custom-application-metrics-with-django-prometheus-and-kubernetes/" data-toggle="tooltip" data-placement="top" title="使用Django，Prometheus，和Kubernetes定制应用指标">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/k8s-autoscaling-all-you-need-to-know/" data-toggle="tooltip" data-placement="top" title="你必知的 Kubernetes 自动缩放">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/istio-analysis-6/"><i class="fa fa-link"></i>Istio 庖丁解牛六：多集群网格应用场景</a></li>
+         
+        <li><a href="/blog/istio-analysis-5/"><i class="fa fa-link"></i>Istio 庖丁解牛五：多集群网格实现分析</a></li>
+         
+        <li><a href="/blog/containers-microservices-service-meshes/"><i class="fa fa-link"></i>容器、微服务和服务网格简史</a></li>
+         
+        <li><a href="/blog/exploring-istio-telemetry-and-observability/"><i class="fa fa-link"></i>Istio遥测和可观察性探索</a></li>
+         
+        <li><a href="/blog/canary-release-strategy-using-kubernetes-istio-and-helm/"><i class="fa fa-link"></i>使用Kubernetes，Istio和Helm实现金丝雀发布</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

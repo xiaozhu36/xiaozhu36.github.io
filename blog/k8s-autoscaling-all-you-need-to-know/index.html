@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>你必知的 Kubernetes 自动缩放 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="autoscaler, hpa">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="你必知的 Kubernetes 自动缩放" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/k8s-autoscaling-all-you-need-to-know//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="本文介绍了kubernetes 的几种缩放方式: HPA、VPA、cluster scaler，并提供了两个测试用例以供测试和学习。">
+  <meta property="og:description" content="本文介绍了kubernetes 的几种缩放方式: HPA、VPA、cluster scaler，并提供了两个测试用例以供测试和学习。">
+  <meta name="twitter:description" content="本文介绍了kubernetes 的几种缩放方式: HPA、VPA、cluster scaler，并提供了两个测试用例以供测试和学习。">
+  <meta property="og:description" content="本文介绍了kubernetes 的几种缩放方式: HPA、VPA、cluster scaler，并提供了两个测试用例以供测试和学习。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="你必知的 Kubernetes 自动缩放 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="你必知的 Kubernetes 自动缩放 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">你必知的 Kubernetes 自动缩放 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>你必知的 Kubernetes 自动缩放</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2019年9月25日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://caylent.com/kubernetes-autoscaling">Juan Ignacio Giro</a>
+                            
+                            
+                            | 译者 <a href="https://github.com/dfang">段访</a>
+                            
+                            
+                            | 审校者
+                            
+                            <a href="https://github.com/GuangmingLuo"><i>罗广明</i></a>
+                            
+                            
+                            |
+                            2900字 | 阅读大约需要6分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            <a href="https://caylent.com/kubernetes-autoscaling">查看原文</a>
+                            |
+                            
+                            
+                            归档于 <a href="/categories/kubernetes">kubernetes</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/kubernetes/"><i>#kubernetes</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/autoscaler/"><i>#autoscaler</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/hpa/"><i>#hpa</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/vpa/"><i>#vpa</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <h2 id="编者按">编者按</h2>
+<p>许多Kubernetes用户，特别是那些企业级用户，很快就遇到了对环境自动缩放的需求。幸运的是，Kubernetes Horizontal Pod Autoscaler（HPA）允许您将部署配置为以多种方式水平扩展。使用Kubernetes Autoscaling的最大优势之一是您的集群可以跟踪现有Pod的负载能力，并计算是否需要更多的Pod。</p>
+<h2 id="kubernetes-autoscaling">Kubernetes Autoscaling</h2>
+<p>通过协调内置的两层可扩展性，可以充分利用高效的Kubernetes Autoscaling：</p>
+<ol>
+<li>Pod级别的自动缩放：包括Horizontal Pod Autoscaler（HPA）和Vertical Pod Autoscaler（VPA）; 两者都可以扩展容器的可用资源。</li>
+<li>集群级别的自动缩放：集群自动调节器（CA）通过在必要时向上或向下扩展集群内的节点数来管理这种可扩展性平面。</li>
+</ol>
+<h2 id="kubernetes-autoscaling-详情">Kubernetes Autoscaling 详情</h2>
+<h3 id="horizontal-pod-autoscalerhpa">Horizontal Pod Autoscaler（HPA）</h3>
+<p>HPA会在集群中缩放Pod副本的数量。该操作由CPU或内存触发，以根据需要向上或向下扩展。但是，也可以根据各种外部的和自定义指标（metrics.k8s.io，external.metrics.k8s.io和custom.metrics.k8s.io）来配置HPA以扩展Pod。</p>
+<h3 id="vertical-pod-autoscalervpa">Vertical Pod Autoscaler（VPA）</h3>
+<p>VPA主要用于有状态服务，它可根据需要为Pod添加CPU或内存——它也适用于无状态的Pod。为了应用这些更改，VPA重新启动Pod以更新新的CPU和内存资源，这些资源可以配置为响应OOM（内存不足）事件而启动。重新启动Pod的时候，VPA始终确保根据Pod分配预算（PDB）确定最小数量，您可以设置该资源分配最大和最小速率。</p>
+<h3 id="cluster-autoscalerca">Cluster Autoscaler（CA）</h3>
+<p>第二层的自动缩放涉及CA，它在以下情况下自动调整集群的大小：</p>
+<ul>
+<li>由于集群中的容量不足，任何Pod/s都无法运行并进入挂起状态（在这种情况下，CA将向上扩展）。</li>
+<li>集群中的节点在一段时间内未得到充分利用，并且有可能迁移节点上的Pod（在这种情况下，CA将缩小）。</li>
+</ul>
+<p>CA进行例行检查以确定是否有任何pod因等待额外资源处于待定状态，或者集群节点是否未得到充分利用。如果需要更多资源，会相应地调整Cluster节点的数量。CA与云提供商交互以请求其他节点或关闭空闲节点，并确保按比例放大的集群保持在用户设置的限制范围内。它适用于AWS，Azure和GCP。</p>
+<h2 id="将hpa和ca与amazon-eks配合使用的5个步骤">将HPA和CA与Amazon EKS配合使用的5个步骤</h2>
+<p>本文提供了通过适用于Kubernetes（Amazon EKS）集群的Amazon Elastic容器服务，通过HPA和CA安装和自动扩展的分步指南。以下指南是两个测试用例示例：</p>
+<h3 id="集群要求">集群要求</h3>
+<ul>
+<li>满足EKS集群要求的Amazon VPC 和 一个安全组。</li>
+<li>或者，为免手动创建VPC，AWS提供了创建了VPC和EKS的<a href="https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html">CloudFormation模板</a></li>
+</ul>
+<blockquote>
+<p><a href="https://amazon-eks.s3-us-west-2.amazonaws.com/cloudformation/2018-08-30/amazon-eks-vpc-sample.yaml">CloudFormation YAML文件</a></p>
+</blockquote>
+<ul>
+<li>应用到集群的<a href="https://docs.aws.amazon.com/eks/latest/userguide/service_IAM_role.html">EKS 角色</a></li>
+</ul>
+<p><strong>1.</strong> 根据<a href="https://docs.aws.amazon.com/eks/latest/userguide/create-cluster.html">官方指南</a>创建一个AWS EKS 集群(控制面板和和工作节点). 一旦你把工作节点以auto scaling group的形式启动了，它们会自动向EKS集群注册，你就可以开始部署k8s应用了。</p>
+<p><strong>2.</strong> 部署度量服务器以便HPA能够根据API提供的CPU/内存数据自动缩放POD副本的数量。 metrics.k8s.io api 通常由metrics-server（负责从summary api收集cpu和内存度量）提供。</p>
+<p><strong>3.</strong> 把以下策略应用到EKS创建的worker节点的Role上</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+   <span style="color:#f92672">&#34;Version&#34;</span>: <span style="color:#e6db74">&#34;2012-10-17&#34;</span>,
+   <span style="color:#f92672">&#34;Statement&#34;</span>: [
+      {
+         <span style="color:#f92672">&#34;Effect&#34;</span>: <span style="color:#e6db74">&#34;Allow&#34;</span>,
+         <span style="color:#f92672">&#34;Action&#34;</span>: [
+            <span style="color:#e6db74">&#34;autoscaling:DescribeAutoScalingGroups&#34;</span>,
+            <span style="color:#e6db74">&#34;autoscaling:DescribeAutoScalingInstances&#34;</span>,
+            <span style="color:#e6db74">&#34;autoscaling:DescribeLaunchConfigurations&#34;</span>,
+            <span style="color:#e6db74">&#34;autoscaling:DescribeTags&#34;</span>,
+            <span style="color:#e6db74">&#34;autoscaling:SetDesiredCapacity&#34;</span>,
+            <span style="color:#e6db74">&#34;autoscaling:TerminateInstanceInAutoScalingGroup&#34;</span>
+         ],
+         <span style="color:#f92672">&#34;Resource&#34;</span>: <span style="color:#e6db74">&#34;*&#34;</span>
+      }
+   ]
+}
+</code></pre></div><p><strong>4.</strong> <a href="https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/examples/cluster-autoscaler-autodiscover.yaml">部署k8s CA特性</a></p>
+<blockquote>
+<p>根据你使用的linux发行版，你可能需要更新部署文件和证书路径。 例如，如果使用AMI Linux，需要用/etc/ssl/certs/ca-bundle.crt替换/etc/ssl/certs/ca-certificates.crt</p>
+</blockquote>
+<p><strong>5.</strong> 更新CA的部署YAML文件，找到指定的AWS AG（k8s.io/cluster-autoscaler/&lt;<code>CLUSTER NAME</code>&gt;应该包含真实的集群名称）标签。
+同时更新<code>AWS_REGION</code>环境变量。</p>
+<p>把以下tag添加到 AWS AG， 以便 k8s 的 cluster autoscaler 能够自动识别 AWS AG：</p>
+<blockquote>
+<p>k8s.io/cluster-autoscaler/enabled
+k8s.io/cluster-autoscaler/</p>
+</blockquote>
+<h3 id="kubernetes-autoscaling-测试用例-1">Kubernetes Autoscaling 测试用例 #1</h3>
+<p>测试k8s hpa 特性和k8s ca 特性同时使用</p>
+<p>要求:</p>
+<ul>
+<li>一个运行中的eks集群</li>
+<li>安装好metric server</li>
+<li>安装了k8s cluster autoscaler 特性</li>
+</ul>
+<p><strong>1.</strong> 部署一个测试app，为app部署创建HPA资源。</p>
+<p><strong>2.</strong> 从不同的地理位置发起请求以增加负载。</p>
+<p><strong>3.</strong> HPA 应该会随着负载的增加开始缩放pod的数量。它会根据hpa资源指定的进行缩放的。在某一时刻，新的POD在等待其他资源的时候会是等待状态。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get nodes -w
+NAME                             STATUS    ROLES     AGE       VERSION
+ip-192-168-189-29.ec2.internal   Ready         1h        v1.10.3
+ip-192-168-200-20.ec2.internal   Ready         1h        v1.10.3
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get Pods -o wide -w
+NAME READY STATUS RESTARTS AGE IP NODE
+ip-192-168-200-20.ec2.internal
+php-apache-8699449574-4mg7w 0/1 Pending <span style="color:#ae81ff">0</span> 17m
+php-apache-8699449574-64zkm 1/1 Running <span style="color:#ae81ff">0</span> 1h 192.168.210.90 ip-192-168-200-20
+php-apache-8699449574-8nqwk 0/1 Pending <span style="color:#ae81ff">0</span> 17m
+php-apache-8699449574-cl8lj 1/1 Running <span style="color:#ae81ff">0</span> 27m 192.168.172.71 ip-192-168-189-29
+php-apache-8699449574-cpzdn 1/1 Running <span style="color:#ae81ff">0</span> 17m 192.168.219.71 ip-192-168-200-20
+php-apache-8699449574-dn9tb 0/1 Pending <span style="color:#ae81ff">0</span> 17m
+...
+</code></pre></div><p><strong>4.</strong> CA 检测到因为容量不足而进入等待状态的pods，调整AWS 自动缩放组的大小。一个新的节点加入了:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get nodes -w
+NAME                                       STATUS    ROLES     AGE       VERSION
+ip-192-168-189-29.ec2.internal   Ready         2h        v1.10.3
+ip-192-168-200-20.ec2.internal   Ready         2h        v1.10.3
+ip-192-168-92-187.ec2.internal   Ready         34s       v1.10.3
+</code></pre></div><p><strong>5.</strong> HPA能够把等待状态的POD调度到新的节点上了。 平均cpu使用率低于指定的目标，没有必要再调度新的pod了。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get hpa
+NAME         REFERENCE                    TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+php-apache   Deployment/php-apache   40%/50%   <span style="color:#ae81ff">2</span>                  <span style="color:#ae81ff">25</span>                 <span style="color:#ae81ff">20</span>               1h $ kubectl get Pods -o wide -w
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get Pods -o wide -w
+NAME READY STATUS RESTARTS AGE IP NODE
+php-apache-8699449574-4mg7w 1/1 Running <span style="color:#ae81ff">0</span> 25m 192.168.74.4 ip-192-168-92-187
+php-apache-8699449574-64zkm 1/1 Running <span style="color:#ae81ff">0</span> 1h 192.168.210.90 ip-192-168-200-20
+php-apache-8699449574-8nqwk 1/1 Running <span style="color:#ae81ff">0</span> 25m 192.168.127.85 ip-192-168-92-187
+php-apache-8699449574-cl8lj 1/1 Running <span style="color:#ae81ff">0</span> 35m 192.168.172.71 ip-192-168-189-29
+...
+</code></pre></div><p><strong>6.</strong> 关闭几个terminal，停掉一些负载</p>
+<p><strong>7.</strong> CPU平均利用率减小了， 所以HPA开始更改部署里的pod副本数量并杀掉一些pods</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get hpa
+NAME         REFERENCE                     TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+php-apache   Deployment/php-apache   47%/50%     <span style="color:#ae81ff">2</span>                <span style="color:#ae81ff">20</span>                 <span style="color:#ae81ff">7</span>                   1h 
+
+$ kubectl get Pods -o wide -w
+NAME READY STATUS RESTARTS AGE IP NODE
+...
+php-apache-8699449574-v5kwf 1/1 Running <span style="color:#ae81ff">0</span> 36m 192.168.250.0 ip-192-168-200-20
+php-apache-8699449574-vl4zj 1/1 Running <span style="color:#ae81ff">0</span> 36m 192.168.242.153 ip-192-168-200-20
+php-apache-8699449574-8nqwk 1/1 Terminating <span style="color:#ae81ff">0</span> 26m 192.168.127.85 ip-192-168-92-187
+php-apache-8699449574-dn9tb 1/1 Terminating <span style="color:#ae81ff">0</span> 26m 192.168.124.108 ip-192-168-92-187
+php-apache-8699449574-k5ngv 1/1 Terminating <span style="color:#ae81ff">0</span> 26m 192.168.108.58 ip-192-168-92-187
+...
+</code></pre></div><p><strong>8.</strong> CA 检测到一个节点未充分使用，正在运行的pod能够调度到其他节点上。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get nodes
+NAME                             STATUS    ROLES     AGE       VERSION
+ip-192-168-189-29.ec2.internal   Ready         2h        v1.10.3
+ip-192-168-200-20.ec2.internal   Ready         2h        v1.10.3
+ip-192-168-92-187.ec2.internal   NotReady       23m       v1.10.3
+
+$ kubectl get nodes
+NAME                             STATUS    ROLES     AGE       VERSION
+ip-192-168-189-29.ec2.internal   Ready         2h        v1.10.3
+ip-192-168-200-20.ec2.internal   Ready         2h        v1.10.3
+</code></pre></div><p><strong>9.</strong> 在向下缩放的时候，terminal中应该没有明显的timeout</p>
+<h3 id="kubernetes-autoscaling-测试用例-2">Kubernetes Autoscaling 测试用例 #2</h3>
+<p>测试在如果没有足够的CPU容量调度pod下，CA是否能够自动调整集群的大小</p>
+<p>要求:</p>
+<ul>
+<li>一个运行中的aws eks集群</li>
+<li>Kubernetes ca 特性已安装</li>
+</ul>
+<p><strong>1.</strong> 创建2个请求小于1vcpu的deployment</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl run nginx --image<span style="color:#f92672">=</span>nginx:latest --requests<span style="color:#f92672">=</span>cpu<span style="color:#f92672">=</span>200m
+$ kubectl run nginx2 --image<span style="color:#f92672">=</span>nginx:latest --requests<span style="color:#f92672">=</span>cpu<span style="color:#f92672">=</span>200m
+</code></pre></div><p><strong>2.</strong> 创建一个新的deployment，请求比剩余的cpu更多的资源</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl run nginx3 --image<span style="color:#f92672">=</span>nginx:latest --requests<span style="color:#f92672">=</span>cpu<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>
+</code></pre></div><p><strong>3.</strong> 新的POD会处于等待状态，因为没有可用的资源：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get Pods -w
+NAME                      READY     STATUS    RESTARTS   AGE
+nginx-5fcb54784c-lcfht    1/1       Running   <span style="color:#ae81ff">0</span>          13m
+nginx2-66667bf959-2fmlr   1/1       Running   <span style="color:#ae81ff">0</span>          3m
+nginx3-564b575974-xcm5t   0/1       Pending   <span style="color:#ae81ff">0</span>          41s
+</code></pre></div><p>描述pod的时候，可能会看到没有足够的cpu的事件</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl describe Pod nginx3-564b575974-xcm5t
+…..
+…..
+Events:
+Type     Reason            Age               From               Message
+----     ------            ----              ----               -------
+Warning  FailedScheduling  32s <span style="color:#f92672">(</span>x7 over 1m<span style="color:#f92672">)</span>  default-scheduler  0/1 nodes are available: <span style="color:#ae81ff">1</span> Insufficient cpu
+</code></pre></div><p><strong>4.</strong> CA自动调整集群的大小， 新加了一个节点</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get nodes
+NAME                              STATUS    ROLES     AGE       VERSION
+ip-192-168-142-179.ec2.internal   Ready         1m        v1.10.3  <span style="color:#e6db74">&lt;&lt;
+</span><span style="color:#e6db74">ip-192-168-82-136.ec2.i</span>nternal     Ready         1h        v1.10.3
+</code></pre></div><p><strong>5.</strong> 集群现在有了足够的资源以运行pod</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get Pods
+NAME                      READY     STATUS    RESTARTS   AGE
+nginx-5fcb54784c-lcfht    1/1       Running   <span style="color:#ae81ff">0</span>          48m
+nginx2-66667bf959-2fmlr   1/1       Running   <span style="color:#ae81ff">0</span>          37m
+nginx3-564b575974-xcm5t   1/1       Running   <span style="color:#ae81ff">0</span>          35m
+</code></pre></div><p><strong>6.</strong> 两个部署删除了。 一段时间后，CA检测到集群中的一个节点未被充分利用，运行的pod可以安置到其他存在的节点上。AWS AG 更新，节点数量减1。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get nodes
+NAME                                      STATUS    ROLES     AGE       VERSION
+ip-192-168-82-136.ec2.internal   Ready         1h          v1.10.3 
+
+$ kubectl get Pods -o wide
+NAME                        READY     STATUS    RESTARTS   AGE       IP                       NODE
+nginx-5fcb54784c-lcfht   1/1       Running     <span style="color:#ae81ff">0</span>                   1h       192.168.98.139   ip-192-168-82-136
+</code></pre></div><p>清除环境的步骤：</p>
+<ol>
+<li>删除添加到eks worker节点上Role的自定义策略</li>
+<li>按照这个<a href="https://docs.aws.amazon.com/eks/latest/userguide/delete-cluster.html">指南</a>删除这个集群</li>
+</ol>
+<h2 id="参考">参考</h2>
+<p>其他的关于kubernetes autoscaling，可以阅读Stefan Prodan的文章 <a href="https://github.com/stefanprodan/k8s-prom-hpa">Kubernetes Horizontal Pod Autoscaler with Prometheus Custom Metrics</a>。</p>
+<p>还有这些链接也可以看看 <a href="https://caylent.com/spotlight-on-kubernetes/">link1</a>, <a href="https://caylent.com/50-useful-kubernetes-tools/">link2</a>, <a href="https://caylent.com/best-practices-kubernetes-pods/">link3</a>。</p>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/istio-circuit-breaking/" data-toggle="tooltip" data-placement="top" title="Istio熔断器解析">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/20190910-horizontal-pod-autoscaling-based-on-custom-istio-metrics/" data-toggle="tooltip" data-placement="top" title="基于自定义Istio指标的Pod水平自动缩放">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/201909-build-full-micro-service-platform-by-spring-boot-with-kubernetes/"><i class="fa fa-link"></i>使用spring boot&#43;kubernetes构建完整微服务平台</a></li>
+         
+        <li><a href="/blog/use-envoy-as-a-kubernetes-ingress/"><i class="fa fa-link"></i>Contour 学习笔记（一）：使用 Contour 接管 Kubernetes 的南北流量</a></li>
+         
+        <li><a href="/blog/kubernetes-1.16-crd-ga-preview/"><i class="fa fa-link"></i>全面进化：Kubernetes CRD 1.16 GA前瞻</a></li>
+         
+        <li><a href="/blog/kubernetes-operator-in-python/"><i class="fa fa-link"></i>实现Kubernetes Operator的新方式：Python</a></li>
+         
+        <li><a href="/blog/prow-quick-start-guide/"><i class="fa fa-link"></i>Prow 快速入门向导</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

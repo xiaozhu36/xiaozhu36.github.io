@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Envoy service mesh、Prometheus和Grafana下的微服务监控 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="Envoy, Service Mesh, 监控, prometheus, grafana">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="Envoy service mesh、Prometheus和Grafana下的微服务监控" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/microservices-monitoring-with-envoy-service-mesh-prometheus-grafana//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="本文介绍了Envoy service mesh下结合Prometheus和Grafana实现的微服务监控方案。">
+  <meta property="og:description" content="本文介绍了Envoy service mesh下结合Prometheus和Grafana实现的微服务监控方案。">
+  <meta name="twitter:description" content="本文介绍了Envoy service mesh下结合Prometheus和Grafana实现的微服务监控方案。">
+  <meta property="og:description" content="本文介绍了Envoy service mesh下结合Prometheus和Grafana实现的微服务监控方案。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="Envoy service mesh、Prometheus和Grafana下的微服务监控 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="Envoy service mesh、Prometheus和Grafana下的微服务监控 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">Envoy service mesh、Prometheus和Grafana下的微服务监控 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>Envoy service mesh、Prometheus和Grafana下的微服务监控</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2018年11月20日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://hackernoon.com/@dnivra26">Arvind Thangamani</a>
+                            
+                            
+                            | 译者 <a href="https://github.com/moeyui1">蒙奕锟</a>
+                            
+                            
+                            | 审校者
+                            
+                            <a href="https://www.yangcs.net"><i>杨传胜</i></a>
+                            
+                            
+                            |
+                            3100字 | 阅读大约需要6分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            <a href="https://medium.com/@dnivra26/microservices-monitoring-with-envoy-service-mesh-prometheus-grafana-a1c26a8595fc">查看原文</a>
+                            |
+                            
+                            
+                            归档于 <a href="/categories/envoy">envoy</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/envoy/"><i>#Envoy</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/service-mesh/"><i>#Service Mesh</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/monitor/"><i>#Monitor</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/prometheus/"><i>#prometheus</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/grafana/"><i>#grafana</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <p>如果你刚接触“Service Mesh“和“Envoy”，我<a href="https://medium.com/@dnivra26/service-mesh-with-envoy-101-e6b2131ee30b">这里</a>有一篇文章可以帮你入门。</p>
+<p>这是<strong>Envoy service mesh下的可观测性</strong>系列的第二篇文章，你可以在<a href="https://medium.com/@dnivra26/distributed-tracing-with-envoy-service-mesh-jaeger-c365b6191592">这里</a>阅读第一篇关于分布式追踪的文章。</p>
+<p>在微服务中谈及监控时，你可不能被蒙在鼓里，至少要知道问题出在哪儿了。</p>
+<p>让我们看看Envoy是怎样帮助我们了解我们的服务运行状况的。在service mesh下，所有的通信都会通过mesh，这意味着没有任何服务会与其它服务直接通信，服务向Envoy发起调用请求，然后Envoy将调用请求路由到目标服务，所以Envoy将持有传入和传出流量的上下文。Envoy通常提供关于<a href="https://www.envoyproxy.io/docs/envoy/latest/configuration/http_conn_man/stats">传入</a>请求、<a href="https://www.envoyproxy.io/docs/envoy/latest/configuration/cluster_manager/cluster_stats">传出</a>请求和<a href="https://www.envoyproxy.io/docs/envoy/latest/configuration/statistics">Envoy实例状态</a>的指标。</p>
+<h2 id="准备">准备</h2>
+<p>这是我们将要构建的系统概览。</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/microservices-monitoring-with-envoy-service-mesh-prometheus-grafana/006tNbRwgy1fwx6wg1dscj30m90cg0sy.jpg" alt="overall setup"></p>
+<h2 id="statsd">Statsd</h2>
+<p>Envoy支持通过两到三种格式来暴露指标，但本文中我们将使用<a href="https://github.com/b/statsd_spec">statsd</a>格式。</p>
+<p>所以流程将是这样，首先Envoy推送指标到statsd，然后我们用<a href="https://github.com/prometheus">prometheus</a>（一个时序数据库）从statsd拉取指标，最后通过<a href="https://github.com/grafana/grafana">grafana</a>可视化这些指标。</p>
+<p>在准备概览图中，我提到了statsd exporter而不是statsd，这是因为我们并不会直接使用statsd，而是使用一个接收statsd格式数据，并将其以prometheus格式输出的转换器（服务）。下面让我们来搞定它吧。</p>
+<p>Envoy的指标主要分为两类：</p>
+<ol>
+<li>Counter（计数器）：一个只增不减的指标。如：请求总数</li>
+<li>Gauge（量表）：一个可增可减的指标，类似于一个瞬时值。如：当前CPU使用量</li>
+</ol>
+<p>让我们看一个包含stats sink的Envoy配置</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">---
+<span style="color:#66d9ef">admin</span>:
+  <span style="color:#66d9ef">access_log_path</span>: <span style="color:#e6db74">&#34;/tmp/admin_access.log&#34;</span>
+  <span style="color:#66d9ef">address</span>: 
+    <span style="color:#66d9ef">socket_address</span>: 
+      <span style="color:#66d9ef">address</span>: <span style="color:#e6db74">&#34;127.0.0.1&#34;</span>
+      <span style="color:#66d9ef">port_value</span>: <span style="color:#ae81ff">9901</span>
+<span style="color:#66d9ef">stats_sinks</span>:
+  <span style="color:#e6db74">-
+</span><span style="color:#e6db74">    name: &#34;envoy.statsd&#34;</span>
+    <span style="color:#66d9ef">config</span>:
+      <span style="color:#66d9ef">tcp_cluster_name</span>: <span style="color:#e6db74">&#34;statsd-exporter&#34;</span>
+      <span style="color:#66d9ef">prefix</span>: front-envoy    
+<span style="color:#66d9ef">static_resources</span>: 
+  <span style="color:#66d9ef">listeners</span>:
+    - 
+      <span style="color:#66d9ef">name</span>: <span style="color:#e6db74">&#34;http_listener&#34;</span>
+      <span style="color:#66d9ef">address</span>: 
+        <span style="color:#66d9ef">socket_address</span>: 
+          <span style="color:#66d9ef">address</span>: <span style="color:#e6db74">&#34;0.0.0.0&#34;</span>
+          <span style="color:#66d9ef">port_value</span>: <span style="color:#ae81ff">80</span>
+      <span style="color:#66d9ef">filter_chains</span>:
+          <span style="color:#66d9ef">filters</span>: 
+            - 
+              <span style="color:#66d9ef">name</span>: <span style="color:#e6db74">&#34;envoy.http_connection_manager&#34;</span>
+              <span style="color:#66d9ef">config</span>:
+                <span style="color:#66d9ef">use_remote_address</span>: <span style="color:#66d9ef">true</span>
+                <span style="color:#66d9ef">add_user_agent</span>: <span style="color:#66d9ef">true</span>
+                <span style="color:#66d9ef">access_log</span>:
+                - <span style="color:#66d9ef">name</span>: envoy.file_access_log
+                  <span style="color:#66d9ef">config</span>:
+                    <span style="color:#66d9ef">path</span>: /dev/stdout
+                    <span style="color:#66d9ef">format</span>: <span style="color:#e6db74">&#34;[ACCESS_LOG][%START_TIME%] \&#34;%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%\&#34; %RESPONSE_CODE% %RESPONSE_FLAGS% %BYTES_RECEIVED% %BYTES_SENT% %DURATION% %RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)% \&#34;%REQ(X-FORWARDED-FOR)%\&#34; \&#34;%REQ(USER-AGENT)%\&#34; \&#34;%REQ(X-REQUEST-ID)%\&#34; \&#34;%REQ(:AUTHORITY)%\&#34; \&#34;%UPSTREAM_HOST%\&#34; \&#34;%DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT%\&#34;\n&#34;</span>
+                <span style="color:#66d9ef">stat_prefix</span>: <span style="color:#e6db74">&#34;ingress_443&#34;</span>
+                <span style="color:#66d9ef">codec_type</span>: <span style="color:#e6db74">&#34;AUTO&#34;</span>
+                <span style="color:#66d9ef">generate_request_id</span>: <span style="color:#66d9ef">true</span>
+                <span style="color:#66d9ef">route_config</span>: 
+                  <span style="color:#66d9ef">name</span>: <span style="color:#e6db74">&#34;local_route&#34;</span>
+                  <span style="color:#66d9ef">virtual_hosts</span>: 
+                    - 
+                      <span style="color:#66d9ef">name</span>: <span style="color:#e6db74">&#34;http-route&#34;</span>
+                      <span style="color:#66d9ef">domains</span>: 
+                        - <span style="color:#e6db74">&#34;*&#34;</span>
+                      <span style="color:#66d9ef">routes</span>: 
+                        - 
+                          <span style="color:#66d9ef">match</span>: 
+                            <span style="color:#66d9ef">prefix</span>: <span style="color:#e6db74">&#34;/&#34;</span>
+                          <span style="color:#66d9ef">route</span>:
+                            <span style="color:#66d9ef">cluster</span>: <span style="color:#e6db74">&#34;service_a&#34;</span>
+                <span style="color:#66d9ef">http_filters</span>:
+                  - 
+                    <span style="color:#66d9ef">name</span>: <span style="color:#e6db74">&#34;envoy.router&#34;</span>
+  <span style="color:#66d9ef">clusters</span>:
+    <span style="color:#e6db74">-
+</span><span style="color:#e6db74">      name: &#34;statsd&#34;</span>
+      <span style="color:#66d9ef">connect_timeout</span>: <span style="color:#e6db74">&#34;0.25s&#34;</span>
+      <span style="color:#66d9ef">type</span>: <span style="color:#e6db74">&#34;strict_dns&#34;</span>
+      <span style="color:#66d9ef">lb_policy</span>: <span style="color:#e6db74">&#34;ROUND_ROBIN&#34;</span>
+      <span style="color:#66d9ef">hosts</span>:
+        <span style="color:#e6db74">-
+</span><span style="color:#e6db74">          socket_address:</span>
+            <span style="color:#66d9ef">address</span>: <span style="color:#e6db74">&#34;statsd_exporter&#34;</span>
+            <span style="color:#66d9ef">port_value</span>: <span style="color:#ae81ff">9125</span>
+    - 
+      <span style="color:#66d9ef">name</span>: <span style="color:#e6db74">&#34;service_a&#34;</span>
+      <span style="color:#66d9ef">connect_timeout</span>: <span style="color:#e6db74">&#34;0.25s&#34;</span>
+      <span style="color:#66d9ef">type</span>: <span style="color:#e6db74">&#34;strict_dns&#34;</span>
+      <span style="color:#66d9ef">lb_policy</span>: <span style="color:#e6db74">&#34;ROUND_ROBIN&#34;</span>
+      <span style="color:#66d9ef">hosts</span>:
+        - 
+          <span style="color:#66d9ef">socket_address</span>: 
+            <span style="color:#66d9ef">address</span>: <span style="color:#e6db74">&#34;service_a_envoy&#34;</span>
+            <span style="color:#66d9ef">port_value</span>: <span style="color:#ae81ff">8786</span>
+</code></pre></div><p>第8-13行告诉Envoy我们需要statsd格式的指标、我们的统计信息前缀（通常是你的服务名）是什么和statsd sink的地址。</p>
+<p>第55-63行配置了我们的环境中的statsd sink。</p>
+<p>这就是让Envoy输出统计信息所需要的所有配置。现在让我们来看看第2-7行做了哪些事情：</p>
+<ol>
+<li>Envoy在9901端口暴露了一个管理端，你可以通过它动态地改变日志级别，查看当前配置、统计数据等</li>
+<li>Envoy也可以生成与nginx类似的访问日志，你可以通过它了解服务间的通信状况。访问日志的格式也是可配置的，如第29-33行</li>
+</ol>
+<p>你需要将相同的配置添加到系统中的其它Envoy sidecar上（是的，每个服务都有自己的Envoy sidecar）。</p>
+<p>这些服务本身是用go写的，它们做的事情很简单，仅仅是通过Envoy调用其它服务。你可以在<a href="https://github.com/dnivra26/envoy_monitoring">这里</a>查看服务和Envoy的配置。</p>
+<p>现在，虽然我们只有图中的statsd exporter，但有了它，如果我们运行docker容器（docker-compose build &amp; docker-compose up），然后向Front Envoy（localhost:8080）发送一些流量，Envoy 将把这些流量的指标发送到statsd exporter，随后statsd exporter会把这些指标转换成prometheus格式，并将其暴露在9102端口。</p>
+<p>Statsd exporter中的统计信息格式如下图所示</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/microservices-monitoring-with-envoy-service-mesh-prometheus-grafana/006tNbRwgy1fwxf9t7t5bj318g0azgof.jpg" alt="来自statsd exporter的prometheus格式的指标"></p>
+<p>这里边将有上百个指标，同时，在上面的截图中我们能看到Service A和Service B之间的通信延迟指标。上图的指标是遵循prometheus格式的</p>
+<pre><code>metric_name [&quot;{&quot; label_name &quot;=&quot; `&quot;` label_value `&quot;` { &quot;,&quot; label_name &quot;=&quot; `&quot;` label_value `&quot;` } [ &quot;,&quot; ] &quot;}&quot;] value [ timestamp ]
+</code></pre><p>你可以在<a href="https://github.com/prometheus/docs/blob/master/content/docs/instrumenting/exposition_formats.md">这里</a>了解更多。</p>
+<h2 id="prometheus">Prometheus</h2>
+<p>我们将使用<a href="https://prometheus.io/">Prometheus</a>作为时序数据库来保存我们的指标。Prometheus不仅是一个时序数据库，它本身还是一个监控系统，但本文我们只用它来存储指标数据。需要注意的是，prometheus是一个通过主动拉取来获取指标的系统，这意味着你必须告诉prometheus从何处拉取指标，在我们的例子中是从statsd exporter处拉取。</p>
+<p>将Prometheus添加到系统中非常简单而又直接，我们只需要将拉取目标（statsd exporter）作为配置文件传递给Prometheus就可以了。配置看起来是这样的</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">global</span>:
+  <span style="color:#66d9ef">scrape_interval</span>:  15s
+<span style="color:#66d9ef">scrape_configs</span>:
+  - <span style="color:#66d9ef">job_name</span>: <span style="color:#e6db74">&#39;statsd&#39;</span>
+    <span style="color:#66d9ef">scrape_interval</span>: 5s
+    <span style="color:#66d9ef">static_configs</span>:
+      - <span style="color:#66d9ef">targets</span>: [<span style="color:#e6db74">&#39;statsd_exporter:9102&#39;</span>]
+        <span style="color:#66d9ef">labels</span>:
+          <span style="color:#66d9ef">group</span>: <span style="color:#e6db74">&#39;services&#39;</span>
+</code></pre></div><p>scrape_interval的值表示Prometheus从目标处拉取配置的频率。</p>
+<p>现在启动Prometheus，里面应该有一些数据了。让我们打开localhost:9090来看一看</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/microservices-monitoring-with-envoy-service-mesh-prometheus-grafana/006tNbRwgy1fwy55z3klmj31jk0f6gmd.jpg" alt="prometheus查询页面"></p>
+<p>如图所示，可以看到我们的指标。你能做的可不仅仅是选择已有的指标，从<a href="https://prometheus.io/docs/prometheus/latest/querying/basics/">这里</a>可以阅读关于prometheus查询语言的更多信息。它还可以基于查询结果绘制图表，除此之外还有一个报警系统。</p>
+<p>如果我们打开prometheus的targets页面，将能看到所有的拉取目标和它们的健康状态</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/microservices-monitoring-with-envoy-service-mesh-prometheus-grafana/006tNbRwgy1fwy5occy0pj31jk0gbjs6.jpg" alt="prometheus目标"></p>
+<h2 id="grafana">Grafana</h2>
+<p>Grafana是一个很棒的监控可视化解决方案，它支持Prometheus，Graphite，InfluxDB，ElasticSearch等多种后端。</p>
+<p>Grafana有两大主要组件需要我们配置</p>
+<p>(1). 数据源（Datasource）：指定grafana从哪个后端获取指标。你可以通过配置文件来配置数据源，代码如下所示</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: <span style="color:#ae81ff">1</span>
+
+<span style="color:#66d9ef">datasources</span>:
+  - <span style="color:#66d9ef">name</span>: prometheus
+    <span style="color:#66d9ef">type</span>: prometheus
+    <span style="color:#66d9ef">access</span>: Server
+    <span style="color:#66d9ef">url</span>: http://prometheus:<span style="color:#ae81ff">9090</span>
+    <span style="color:#66d9ef">editable</span>: <span style="color:#66d9ef">true</span>
+</code></pre></div><p>(2). 仪表盘（Dashboard）：你可以从仪表盘查看来自数据源的指标。Grafana支持多种可视化元素，如Graphs，Single Stats，Heatmaps……你可以继承这些元素并使用插件来构造自己的元素。</p>
+<p>我在使用Grafana时遇到的唯一一个问题是，缺少一种标准的方法来用代码开发那些仪表盘。所幸有一些第三方的库提供了支持，我们将使用来自weaveworks的<a href="https://github.com/weaveworks/grafanalib">grafanalib</a>。</p>
+<p>下面是我们通过 python 代码尝试构建的一个仪表盘</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">
+<span style="color:#f92672">from</span> grafanalib.core <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+<span style="color:#f92672">import</span> os
+dashboard <span style="color:#f92672">=</span> Dashboard(
+    title<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Services Dashboard&#34;</span>,
+    templating<span style="color:#f92672">=</span>Templating(
+        [
+            Template(
+                name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;source&#34;</span>,
+                dataSource<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;prometheus&#34;</span>,
+                query<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;metrics(.*_cluster_.*_upstream_rq_2xx)&#34;</span>,
+                regex<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/(.*)_cluster_.*_upstream_rq_2xx/&#34;</span>,
+                default<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;service_a&#34;</span>
+            ),
+            Template(
+                name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;destination&#34;</span>,
+                dataSource<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;prometheus&#34;</span>,
+                query<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;metrics(.*_cluster_.*_upstream_rq_2xx)&#34;</span>,
+                regex<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/.*_cluster_(.*)_upstream_rq_2xx/&#34;</span>,
+                default<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;service_b&#34;</span>
+            )
+        ]
+    ),
+    rows<span style="color:#f92672">=</span>[
+        Row(
+            panels<span style="color:#f92672">=</span>[
+                Graph(
+                    title<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;2XX&#34;</span>,
+                    transparent<span style="color:#f92672">=</span>True,
+                    dataSource<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;prometheus&#34;</span>,
+                    targets<span style="color:#f92672">=</span>[
+                        Target(
+                            expr<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[[source]]_cluster_[[destination]]_upstream_rq_2xx - [[source]]_cluster_[[destination]]_upstream_rq_2xx offset $__interval&#34;</span>,
+                            legendFormat<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;2xx&#34;</span>
+                        )
+                    ]
+                ),
+                Graph(
+                    title<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;5XX&#34;</span>,
+                    transparent<span style="color:#f92672">=</span>True,
+                    dataSource<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;prometheus&#34;</span>,
+                    targets<span style="color:#f92672">=</span>[
+                        Target(
+                            expr<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[[source]]_cluster_[[destination]]_upstream_rq_5xx - [[source]]_cluster_[[destination]]_upstream_rq_5xx offset $__interval&#34;</span>,
+                            legendFormat<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;5xx&#34;</span>
+                        ),
+                    ]
+                ),
+                Graph(
+                    title<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Latency&#34;</span>,
+                    transparent<span style="color:#f92672">=</span>True,
+                    dataSource<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;prometheus&#34;</span>,
+                    targets<span style="color:#f92672">=</span>[
+                        Target(
+                            expr<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[[source]]_cluster_[[destination]]_upstream_rq_time&#34;</span>,
+                            legendFormat<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{{quantile}}&#34;</span>
+                        )
+                    ]
+                )
+            ]
+        ),
+    ]
+)<span style="color:#f92672">.</span>auto_panel_ids()
+</code></pre></div><p>在这段代码中，我们为2xx，5xx和延迟数据构建了图表。其中第5-22行很重要，它从我们的设置中提取可用的service names作为grafana的变量，为我们创建一个动态的仪表盘，这意味着我们能够选择性地查看特定源服务和目标服务的统计数据。如果想了解更多关于变量的内容请参考<a href="http://docs.grafana.org/reference/templating/">这里</a>。</p>
+<p>你需要通过grafanalib命令来从上述python文件生成仪表盘</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">     generate-dashboard -o dashboard.json service-dashboard.py
+</code></pre></div><p>注意这里生成的dashboard.json可不容易阅读。</p>
+<p>所以，启动Grafana时我们只需要传递仪表盘和数据源就好了。当访问http:localhost:3000时，你将看到：</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/microservices-monitoring-with-envoy-service-mesh-prometheus-grafana/006tNbRwly1fx6n732mrdj31jk0h7jsc.jpg" alt="grafana仪表盘"></p>
+<p>现在你应该能看到2xx，5xx和延迟的图表，同时还能看到一个下拉菜单，你可以通过它选择源服务和目标服务。关于Grafana还有许多内容我们没有讨论到，包括强大的查询编辑器和告警系统。更重要的是，这一切都是可以通过插件和应用扩展的，可以参考<a href="https://github.com/grafana/kubernetes-app">这里</a>的例子。如果你正想可视化常见服务如redis，rabbitmq等的指标，grafana有一个<a href="https://grafana.com/dashboards">公共仪表盘</a>库，你只需要导入它们就可以使用了。使用Grafana 还有一个好处，你可以通过配置文件和代码创建和管理所有东西，而不需要过多地通过UI来操作。</p>
+<p>我建议你试用一下prometheus和grafana以了解更多信息。感谢阅读，如有建议和意见，请写在评论中。</p>
+<p>在<a href="https://github.com/dnivra26/envoy_monitoring/">这里</a>可以找到所有代码和配置文件。</p>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/envoy-grpc-and-rate-limiting/" data-toggle="tooltip" data-placement="top" title="Envoy，gRPC和速率限制">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/transcoding-grpc-to-http-json-using-envoy/" data-toggle="tooltip" data-placement="top" title="使用Envoy将gRPC转码为HTTP/JSON">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/envoy-grpc-and-rate-limiting/"><i class="fa fa-link"></i>Envoy，gRPC和速率限制</a></li>
+         
+        <li><a href="/blog/comprehensive-container-based-service-monitoring-with-kubernetes-and-istio/"><i class="fa fa-link"></i>使用Kubernetes和Istio对基于容器基础设施的全面服务监控</a></li>
+         
+        <li><a href="/blog/the-enterprise-path-to-service-mesh-architectures/"><i class="fa fa-link"></i>企业级服务网格架构之路解读—Service Mesh在会话层解耦</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

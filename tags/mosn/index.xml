@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>mosn on ServiceMesher</title>
+    <link>https://www.servicemesher.com/tags/mosn/</link>
+    <description>Recent content in mosn on ServiceMesher</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh</language>
+    <lastBuildDate>Mon, 18 May 2020 20:12:18 +0800</lastBuildDate>
+    
+	<atom:link href="https://www.servicemesher.com/tags/mosn/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Service Mesh Webinar #1</title>
+      <link>https://www.servicemesher.com/blog/service-mesh-webinar-1/</link>
+      <pubDate>Mon, 18 May 2020 20:12:18 +0800</pubDate>
+      
+      <guid>https://www.servicemesher.com/blog/service-mesh-webinar-1/</guid>
+      <description>B 站直播：多点生活在 Service Mesh 上的实践——Istio + MOSN 在 Dubbo 场景下的探索之路。</description>
+    </item>
+    
+    <item>
+      <title>蚂蚁金服开源的Service Mesh Sidecar代理SOFAMosn发布0.4.0版本</title>
+      <link>https://www.servicemesher.com/blog/sofa-mosn-0-4-0-changelog/</link>
+      <pubDate>Mon, 17 Dec 2018 11:07:07 +0800</pubDate>
+      
+      <guid>https://www.servicemesher.com/blog/sofa-mosn-0-4-0-changelog/</guid>
+      <description>本文是蚂蚁金服开源的 SOFAMosn 的0.4.0版本的发布日志。</description>
+    </item>
+    
+    <item>
+      <title>蚂蚁金服Service Mesh新型网络代理的思考与实践</title>
+      <link>https://www.servicemesher.com/blog/microservice-with-service-mesh-at-ant-financial/</link>
+      <pubDate>Tue, 04 Dec 2018 17:32:44 +0800</pubDate>
+      
+      <guid>https://www.servicemesher.com/blog/microservice-with-service-mesh-at-ant-financial/</guid>
+      <description>本文根据晓东在 GIAC 上海站的演讲内容整理，完整的分享 PPT 获取方式见文章底部。</description>
+    </item>
+    
+    <item>
+      <title>Service Mesh数据平面SOFAMosn深层揭秘</title>
+      <link>https://www.servicemesher.com/blog/sofa-mosn-deep-dive/</link>
+      <pubDate>Thu, 02 Aug 2018 14:31:43 +0800</pubDate>
+      
+      <guid>https://www.servicemesher.com/blog/sofa-mosn-deep-dive/</guid>
+      <description>本文基于蚂蚁金服高级技术专家朵晓东在第二届Service Mesh Meetup北京站分享的部分内容所整理。</description>
+    </item>
+    
+    <item>
+      <title>蚂蚁金服开源SOFAMesh—一款基于Istio改进和扩展而来的Service Mesh大规模落地实践方案</title>
+      <link>https://www.servicemesher.com/blog/introducing-sofamesh-a-solution-for-large-scale-service-mesh-by-ant-financial/</link>
+      <pubDate>Mon, 16 Jul 2018 15:51:34 +0800</pubDate>
+      
+      <guid>https://www.servicemesher.com/blog/introducing-sofamesh-a-solution-for-large-scale-service-mesh-by-ant-financial/</guid>
+      <description>蚂蚁金服开源SOFAMesh—一款基于Istio改进和扩展而来的Service Mesh大规模落地实践方案，同时开源了Go语言版的Sidecar—SOFA MOSN（可单独使用），期待通过社区贡献。</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>应用程序安全性和正确性的责任不能推卸给Istio和任何服务网格 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="service mesh">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="应用程序安全性和正确性的责任不能推卸给Istio和任何服务网格" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/application-safety-and-correctness-cannot-be-offloaded-to-istio-or-any-service-mesh//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="Istio和服务网格的总体目标是解决应用程序网络类问题。将这些问题的解决方案迁移到服务网格中是可操作性的优化。但这并不意味着它不再是应用程序的责任，而是意味着这些功能的实现存在于进程之外了，并且必须是可配置的。">
+  <meta property="og:description" content="Istio和服务网格的总体目标是解决应用程序网络类问题。将这些问题的解决方案迁移到服务网格中是可操作性的优化。但这并不意味着它不再是应用程序的责任，而是意味着这些功能的实现存在于进程之外了，并且必须是可配置的。">
+  <meta name="twitter:description" content="Istio和服务网格的总体目标是解决应用程序网络类问题。将这些问题的解决方案迁移到服务网格中是可操作性的优化。但这并不意味着它不再是应用程序的责任，而是意味着这些功能的实现存在于进程之外了，并且必须是可配置的。">
+  <meta property="og:description" content="Istio和服务网格的总体目标是解决应用程序网络类问题。将这些问题的解决方案迁移到服务网格中是可操作性的优化。但这并不意味着它不再是应用程序的责任，而是意味着这些功能的实现存在于进程之外了，并且必须是可配置的。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="应用程序安全性和正确性的责任不能推卸给Istio和任何服务网格 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="应用程序安全性和正确性的责任不能推卸给Istio和任何服务网格 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">应用程序安全性和正确性的责任不能推卸给Istio和任何服务网格 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>应用程序安全性和正确性的责任不能推卸给Istio和任何服务网格</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2018年8月23日
+                            </i>
+                            |
+                            
+                            作者 <a href="http://blog.christianposta.com">Christian Posta</a>
+                            
+                            
+                            | 译者 <a href="https://github.com/shaobai">陈冬</a>
+                            
+                            
+                            | 审校者
+                            
+                            <a href="https://jimmysong.io"><i>宋净超</i></a>
+                            
+                            
+                            |
+                            4400字 | 阅读大约需要9分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            <a href="http://blog.christianposta.com/microservices/application-safety-and-correctness-cannot-be-offloaded-to-istio-or-any-service-mesh/">查看原文</a>
+                            |
+                            
+                            
+                            归档于 <a href="/categories/istio">istio</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/service-mesh/"><i>#service mesh</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/istio/"><i>#istio</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <p>我最近在讨论集成服务的演进以及服务网格的使用，特别是关于 Istio 。自从2017年1月我听说了 Istio 以来，我一直很兴奋，事实上我是为这种新技术感到兴奋，它可以帮助组织构建微服务以及原生云架构成为可能。也许你可以说，因为我已经写了很多关于它的文章（请关注 <a href="https://twitter.com/christianposta">@christianposta</a> 的动态)：</p>
+<ul>
+<li><a href="http://blog.christianposta.com/microservices/the-hardest-part-of-microservices-calling-your-services/">The Hardest Part of Microservices: Calling Your Services</a></li>
+<li><a href="http://blog.christianposta.com/microservices/00-microservices-patterns-with-envoy-proxy-series/">Microservices Patterns With Envoy Sidecar Proxy: The series</a></li>
+<li><a href="http://blog.christianposta.com/microservices/application-network-functions-with-esbs-api-management-and-now-service-mesh/">Application Network Functions With ESBs, API Management, and Now.. Service Mesh?</a></li>
+<li><a href="http://blog.christianposta.com/microservices/comparing-envoy-and-istio-circuit-breaking-with-netflix-hystrix/">Comparing Envoy and Istio Circuit Breaking With Netflix OSS Hystrix</a></li>
+<li><a href="http://blog.christianposta.com/microservices/traffic-shadowing-with-istio-reduce-the-risk-of-code-release/">Traffic Shadowing With Istio: Reducing the Risk of Code Release</a></li>
+<li><a href="http://blog.christianposta.com/microservices/advanced-traffic-shadowing-patterns-for-microservices-with-istio-service-mesh/">Advanced Traffic-shadowing Patterns for Microservices With Istio Service Mesh</a></li>
+<li><a href="http://blog.christianposta.com/how-a-service-mesh-can-help-with-microservices-security/">How a Service Mesh Can Help With Microservices Security</a></li>
+</ul>
+<p>Istio 建立在容器和 Kubernetes 的一些目标之上：提供有价值的分布式系统模式作为语言无关的习惯用法。例如：Kubernetes 通过执行启动/停止、健康检查、缩放/自动缩放等来管理容器，而不管容器中实际运行的是什么。类似的， Istio 可以通过在应用程序容器之外透明地解决可靠性、安全性、策略和通信方面的挑战。</p>
+<p>随着 <a href="https://istio.io/blog/2018/announcing-1.0/">Istio 1.0</a> 版本在2018年7月31日的发布，我们看到 Istio 的使用和采纳有了很大的增加。我看到的一个问题是“如果 Istio 为我提供了可靠性，那么在应用程序中我还需要在担心它吗？”</p>
+<p><strong>我的答案是：绝对要！</strong></p>
+<p><a href="http://blog.christianposta.com/microservices/application-network-functions-with-esbs-api-management-and-now-service-mesh/">就在前一年，我写了一篇文章</a>，其中包含了这一区别，但并不是足够有力；这篇文章是我试图纠正这一点，<a href="https://www.slideshare.net/ceposta/evolution-of-integration-and-microservices-patterns-with-service-mesh-107786281">并建立在前面提到的谈话的基础上</a>。</p>
+<p>因此，设置一些上下文：Istio 提供了应用程序网络的“可靠性”能力，例如：</p>
+<ul>
+<li>自动重试（automatic retry）</li>
+<li>重试配额/预算（retry quota/budget）</li>
+<li>连接超时（connection timeout）</li>
+<li>请求超时（request timeout）</li>
+<li>客户端负载均衡（client-side load balancing）</li>
+<li>断路器（circuit breaking）</li>
+<li>隔离层（bulkheading）</li>
+</ul>
+<p>在处理分布式系统时，这些功能是必不可少的。网络并不是可靠的，并且破坏了我们在一个整体中所拥有的很多好的安全假设/抽象。我们要么迫切的解决这些问题，要么遭受系统范围内不可预测的停机。</p>
+<h2 id="退一步说">退一步说</h2>
+<p>这里更大的问题实际上是让应用程序相互通信来解决一些业务的问题。这就是为什么我们编写软件的原因，最终用来提供某种商业价值。同时该软件也使用一些商业领域模型，例如：“客户”、“购物车”、“账户”等。从领域驱动的设计来看，每个服务可能在理解这些概念上都略微有不同。</p>
+<p>这里有一些不太明确的概念和更大的业务约束（例如：客户可以由名称和电子邮件来确认唯一性，或者客户只能拥有一种类型的支票账户等），以及不可靠的网络和整个不可预知的基础设施（假定可以构建这样的服务，可以或者失败）使构建正确是非常困难的。</p>
+<h2 id="端到端的正确性和安全性">端到端的正确性和安全性</h2>
+<p>然而，事实上是，在构建正确和安全的应用程序方面，这样的责任归属到了应用程序上（以及所有它支持的人）。我们可以尝试将更低级别的可靠性构建到系统的性能或优化的组件中，但总的责任还是在应用程序中。1984年 Saltzer、Reed 和 Clark 在“系统设计中的端到端论证”中提到了这一原则。具体地说：</p>
+<blockquote>
+<p>只有在对通信系统端点的应用程序足够了解的情况下，才能完全正确的实现所讨论的功能。</p>
+</blockquote>
+<p>在这里，“功能”是应用程序的需求之一，比如“预订”或“向购物车中添加商品”。这种功能不能概括为通信系统或其组件/基础设置（这里的通信系统指的是网络、中间件和任何为应用程序提供基础设施的工作）：</p>
+<blockquote>
+<p>因此，提供被质疑的功能作为通信系统本身的特质是不可能的。</p>
+</blockquote>
+<p>然而，我们可以做一些事情以保证通信系统的部分可靠，这样有助于实现更高层次的应用程序的需求。我们做这些事情后可以优化部分区域，这样不至于过于担心这样的问题，但应用程序不能完全忽略这些事情：</p>
+<blockquote>
+<p>有时，通信系统提供的非完整的版本的功能，可能对于增强性能很有用。</p>
+</blockquote>
+<p>例如：在 Saltzer 的论文中，他们使用从应用程序 A 传输文件到应用程序 B 的示例：</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/application-safety-and-correctness-cannot-be-offloaded-to-istio-or-any-service-mesh/006tNbRwgy1fuibtn8kvfj31fc0v2ju4.jpg" alt=""></p>
+<p>我们需要做什么（安全）来保证文件被正确的传送到？在图中的任何一点都有能出现错误：</p>
+<ol>
+<li>存储机制可能有失败的区域/移位的比特/损坏，所以当应用程序 A 读取一个文件时，读取的是一个错误的文件；</li>
+<li>应用程序在读取文件到内存中或者发送文件时存在 bug ；</li>
+<li>网络可能混淆字节的顺序，文件部分重复等。</li>
+</ol>
+<p>我们可以进行优化，例如使用更可靠的传输，如 TCP 协议或消息队列，但是 TCP 不知道“正确传输文件”的语意，所以我们期望的最好结果至少是当我们在网络上处理事情时，网络是可靠的。</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/application-safety-and-correctness-cannot-be-offloaded-to-istio-or-any-service-mesh/006tNbRwgy1fuiihqrv73j31es0eqjsf.jpg" alt=""></p>
+<p>为了完整的实现端到端的正确性，我们可能需要使用一些类似文件校验的东西，与文件一起在文件初始化时写入，然后在 B 接收文件时校验其校验和。然而，我们在校验传输的正确性（实现细节），其职责在于找出解决方案并使其正确，而不是使用 TCP 或者消息队列。</p>
+<h2 id="典型的模式是什么样的">典型的模式是什么样的？</h2>
+<p>为了解决分布式应用程序中应用程序的正确性和安全性，我们可以使用一些模式。在早些时候，我们提到了 Istio 提供给我们的一些可靠的模式，但这些并不是唯一的。通常，有两类模式可以帮助我们正确和安全的构建应用程序，并且这两类模式是相关的。我们称这类位“应用程序集成”和“应用程序网络”。两者都是应用程序的责任。让我们来看看：</p>
+<h3 id="应用程序集成">应用程序集成</h3>
+<p>这些模式以如下这样的形式出现：</p>
+<ul>
+<li>调用排序、多播和编排 （Call sequencing, multicasting, and orchestration）</li>
+<li>聚合响应、转换消息语义、拆分消息等 （Aggregate responses, transforming message semantics, splitting messages, etc）</li>
+<li>原子性、一致性问题、saga模式 （Atomicity, consistency issues, saga pattern）</li>
+<li>反腐败层、适配器、边界转换 （Anti-corruption layers, adapters, boundary transformations）</li>
+<li>消息重试、排重/幂等性 （Message retries, de-duplication/idempotency）</li>
+<li>消息重新排序 （Message re-ordering）</li>
+<li>缓存 （Caching）</li>
+<li>消息级路由 （Message-level routing）</li>
+<li>重试、超时 （Retries, timeouts）</li>
+<li>后端/遗留系统集成 （Backend/legacy systems integration）</li>
+</ul>
+<p>可以使用一个简单的例子，”在购物车中添加一个项目“，我们可以来说明这个概念：</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/application-safety-and-correctness-cannot-be-offloaded-to-istio-or-any-service-mesh/006tNbRwgy1fuikdn3j02j31ks0oa77e.jpg" alt=""></p>
+<p>当一个用户在点击“加入购物车”功能时，用户期望看到的是商品已经加入到他们的购物车中。在系统中，这可能涉及到对推荐引擎的协调、调用顺序（嘿，我们把它加入到购物车中了，想知道是否计算推荐报价来配合它）、库存服务和其他服务等，然后再调用服务插入购物车。我们需要能够将消息转换到不同的后端，处理失败（并回滚我们发起的任何更改），并且在每个服务中我们都需要可以处理重复。如果由于某种原因，调用变得很慢，但用户又再次点击了“加入购物车”时怎么办呢？如果用户这么做了，那么再多可靠的基础设施也拯救不了我们；我们需要在应用程序中检测和实现重复检查/幂等服务。</p>
+<h3 id="应用程序网络">应用程序网络</h3>
+<p>这些模式以如下这样的形式出现：</p>
+<ul>
+<li>自动重试 （automatic retry）</li>
+<li>重试指标/预算 （retry quota/budget）</li>
+<li>连接超时 （connection timeout）</li>
+<li>请求超时 （request timeout）</li>
+<li>客户端负载均衡（client-side load balancing）</li>
+<li>熔断器 （circuit breaking）</li>
+<li>隔离层 （bulkheading）</li>
+</ul>
+<p>但在通过网络进行通信的应用程序时，还存在其他复杂的问题：</p>
+<ul>
+<li>金丝雀展示 （Canary rollout）</li>
+<li>流量路由 （Traffic routing）</li>
+<li>指标集合 （Metrics collection）</li>
+<li>分布式跟踪 （Distributed tracing）</li>
+<li>影子流量 （Traffic shadowing）</li>
+<li>故障注入 （Fault injection）</li>
+<li>健康检查 （Health checking）</li>
+<li>安全 （Security）</li>
+<li>组织策略 （Organizational policy）</li>
+</ul>
+<h2 id="如何使用这么模式">如何使用这么模式？</h2>
+<p>在过去，我们试图将这些领域中的职责混合在一起。我们会做一些事情，比如把所有东西都推入集中式基础设施中，这样它基本上就100%可用的（应用程序网络+应用系统集成）。我们将应用程序的关注点放在集中的基础设施中（它本应该使我们更加敏捷），但是当需要对应用程序做快速的更改时，却遇到了瓶颈和僵化的问题。这些动态体现在我们实现企业服务总线（ESB）的方式上：</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/application-safety-and-correctness-cannot-be-offloaded-to-istio-or-any-service-mesh/006tNbRwly1fuit5y2mn6j311g0x418y.jpg" alt=""></p>
+<p>或者，我认为大型云厂商（Netflix、Amazon、Twitter 等）以及认识到了这些模式的“应用程序职责”方面，并将应用程序网络代码混合到应用程序中。想想像 Netflix OSS ，有用于断路器、客户端负载均衡、服务发现等不同的库。</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/application-safety-and-correctness-cannot-be-offloaded-to-istio-or-any-service-mesh/006tNbRwly1fuitn6o25ij30yy0x0408.jpg" alt=""></p>
+<p>如你所知，围绕应用程序网络的 Netflix OSS 库非常关注 Java。当组织开始采用 Netflix OSS 以及类似spring-cloud-netflix 这样的衍生产品时，他们就会遇到这样一个事实：一旦开始添加其他语言时，操作这样的架构就变的令人望而却步了。Netflix 已经非常成熟了并且实现了自动化，但其他公司并不是 Netflix 。在尝试操作应用程序库和框架来解决应用程序联网问题是遇到的一些问题：</p>
+<ul>
+<li>每种语言/框架对于这些关注点都有自己的实现方式。</li>
+<li>实现不会完全相同，它们会变化、不同，有时会有错误。</li>
+<li>如何管理、更新以及修补这些库？也就是说，生命周期的管理。</li>
+<li>这些库混淆了应用程序的逻辑。</li>
+<li>对开发人员给与了极大的信任。</li>
+</ul>
+<p>Istio 和服务网格的总体目标是解决应用程序网络类问题。将这些问题的解决方案迁移到服务网格中是可操作性的优化。但这并不意味着它不再是应用程序的责任，而是意味着这些功能的实现存在于进程之外了，并且必须是可配置的。</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/application-safety-and-correctness-cannot-be-offloaded-to-istio-or-any-service-mesh/006tNbRwly1fuiuklgkjxj31060wyt9g.jpg" alt=""></p>
+<p>通过这样做，我们可以通过以下操作来优化可操作性:</p>
+<ul>
+<li>这些功能的单一实现随处可见。</li>
+<li>一致的功能。</li>
+<li>正确的功能。</li>
+<li>应用程序运维人员和应用程序开发人员都可编程。</li>
+</ul>
+<p>Istio 和服务网格不允许你将责任推给基础设施，它们只是增加了一定程度的可靠性和可操作性的优化。就像在端到端的参数中一样，TCP 允许卸载应用程序的责任。</p>
+<p>Istio 有助于解决应用程序网络类问题，但是应用程序集成类问题是什么呢？幸运的是，对于开发人员来说，有大量的框架可以帮助他们来实现应用程序的集成。对于 Java 开发者我最喜欢的 Apache Camel ，它提供了许多编写正确和安全的应用程序所需的组件，包括：</p>
+<ul>
+<li><a href="http://blog.christianposta.com/microservices/application-safety-and-correctness-cannot-be-offloaded-to-istio-or-any-service-mesh/">Call sequencing, multicasting, and orchestration</a></li>
+<li><a href="https://github.com/apache/camel/blob/master/camel-core/src/main/docs/eips/aggregate-eip.adoc">Aggregate responses, transforming message semantics, splitting messages, etc</a></li>
+<li><a href="https://github.com/apache/camel/blob/master/camel-core/src/main/docs/eips/saga-eip.adoc">Atomicity, consistency issues, saga pattern</a></li>
+<li><a href="">Anti-corruption layers, adapters, boundary transformations</a></li>
+<li><a href="https://github.com/apache/camel/blob/master/camel-core/src/main/docs/eips/idempotentConsumer-eip.adoc">Message retries, de-duplication/idempotency</a></li>
+<li><a href="https://github.com/apache/camel/blob/master/camel-core/src/main/docs/eips/resequence-eip.adoc">Message reordering</a></li>
+<li>Caching</li>
+<li><a href="https://github.com/apache/camel/blob/master/camel-core/src/main/docs/eips/content-based-router-eip.adoc">Message-level routing</a></li>
+<li>Retries, timeouts</li>
+<li><a href="https://github.com/apache/camel/blob/master/components/readme.adoc">Backend/legacy systems integration</a></li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/application-safety-and-correctness-cannot-be-offloaded-to-istio-or-any-service-mesh/006tNbRwly1fuiv4suzo8j316m0xataq.jpg" alt=""></p>
+<p>其他框架包括 <a href="https://spring.io/projects/spring-integration">Spring Integration</a>，甚至还有 WSO2 中一个有趣的新编程语言 <a href="https://ballerina.io/">Ballerina</a> 。请注意，重用现有的模式和构造是非常好的，特别是当这些模式相对于您选择的语言来说成熟时，但是这些模式都不需要您使用框架。</p>
+<h1 id="智能端点和dumb管道">智能端点和dumb管道</h1>
+<p>关于微服务，我有一个朋友提出了一个问题，关于微服务的“智能端点和dumb pipe”这句话很吸引人，但很简单，“让基础设施智能化”是个前提：</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/application-safety-and-correctness-cannot-be-offloaded-to-istio-or-any-service-mesh/006tNbRwly1fuivligg5sj30g50cygmn.jpg" alt=""></p>
+<p>管道仍然是dumb的；我们不是通过使用服务网格将应用程序的正确性和安全性的应用程序逻辑强制加入基础设施中。我们只是使它更可靠，优化运维方面，并简化应用程序必须实现的内容（不必为此负责）。如果你不认同或者有其他想法，请随时在 Twitter 上留言或联系 <a href="https://twitter.com/christianposta">@christianposta</a> 。</p>
+<p>如果您想了解更多关于 Istio 的信息，请查看 <a href="http://istio.io">http://istio.io</a> 或者<a href="http://blog.christianposta.com/our-book-has-been-released-introducing-istio-service-mesh-for-microservices/">我写的关于 Istio 的书</a> 。</p>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/securing-ingress-services-in-istio-with-lets-encrypt-on-kubernetes/" data-toggle="tooltip" data-placement="top" title="使用Let’s Encrypt在Kubernetes上保护Istio的Ingress服务">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/service-mesh-meetup-shenzhen-20180825/" data-toggle="tooltip" data-placement="top" title="第三届Service Mesh Meetup深圳站回顾">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/google-istio-bigger-kubernetes-serverless/"><i class="fa fa-link"></i>Google加持Istio—这可能比Kubernetes和Serverless产生更大影响力</a></li>
+         
+        <li><a href="/blog/istio-tutorials-collection/"><i class="fa fa-link"></i>Istio service mesh示例教程汇总</a></li>
+         
+        <li><a href="/blog/istio-service-mesh-tech-boosts-kubernetes-work-with-trade-offs/"><i class="fa fa-link"></i>采纳运行在Kubernetes上的Istio服务网格的利弊分析</a></li>
+         
+        <li><a href="/blog/istio-service-mesh-source-code-pilot-discovery-module-deepin-part2/"><i class="fa fa-link"></i>Service Mesh深度学习系列part3—istio源码分析之pilot-discovery模块分析（续）</a></li>
+         
+        <li><a href="/blog/service-mesh-architecture-radicalizes-container-networking/"><i class="fa fa-link"></i>服务网格架构激活了容器网络管理—来自于服务网格创建者们的见解与展望</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

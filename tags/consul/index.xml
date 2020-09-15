@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>consul on ServiceMesher</title>
+    <link>https://www.servicemesher.com/tags/consul/</link>
+    <description>Recent content in consul on ServiceMesher</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh</language>
+    <lastBuildDate>Thu, 04 Jun 2020 00:00:00 +0800</lastBuildDate>
+    
+	<atom:link href="https://www.servicemesher.com/tags/consul/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>如何将第三方服务中心注册集成到 Istio ？</title>
+      <link>https://www.servicemesher.com/blog/istio-service-registy-integration/</link>
+      <pubDate>Thu, 04 Jun 2020 00:00:00 +0800</pubDate>
+      
+      <guid>https://www.servicemesher.com/blog/istio-service-registy-integration/</guid>
+      <description>对于大量使用了 Consul，Eureka 或者自建服务注册中心的项目来说，如何能够以最小的代价快速地将现有微服务项目和 Istio 进行集成，以享受 Istio 提供的各种服务治理能力呢？本文将分析 Istio 服务注册机制的原理，并提出几种 Istio 与第三方服务注册中心集成的可行方案，以供读者参考。</description>
+    </item>
+    
+    <item>
+      <title>Consul Service Mesh的7层网络可观察性</title>
+      <link>https://www.servicemesher.com/blog/layer-7-observability-with-consul-service-mesh/</link>
+      <pubDate>Fri, 12 Jul 2019 00:00:00 +0800</pubDate>
+      
+      <guid>https://www.servicemesher.com/blog/layer-7-observability-with-consul-service-mesh/</guid>
+      <description>Consul团队写了一篇易懂、又有实操的如何在Service Mesh中，实现服务的可观察性的文章。即使没有太多基础，也能比较容易的看懂并了解service mesh中，如何实现服务的度量。</description>
+    </item>
+    
+    <item>
+      <title>Service Mesh新成员：Consul 1.2</title>
+      <link>https://www.servicemesher.com/blog/consul-1-2-service-mesh/</link>
+      <pubDate>Wed, 04 Jul 2018 12:48:07 +0800</pubDate>
+      
+      <guid>https://www.servicemesher.com/blog/consul-1-2-service-mesh/</guid>
+      <description>本文是 HashiCorp 创始人 Mitchell Hashimoto 在 2018 年 6 月 26 日发布的关于 Consul 1.2 新功能 Service Mesh 的官方介绍。</description>
+    </item>
+    
+  </channel>
+</rss>

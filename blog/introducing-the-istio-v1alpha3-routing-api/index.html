@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Istio v1aplha3 routing API介绍 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="istio, API, istio 0.8">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="Istio v1aplha3 routing API介绍" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/introducing-the-istio-v1alpha3-routing-api//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="本文讲解的是Istio 0.8中的一项重大变化——引入v1alpha3 routing API，旧版本的API将不再兼容，未来会提供模型转换工具来转换旧版 API。">
+  <meta property="og:description" content="本文讲解的是Istio 0.8中的一项重大变化——引入v1alpha3 routing API，旧版本的API将不再兼容，未来会提供模型转换工具来转换旧版 API。">
+  <meta name="twitter:description" content="本文讲解的是Istio 0.8中的一项重大变化——引入v1alpha3 routing API，旧版本的API将不再兼容，未来会提供模型转换工具来转换旧版 API。">
+  <meta property="og:description" content="本文讲解的是Istio 0.8中的一项重大变化——引入v1alpha3 routing API，旧版本的API将不再兼容，未来会提供模型转换工具来转换旧版 API。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="Istio v1aplha3 routing API介绍 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="Istio v1aplha3 routing API介绍 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">Istio v1aplha3 routing API介绍 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>Istio v1aplha3 routing API介绍</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2018年6月6日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://istio.io/blog/2018/v1alpha3-routing">Frank Budinsky &amp; Shriram Rajagopalan</a>
+                            
+                            
+                            | 译者 <a href="https://zhaohuabing.com">赵化冰</a>
+                            
+                            
+                            | 审校者
+                            
+                            <a href="https://jimmysong.io"><i>宋净超</i></a>
+                            
+                            
+                            |
+                            5500字 | 阅读大约需要11分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            
+                            归档于 <a href="/categories/istio">istio</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/istio/"><i>#istio</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <p>到目前为止，Istio提供了一个简单的API来进行流量管理，该API包括了四种资源：RouteRule、DestinationPolicy、EgressRule和Ingress（直接使用了Kubernets的Ingress资源）。借助此API，用户可以轻松管理Istio服务网格中的流量。该API允许用户将请求路由到特定版本的服务，为弹性测试注入延迟和失败，添加超时和断路器等等，所有这些功能都不必更改应用程序本身的代码。</p>
+<p>虽然目前API的功能已被证明是Istio非常引人注目的一部分，但也有一些用户反馈该API确实有一些缺点，尤其是在使用它来管理包含数千个服务的大型应用，以及使用HTTP以外的协议时。 此外，使用Kubernetes Ingress资源来配置外部流量的方式已被证明不能满足需求。</p>
+<p>为了解决上述缺陷和其他的一些问题，Istio引入了新的流量管理API v1alpha3，<strong>新版本的API将完全取代之前的API</strong>。 尽管v1alpha3和之前的模型在本质上是基本相同的，但旧版API并不向后兼容，基于旧API的模型需要进行手动转换。Istio的后续版本中会提供一个新旧模型的转换工具。</p>
+<p>为了证明该非兼容性升级的必要性，v1alpha3 API经历了漫长而艰苦的社区评估过程，以希望新的API能够大幅改进，并经得起时间的考验。在本文中，我们将介绍新的配置模型，并试图解释其后面的一些动机和设计原则。</p>
+<h2 id="设计原则">设计原则</h2>
+<p>路由模型的重构过程中遵循了一些关键的设计原则：</p>
+<ul>
+<li>除支持声明式（意图）配置外，也支持显式指定模型依赖的基础设施。例如，除了配置入口网关（的功能特性）之外，负责实现入口网关功能的组件（Controller）也可以在模型指定。</li>
+<li>编写模型时应该“生产者导向”和“以Host为中心”，而不是通过组合多个规则来编写模型。 例如，所有与特定Host关联的规则被配置在一起，而不是单独配置。</li>
+<li>将路由与路由后行为清晰分开。</li>
+</ul>
+<h2 id="v1alpha3中的配置资源">v1alpha3中的配置资源</h2>
+<p>在一个典型的网格中，通常有一个或多个用于终止外部TLS链接，将流量引入网格的负载均衡器（我们称之为gateway）。 然后流量通过sidecar网关（sidecar gateway）流经内部服务。应用程序使用外部服务的情况也很常见（例如访问Google Maps API），一些情况下，这些外部服务可能被直接调用；但在某些部署中，网格中所有访问外部服务的流量可能被要求强制通过专用的出口网关（Egress gateway）。 下图描绘了网关在网格中的使用情况。</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/introducing-the-istio-v1alpha3-routing-api/6ce41a46ly1fs1eqjfubij20m308mgmu.jpg" alt=""></p>
+<p>考虑到上述因素，<code>v1alpha3</code>引入了以下这些新的配置资源来控制进入网格、网格内部和离开网格的流量路由。</p>
+<ol>
+<li><code>Gateway</code></li>
+<li><code>VirtualService</code></li>
+<li><code>DestinationRule</code></li>
+<li><code>ServiceEntry</code></li>
+</ol>
+<p><code>VirtualService</code>、<code>DestinationRule</code>和<code>ServiceEntry</code>分别替换了原API中的<code>RouteRule</code>、<code>DestinationPolicy</code>和<code>EgressRule</code>。<code>Gateway</code>是一个独立于平台的抽象，用于对流入专用中间设备的流量进行建模。</p>
+<p>下图描述了跨多个配置资源的控制流程。
+<img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/introducing-the-istio-v1alpha3-routing-api/6ce41a46ly1fs1erey8a3j20lt0acgmi.jpg" alt=""></p>
+<h3 id="gateway">Gateway</h3>
+<p><a href="https://istio.io/docs/reference/config/istio.networking.v1alpha3/#Gateway">Gateway</a>用于为HTTP/TCP流量配置负载均衡器，并不管该负载均衡器将在哪里运行。网格中可以存在任意数量的Gateway，并且多个不同的Gateway实现可以共存。实际上，通过在配置中指定一组工作负载（Pod）标签，可以将Gateway配置绑定到特定的工作负载，从而允许用户通过编写简单的Gateway Controller来重用现成的网络设备。</p>
+<p>对于入口流量管理，您可能会问：为什么不直接使用Kubernetes Ingress API？原因是Ingress API无法表达Istio的路由需求。Ingress试图在不同的HTTP代理之间取一个公共的交集，因此只能支持最基本的HTTP路由，最终导致需要将代理的其他高级功能放入到注解（annotation）中，而注解的方式在多个代理之间是不兼容的，无法移植。</p>
+<p>Istio <code>Gateway</code> 通过将L4-L6配置与L7配置分离的方式克服了<code>Ingress</code>的这些缺点。<code>Gateway</code>只用于配置L4-L6功能（例如，对外公开的端口、TLS配置），所有主流的L7代理均以统一的方式实现了这些功能。 然后，通过在<code>Gateway</code>上绑定<code>VirtualService</code>的方式，可以使用标准的Istio规则来控制进入<code>Gateway</code>的HTTP和TCP流量。</p>
+<p>例如，下面这个简单的<code>Gateway</code>配置了一个Load Balancer，以允许访问host bookinfo.com的https外部流量入mesh中：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: networking.istio.io/v1alpha3
+<span style="color:#66d9ef">kind</span>: Gateway
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: bookinfo-gateway
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">servers</span>:
+  - <span style="color:#66d9ef">port</span>:
+      <span style="color:#66d9ef">number</span>: <span style="color:#ae81ff">443</span>
+      <span style="color:#66d9ef">name</span>: https
+      <span style="color:#66d9ef">protocol</span>: HTTPS
+    <span style="color:#66d9ef">hosts</span>:
+    - bookinfo.com
+    <span style="color:#66d9ef">tls</span>:
+      <span style="color:#66d9ef">mode</span>: SIMPLE
+      <span style="color:#66d9ef">serverCertificate</span>: /tmp/tls.crt
+      <span style="color:#66d9ef">privateKey</span>: /tmp/tls.key
+</code></pre></div><p>要为进入上面的Gateway的流量配置相应的路由，必须为同一个host定义一个<code>VirtualService</code>（在下一节中描述），并使用配置中的<code>gateways</code>字段绑定到前面定义的<code>Gateway</code> 上：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: networking.istio.io/v1alpha3
+<span style="color:#66d9ef">kind</span>: VirtualService
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: bookinfo
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">hosts</span>:
+    - bookinfo.com
+  <span style="color:#66d9ef">gateways</span>:
+  - bookinfo-gateway <span style="color:#75715e"># &lt;---- bind to gateway</span>
+  <span style="color:#66d9ef">http</span>:
+  - <span style="color:#66d9ef">match</span>:
+    - <span style="color:#66d9ef">uri</span>:
+        <span style="color:#66d9ef">prefix</span>: /reviews
+    <span style="color:#66d9ef">route</span>:
+    ...
+</code></pre></div><p>Gateway可以用于建模边缘代理或纯粹的内部代理，如第一张图所示。无论在哪个位置，所有网关都可以用相同的方式进行配置和控制。</p>
+<h3 id="virtualservice">VirtualService</h3>
+<p>用一种叫做“Virtual services”的东西代替路由规则可能看起来有点奇怪，但对于它配置的内容而言，这事实上是一个更好的名称，特别是在重新设计API以解决先前模型的可扩展性问题之后。</p>
+<p>实际上，发生的变化是：在之前的模型中，需要用一组相互独立的配置规则来为特定的目的服务设置路由规则，并通过<code>precedence</code>字段来控制这些规则的顺序；在新的API中，则直接对（虚拟）服务进行配置，该虚拟服务的所有规则以一个有序列表的方式配置在对应的<a href="/docs/reference/config/istio.networking.v1alpha3/#VirtualService">VirtualService</a>资源中。</p>
+<p>例如，之前在<a href="/docs/guides/bookinfo/">Bookinfo</a> 应用程序的reviews服务中有两个RouteRule资源，如下所示：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: config.istio.io/v1alpha2
+<span style="color:#66d9ef">kind</span>: RouteRule
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: reviews-default
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">destination</span>:
+    <span style="color:#66d9ef">name</span>: reviews
+  <span style="color:#66d9ef">precedence</span>: <span style="color:#ae81ff">1</span>
+  <span style="color:#66d9ef">route</span>:
+  - <span style="color:#66d9ef">labels</span>:
+      <span style="color:#66d9ef">version</span>: v1
+---
+<span style="color:#66d9ef">apiVersion</span>: config.istio.io/v1alpha2
+<span style="color:#66d9ef">kind</span>: RouteRule
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: reviews-test-v2
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">destination</span>:
+    <span style="color:#66d9ef">name</span>: reviews
+  <span style="color:#66d9ef">precedence</span>: <span style="color:#ae81ff">2</span>
+  <span style="color:#66d9ef">match</span>:
+    <span style="color:#66d9ef">request</span>:
+      <span style="color:#66d9ef">headers</span>:
+        <span style="color:#66d9ef">cookie</span>:
+          <span style="color:#66d9ef">regex</span>: <span style="color:#e6db74">&#34;^(.*?;)?(user=jason)(;.*)?$&#34;</span>
+  <span style="color:#66d9ef">route</span>:
+  - <span style="color:#66d9ef">labels</span>:
+      <span style="color:#66d9ef">version</span>: v2
+</code></pre></div><p>在<code>v1alph3</code>，可以在单个<code>VirtualService</code>资源中提供相同的配置：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: networking.istio.io/v1alpha3
+<span style="color:#66d9ef">kind</span>: VirtualService
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: reviews
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">hosts</span>:
+    - reviews
+  <span style="color:#66d9ef">http</span>:
+  - <span style="color:#66d9ef">match</span>:
+    - <span style="color:#66d9ef">headers</span>:
+        <span style="color:#66d9ef">cookie</span>:
+          <span style="color:#66d9ef">regex</span>: <span style="color:#e6db74">&#34;^(.*?;)?(user=jason)(;.*)?$&#34;</span>
+    <span style="color:#66d9ef">route</span>:
+    - <span style="color:#66d9ef">destination</span>:
+        <span style="color:#66d9ef">host</span>: reviews
+        <span style="color:#66d9ef">subset</span>: v2
+  - <span style="color:#66d9ef">route</span>:
+    - <span style="color:#66d9ef">destination</span>:
+        <span style="color:#66d9ef">host</span>: reviews
+        <span style="color:#66d9ef">subset</span>: v1
+</code></pre></div><p>正如你所看到的，和reviews服务相关的两个规则集中写在了一个地方。这个改变乍一看可能觉得并没有什么特别的优势， 然而，如果仔细观察这个新模型，会发现它和之前的API之间存在着根本的差异，这使得v1alpha3功能更加强大。</p>
+<p>首先，请注意<code>VirtualService</code>的目标服务是使用<code>hosts</code>字段（实际上是重复字段）指定的，然后再在每个路由的<code>destination</code>字段中指定。这是与以前模型的重要区别。</p>
+<p><code>VirtualService</code>描述了一个或多个用户可寻址目标到网格内实际工作负载之间的映射。在上面的示例中，这两个地址是相同的，但实际上用户可寻址目标可以是任何用于定位服务的，具有可选通配符前缀或CIDR前缀的DNS名称。</p>
+<p>这对于将应用从单体架构迁移到微服务架构的过程特别有用，单体应用被拆分为多个独立的微服务后，采用<code>VirtaulService</code>可以继续把多个微服务对外暴露为同一个目标地址，而不需要服务消费者进行修改以适应该变化。</p>
+<p>例如，以下规则允许服务消费者访问Bookinfo应用程序的reviews和ratings服务，就好像它们是<code>http://bookinfo.com/</code>（虚拟）服务的一部分：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: networking.istio.io/v1alpha3
+<span style="color:#66d9ef">kind</span>: VirtualService
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: bookinfo
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">hosts</span>:
+    - bookinfo.com
+  <span style="color:#66d9ef">http</span>:
+  - <span style="color:#66d9ef">match</span>:
+    - <span style="color:#66d9ef">uri</span>:
+        <span style="color:#66d9ef">prefix</span>: /reviews
+    <span style="color:#66d9ef">route</span>:
+    - <span style="color:#66d9ef">destination</span>:
+        <span style="color:#66d9ef">host</span>: reviews
+  - <span style="color:#66d9ef">match</span>:
+    - <span style="color:#66d9ef">uri</span>:
+        <span style="color:#66d9ef">prefix</span>: /ratings
+    <span style="color:#66d9ef">route</span>:
+    - <span style="color:#66d9ef">destination</span>:
+        <span style="color:#66d9ef">host</span>: ratings
+  ...
+</code></pre></div><p>实际上在<code>VirtualService</code>中hosts部分设置只是虚拟的目的地，因此不一定是已在网格中注册的服务。这允许用户为在网格内没有可路由条目的虚拟主机的流量进行建模。通过将<code>VirtualService</code>绑定到同一Host的<code>Gateway</code>配置（如前一节所述 ），可向网格外部暴露这些Host。</p>
+<p>除了这个重大的重构之外，<code>VirtualService</code>还包括其他一些重要的改变：</p>
+<ol>
+<li>可以在<code>VirtualService</code>配置中表示多个匹配条件，从而减少对冗余的规则设置。</li>
+<li>每个服务版本都有一个名称（称为服务子集）。属于某个子集的一组Pod/VM在<code>DestinationRule</code>中定义，具体定义参见下节。</li>
+<li>通过使用带通配符前缀的DNS来指定<code>VirtualService</code>的host，可以创建单个规则以作用于所有匹配的服务。例如，在Kubernetes中，在<code>VirtualService</code>中使用<code>*.foo.svc.cluster.local</code>作为host,可以对<code>foo</code>命名空间中的所有服务应用相同的重写规则。</li>
+</ol>
+<h3 id="destinationrule">DestinationRule</h3>
+<p><a href="https://istio.io/docs/reference/config/istio.networking.v1alpha3/#DestinationRule">DestinationRule</a>用于配置在将流量转发到服务时应用的策略集。这些策略应由服务提供者撰写，用于描述断路器、负载均衡、TLS设置等。</p>
+<p>除了下述改变外，<code>DestinationRule</code>与其前身<code>DestinationPolicy</code>大致相同。</p>
+<ol>
+<li>
+<p><a href="https://istio.io/docs/reference/config/istio.networking.v1alpha3/#DestinationRule">DestinationRule</a>的<code>host</code>可以包含通配符前缀，以允许单个规则应用于多个服务。</p>
+</li>
+<li>
+<p><code>DestinationRule</code>定义了目的host的子集<code>subsets</code> （例如：命名版本）。 这些subset用<code>VirtualService</code>的路由规则设置中，可以将流量导向服务的某些特定版本。通过这种方式为版本命名后，可以在不同的虚拟服务中明确地引用这些命名版本的subset，简化Istio代理发出的统计数据，并可以将subsets编码到SNI头中。</p>
+<p>为reviews服务配置策略和subsets的<code>DestinationRule</code>可能如下所示：</p>
+</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: networking.istio.io/v1alpha3
+<span style="color:#66d9ef">kind</span>: DestinationRule
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: reviews
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">host</span>: reviews
+  <span style="color:#66d9ef">trafficPolicy</span>:
+    <span style="color:#66d9ef">loadBalancer</span>:
+      <span style="color:#66d9ef">simple</span>: RANDOM
+  <span style="color:#66d9ef">subsets</span>:
+  - <span style="color:#66d9ef">name</span>: v1
+    <span style="color:#66d9ef">labels</span>:
+      <span style="color:#66d9ef">version</span>: v1
+  - <span style="color:#66d9ef">name</span>: v2
+    <span style="color:#66d9ef">labels</span>:
+      <span style="color:#66d9ef">version</span>: v2
+    <span style="color:#66d9ef">trafficPolicy</span>:
+      <span style="color:#66d9ef">loadBalancer</span>:
+        <span style="color:#66d9ef">simple</span>: ROUND_ROBIN
+  - <span style="color:#66d9ef">name</span>: v3
+    <span style="color:#66d9ef">labels</span>:
+      <span style="color:#66d9ef">version</span>: v3
+</code></pre></div><p>注意，与<code>DestinationPolicy</code>不同的是，可在单个<code>DestinationRule</code>中指定多个策略（例如上面实例中的缺省策略和v2版本特定的策略）。</p>
+<h3 id="serviceentry">ServiceEntry</h3>
+<p><a href="https://istio.io/docs/reference/config/istio.networking.v1alpha3/#ServiceEntry">ServiceEntry</a>用于将附加条目添加到Istio内部维护的服务注册表中。</p>
+<p>它最常用于对访问网格外部依赖的流量进行建模，例如访问Web上的API或遗留基础设施中的服务。</p>
+<p>所有以前使用<code>EgressRule</code>进行配置的内容都可以通过<code>ServiceEntry</code>轻松完成。例如，可以使用类似这样的配置来允许从网格内部访问一个简单的外部服务：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: networking.istio.io/v1alpha3
+<span style="color:#66d9ef">kind</span>: ServiceEntry
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: foo-ext
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">hosts</span>:
+  - foo.com
+  <span style="color:#66d9ef">ports</span>:
+  - <span style="color:#66d9ef">number</span>: <span style="color:#ae81ff">80</span>
+    <span style="color:#66d9ef">name</span>: http
+    <span style="color:#66d9ef">protocol</span>: HTTP
+</code></pre></div><p>也就是说，<code>ServiceEntry</code>比它的前身具有更多的功能。首先，<code>ServiceEntry</code>不限于外部服务配置，它可以有两种类型：网格内部或网格外部。网格内部条目只是用于向网格显式添加服务，添加的服务与其他内部服务一样。采用网格内部条目，可以把原本未被网格管理的基础设施也纳入到网格中（例如，把虚机中的服务添加到基于Kubernetes的服务网格中）。网格外部条目则代表了网格外部的服务。对于这些外部服务来说，mTLS身份验证是禁用的，并且策略是在客户端执行的，而不是在像内部服务请求一样在服务器端执行策略。</p>
+<p>由于<code>ServiceEntry</code>配置只是将服务添加到网格内部的服务注册表中，因此它可以像注册表中的任何其他服务一样，与<code>VirtualService</code>和/或<code>DestinationRule</code>一起使用。例如，以下<code>DestinationRule</code>可用于启动外部服务的mTLS连接：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: networking.istio.io/v1alpha3
+<span style="color:#66d9ef">kind</span>: DestinationRule
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: foo-ext
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">name</span>: foo.com
+  <span style="color:#66d9ef">trafficPolicy</span>:
+    <span style="color:#66d9ef">tls</span>:
+      <span style="color:#66d9ef">mode</span>: MUTUAL
+      <span style="color:#66d9ef">clientCertificate</span>: /etc/certs/myclientcert.pem
+      <span style="color:#66d9ef">privateKey</span>: /etc/certs/client_private_key.pem
+      <span style="color:#66d9ef">caCertificates</span>: /etc/certs/rootcacerts.pem
+</code></pre></div><p>除了扩展通用性以外，<code>ServiceEntry</code>还提供了其他一些有关<code>EgressRule</code>的改进，其中包括：</p>
+<ol>
+<li>一个<code>ServiceEntry</code>可以配置多个服务端点，这在之前需要采用多个<code>EgressRules</code>来实现。</li>
+<li>现在可以配置服务端点的解析模式（<code>NONE</code>、<code>STATIC</code>或<code>DNS</code>）。</li>
+<li>此外，我们正在努力解决另一个难题：目前需要通过纯文本端口访问安全的外部服务（例如<code>http://google.com:443</code>）。该问题将会在未来几周内得到解决，届时将允许从应用程序直接访问<code>https://google.com</code>。请继续关注解决此限制的Istio补丁版本（0.8.x）。</li>
+</ol>
+<h2 id="创建和删除v1alpha3路由规则">创建和删除v1alpha3路由规则</h2>
+<p>由于一个特定目的地的所有路由规则现在都存储在单个<code>VirtualService</code>资源的一个有序列表中，因此为该目的地添加新的规则不需要再创建新的<code>RouteRule</code>，而是通过更新该目的地的<code>VirtualService</code>资源来实现。</p>
+<p>旧的路由规则：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ istioctl create -f my-second-rule-for-destination-abc.yaml
+</code></pre></div><p><code>v1alpha3</code>路由规则：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ istioctl replace -f my-updated-rules-for-destination-abc.yaml
+</code></pre></div><p>删除路由规则也使用<code>istioctl replace</code>完成，当然删除最后一个路由规则除外（删除最后一个路由规则需要删除<code>VirtualService</code>）。</p>
+<p>在添加或删除引用服务版本的路由时，需要在该服务相应的<code>DestinationRule</code>更新subsets 。正如你可能猜到的，这也是使用<code>istioctl replace</code>完成的。</p>
+<h2 id="总结">总结</h2>
+<p>Istio <code>v1alpha3</code>路由API具有比其前身更多的功能，但不幸的是新的API并不向后兼容，旧的模型升级需要一次手动转换。Istio 0.9以后将不再支持<code>RouteRule</code>、<code>DesintationPolicy</code>和<code>EgressRule</code>这些以前的配置资源 。Kubernetes用户可以继续使用<code>Ingress</code>配置边缘负载均衡器来实现基本的路由。 但是，高级路由功能（例如，跨两个版本的流量分割）则需要使<code>用Gateway</code> ，这是一种功能更强大，Istio推荐的<code>Ingress</code>替代品。</p>
+<h2 id="致谢">致谢</h2>
+<p>感谢以下人员为新版本的路由模型重构和实现工作做出的贡献（按字母顺序）</p>
+<ul>
+<li>Frank Budinsky (IBM)</li>
+<li>Zack Butcher (Google)</li>
+<li>Greg Hanson (IBM)</li>
+<li>Costin Manolache (Google)</li>
+<li>Martin Ostrowski (Google)</li>
+<li>Shriram Rajagopalan (VMware)</li>
+<li>Louis Ryan (Google)</li>
+<li>Isaiah Snell-Feikema (IBM)</li>
+<li>Kuat Yessenov (Google)</li>
+</ul>
+<hr>
+<p>译文原地址：https://zhaohuabing.com/2018/06/04/introducing-the-istio-v1alpha3-routing-api</p>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/manage-microservices-traffic-using-istio/" data-toggle="tooltip" data-placement="top" title="使用Istio为微服务提供高级流量管理和请求跟踪功能">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/istio-mixer-cache-part1-concepts/" data-toggle="tooltip" data-placement="top" title="Istio Mixer Cache工作原理与源码分析part1－基本概念">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/helm-chart-for-istio-0-8/"><i class="fa fa-link"></i>Istio 0.8的Helm Chart解析</a></li>
+         
+        <li><a href="/blog/istio-0-8-release-note/"><i class="fa fa-link"></i>Istio 0.8发布了！</a></li>
+         
+        <li><a href="/blog/manage-microservices-traffic-using-istio/"><i class="fa fa-link"></i>使用Istio为微服务提供高级流量管理和请求跟踪功能</a></li>
+         
+        <li><a href="/blog/deepin-service-mesh-tech-details/"><i class="fa fa-link"></i>深入解读Service Mesh背后的技术细节</a></li>
+         
+        <li><a href="/blog/istio-service-mesh-tutorial/"><i class="fa fa-link"></i>Istio Service Mesh教程</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

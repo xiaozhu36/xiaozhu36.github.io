@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>服务网格的三个技术优势及其运维局限-第2部分 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="service mesh, 服务网格">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="服务网格的三个技术优势及其运维局限-第2部分" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/service-mesh-istio-limits-and-benefits-part-2//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="本文结合当前服务网格的形势，分析了服务网格的局限性，以及其带来的三个有价值的好处：可观测性、流量控制和安全。">
+  <meta property="og:description" content="本文结合当前服务网格的形势，分析了服务网格的局限性，以及其带来的三个有价值的好处：可观测性、流量控制和安全。">
+  <meta name="twitter:description" content="本文结合当前服务网格的形势，分析了服务网格的局限性，以及其带来的三个有价值的好处：可观测性、流量控制和安全。">
+  <meta property="og:description" content="本文结合当前服务网格的形势，分析了服务网格的局限性，以及其带来的三个有价值的好处：可观测性、流量控制和安全。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="服务网格的三个技术优势及其运维局限-第2部分 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="服务网格的三个技术优势及其运维局限-第2部分 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">服务网格的三个技术优势及其运维局限-第2部分 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>服务网格的三个技术优势及其运维局限-第2部分</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2019年8月1日
+                            </i>
+                            |
+                            
+                            作者 Tobias Kunze
+                            
+                            
+                            | 译者 <a href="https://github.com/malphi">马若飞</a>
+                            
+                            
+                            | 审校者
+                            
+                            <a href="https://github.com/GuangmingLuo"><i>罗广明</i></a>
+                            
+                            
+                            |
+                            4400字 | 阅读大约需要9分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            <a href="https://glasnostic.com/blog/service-mesh-istio-limits-and-benefits-part-2">查看原文</a>
+                            |
+                            
+                            
+                            归档于 <a href="/categories/service-mesh">Service Mesh</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/service-mesh/"><i>#Service Mesh</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <h2 id="编者按">编者按</h2>
+<p>本文作者洞察全局，高屋建瓴，结合当前服务网格的形势，分析了服务网格普遍的局限性，以及从开发者角度讲述服务网格带来的三个有价值的好处：可观测性、流量控制和安全。本文的观点阐述详细而深刻，涵盖了服务网格的关键性技术与架构，以及许多备受瞩目与广泛探讨的话题。</p>
+<h2 id="正文">正文</h2>
+<p>欢迎来到关于服务网格的优势和运维局限的系列文章的第2部分。在<a href="https://glasnostic.com/blog/service-mesh-istio-limits-and-benefits-part-1">第1部分</a>中，我们了解了开发人员如何从服务网格为微服务架构提供附加的可观察性、流量控制和安全功能的能力中获益。在这篇文章中，我们将关注同样的三个维度，但不同于开发人员关心的问题，我们会从运维团队的角度深入研究服务网格的局限性。</p>
+<h2 id="可观测性的限制">可观测性的限制</h2>
+<p>可观察性始终是分布式系统工程师的首选。因此，服务网格尽其所能来满足这种需求就不足为奇了。然而，工程师期望的以及服务网格提供的可观察性并没有针对传统的运维行为，比如容量规划：它关注的是<strong>运行时调试</strong>的开发活动。</p>
+<p>当然，运行时调试要求指标在请求的执行线程上下文中是“可解释的”。这与当今联合的，<a href="https://glasnostic.com/blog/microservices-architecture-patterns-service-mesh-glossary#Organic-Architecture">有组织发展的服务架构（Organic Architecture）</a>是不一致的，它的度量标准是不可预测和不确定的。</p>
+<p>如果一个分布式系统的服务构建了一个应用，并且其设计在很长一段时间内保持静态，那么观测这个分布式系统是有意义的。这样的系统可以被基线化和合理化，收集到的结果指标是可以解释的——特别是当架构主要是同步模式的时候。</p>
+<p>但是，随着今天现代企业运行的那种联合的、有组织的架构的消失，可解释性也消失了。首先，基线——以及实践人员的“基线理解”——在一个有组织的架构世界中已经过时了。如果没有基线，对度量的最终解释可能会很有挑战。此外，服务的组合减少了单个开发团队的职责范围。联合的、有组织的服务环境是由并行的、在快速决策和学习周期中发展的自我管理团队创建的。换句话说，开发团队只负责少量的服务：他们的控制范围有限。因为没有必要跟踪到不属于团队的依赖，所以可观察性只在开发团队的控制范围内才有意义。在联合的、有组织的架构中，惟一的全局控制视野是负责“整个”服务场景的运维团队，而不仅仅是一组相关服务或应用——换句话说，是“任务控制”的运维团队。</p>
+<p>可观测性在尺度上也会变成数据密集型。随着联合的、有组织架构的增长，在遥测和追踪中收集的数据量呈指数级增长，而单个服务实例的重要性下降。换句话说，以运行时调试为目标的可观察性导致从业者收集的数据越来越多，而这些数据却越来越不重要。因此，收集到的指标几乎没有可用的。</p>
+<p>随着这些架构的发展，可观察性需要“在技术栈中向上移动”。与收集开发人员能够理解的指标不同，运维人员需要关注更高级别的KPI，让他们能够实时检测和反应。这些KPI需要具有全局的意义。这也是服务网格提供的可观察性不足的地方。由于其固执己见的特性，服务网格往往在企业中被孤立地部署，特别是运行在Kubernetes上的环境中。另一方面，可操作的观察性需要高级的“黄金信号”指标，它可以跨裸机、虚拟机和容器部署以及跨多个区域和云工作。</p>
+<p>总之，服务网格为运行时调试提供了可观察性。这在开发人员的控制范围内是有价值的，但是指标需要是可以在请求执行的线程上下文中可解释的。然而，在当今联合的、有组织的服务环境中，缺乏基准指标和缩小的控制范围破坏了这种可解释性。</p>
+<p>运行时调试的可观察性也是数据密集型的，这导致以更高的成本收集更多的数据，但价值却更低。为了避免价值的螺旋下降，可观测性需要“向上移动栈”，收集更高级别的全局的<strong>黄金信号</strong>，以使<strong>任务控制</strong>运维团队能够实时检测并做出反应。服务网格提供的可观察性不符合这个目标，这不仅是因为它的目标是支持运行时调试，还因为黄金信号需要是全局的，而且服务网格过于武断和具有侵入性，不适合部署在每个地方。</p>
+<h2 id="流量控制的限制">流量控制的限制</h2>
+<p>服务网格的发展是为了解决如何将对服务的调用路由到最佳目标实例，例如可以最快地为请求提供服务的实例。这就是为什么服务网格是面向开发人员或“面向路由”的：它们服务于开发人员的视角，开发人员希望调用服务而不必处理复杂的远程服务调用。因此，服务网格被证明是不适合管理这样架构下的工作负载——涉及了数十个或上百个微服务之间的跨越开发团队、业务部门甚至是公司防火墙的交互，例如随着时间的推移，具有不断变化的服务到服务交互和依赖关系的组合服务架构会有机地发展。</p>
+<p>例如，在服务网格下要表达<a href="https://glasnostic.com/blog/how-canary-deployments-work-1-kubernetes-istio-linkerd#figure-3"><em>向前</em>路由策略</a>和向后的流量控制是比较简单的，而下游客户端如<a href="https://glasnostic.com/blog/preventing-systemic-failure-backpressure">施加backpressure</a>或<a href="https://glasnostic.com/blog/preventing-systemic-failure-bulkheads">实现bulkhead</a>就要更加困难，即使也有可能实现。服务网格的数据平面基于源和目标规则去构建流量决策从理论上讲是可能的，开发人员定位像<a href="https://glasnostic.com/blog/kubernetes-service-mesh-what-is-istio">Istio</a>这样的控制平面，让他们提供对任意的服务交互集的流量控制。</p>
+<p>这种将策略应用于任意服务交互集的能力的缺乏也使得策略的分层变得极其困难。例如，当一个<a href="https://glasnostic.com/blog/preventing-systemic-failure-bulkheads">bulkhead</a>在两个可用性区域之间，但一个关键服务需要能够在需要是故障转移，这几乎不可能找到正确的服务网格规则的阈值，特别是自动扩展部署的情况下。</p>
+<p>然而，对于运维人员来说，最重要的问题是服务网格在kubernetes之外的有限的可部署性——这是他们“固执己见”的直接结果。修改部署和部署过程以正确的包括一个数据平面的sidecar通常是不可能的，将虚拟机添加到服务网格是<a href="https://istio.io/docs/setup/kubernetes/additional-setup/mesh-expansion/">最令人费解的</a>，但仍然不允许运维人员捕捉内部虚拟机的流量。更糟的是，要将现有的非Kubernetes工作负载集成到基于Kubernetes的服务网格中，运维人员不仅需要调整应用程序代码，还需要根据Kubernetes网络进行部署。</p>
+<p>最后，通过YAML部署描述配置了当前服务网格实现的流量控制。部署描述是在版本控制中存储配置的一种很好的方法，因此可以用来重建定义良好的初始状态，但是它们不太适合运维团队在遇到困难时需要进行持续、实时的更改。</p>
+<p>总之，虽然服务网格提供的流量控制支持许多面向开发人员的控制机制，如目标规则和虚拟服务定义，它不支持面向无路由的操作模式如<a href="https://glasnostic.com/blog/preventing-systemic-failure-backpressure">backpressure</a>或bulkhead。面对架构更改，服务网格策略不可能预先分层，而且很难部署到Kubernetes之外。服务网格配置通常基于部署描述，当需要进行补救时，这些描述必然会妨碍到运维团队。</p>
+<h2 id="安全限制">安全限制</h2>
+<p>通过代理服务间调用，服务网格可以很好地提供面向开发人员的应用安全特性的核心集，比如身份验证、授权、账号、安全传输和服务标识。虽然为应用开发人员提供这些开箱即用的特性可以节省时间，但是使用YAML部署描述来配置这些特性往往比较困难且容易出错，这显然会降低他们的目标。</p>
+<p>从操作的角度来看，这些<strong>基于服务间调用</strong>的安全特性最多只能提供有限的安全，对于运维团队所关心的系统安全问题（如影响可用性、拒绝服务攻击、入侵或分割违规）毫无帮助。</p>
+<p>由于服务网格的固执和侵入性，它们的应用安全特性在异构环境中会发生故障，除了Kubernetes之外，异构环境还包括裸机、虚拟机、PaaS、容器或serverless部署。类似的，当不是所有的服务都有sidecar时服务网格安全特性在Kubernetes环境中也会发生故障，在“服务器sidecar”这个例子中，<a href="https://istio.io/docs/concepts/performance-and-scalability/#latency-for-istio-hahahugoshortcode-s2-hbhb">由于性能的原因</a>只有目标服务有sidecar注入。</p>
+<p>面向平台、固执己见的服务网格与应用安全性相结合也有一个影响，那就是大多数的网格与其他安全解决方案不能很好地集成——这是运维团队非常关心的问题。Istio能够使用替代的CA插件，外部工具可以使用YAML部署描述调用<code>kubectl</code>来实现与安全性相关的策略，但是由于服务网格不支持策略分层，外部工具不可能正确和安全地实现这些策略。</p>
+<p>总之，服务网格提供了许多应用程序的安全特性，这些特性对开发人员很有价值，但对更具挑战性的运维安全问题贡献甚微。由于服务网格是自定义的平台，而不是与外部安全解决方案协作的开放工具，因此即使是由它们提供的应用程序安全性在异构环境中也会很快出现故障。</p>
+<h2 id="操作需要">操作需要</h2>
+<p>对于构建微服务应用的开发团队，服务网格提供了许多好处，可以抽象出分布式服务带来的复杂性。其中的一些好处如加密、“智能”路由和运行时可观察性帮助运维这样的应，但很快被证明太有限，随着应用程序的增长，服务会变得更加关联且业务采用联合的，有机发展的<a href="https://glasnostic.com/blog/microservices-architecture-patterns-service-mesh-glossary">服务场景</a>。</p>
+<p>运维团队需要控制的不仅仅是服务间调用。他们需要能够将<a href="https://glasnostic.com/blog/microservices-architecture-patterns-service-mesh-glossary/#Operational-Patterns-and-Techniques">运维模式</a>应用到任意一组交互中。它们还需要能够<strong>分层</strong>的策略，以便能够在不影响彼此的情况下实现。运维团队需要能够实时控制服务环境，而不需要管理数百个YAML描述。要做到这一切，他们不需要武断的平台，而是需要与现有工具集成的、应用于整个服务场景的工具，而不影响任何部署。</p>
+<p>因此，如果服务网格技术，其核心是用于开发人员在Kubernetes之上创建复杂度有限的独立应用程序，而不是用于让运维团队确保整个异构和动态服务环境的正确运维，那么我们如何解决必要的运维问题呢?</p>
+<ul>
+<li>**解决方案1：继续等待，直到服务网格解决运维关注的这些问题。**对于我们这些将服务网格（特别是Istio）视为每个分布式问题的一体化解决方案的人来说，最简单的解决方案就是等待服务网格支持这些问题。当然，这不大可能发生。服务网格是围绕开发人员的关注点(如服务链接和更智能的实例路由)而设计的，必须进行很大的更改才能支持运维模式，而这通常无法通过管理点对点连接来解决。</li>
+<li>**解决方案2：在这个问题上投入更多的工程。**工程师的答案是，在这个问题上投入更多的工程。开发人员可以编写策略引擎、粘接代码来集成服务网格安全性和其他安全工具、数据聚合器来收集运维人员需要的高级指标等等。显然，这将耗费更多成本，而且不太可能在短期内令人满意。</li>
+<li>**解决方案3：采用云流量控制器。**最好的选择是将服务网格留给开发团队，让运维团队采用云流量控制器。这样，运维团队可以检测到<a href="https://glasnostic.com/blog/microservices-architecture-patterns-service-mesh-glossary/#Emergent-Behaviors">复杂紧急的行为</a>，并实时纠正，创造他们所需要的自动化来有效的实现需要的运维模式，保证架构的可控。</li>
+</ul>
+<p>Glasnostic就是这样一个云流量控制器。</p>
+<!-- raw HTML omitted -->
+<p>**图 1:**是一个云流量控制器，允许运维和安全团队控制微服务应用之间的复杂交互和行为。</p>
+<p>Glasnostic是一个用于服务环境的控制平面，它帮助运维和安全团队大规模地控制关联的微服务应用之间的复杂交互和行为。这与服务网格相反，服务网格管理应用程序中的服务到服务连接。Glasnostic是一个独立的解决方案，而不是另一个平台。它不需要sidecar或代理，并且能干净地集成到任何现有环境中。</p>
+<p>通过获得对服务交互的控制，团队可以控制紧急行为、防止级联故障和避免安全漏洞。</p>
+<p>Glasnostic是借鉴了成功的可以有机发展的架构之后才被构建的，它反对预先进行严格的设计。它使用一种独特的基于网络的方法来为运维人员提供他们需要的可观察性和控制能力，以检测和纠正服务场景中的紧急行为。</p>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/service-mesh-istio-limits-and-benefits-part-1/" data-toggle="tooltip" data-placement="top" title="服务网格的三个技术优势及其运维局限-第1部分">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/istio-analysis-6/" data-toggle="tooltip" data-placement="top" title="Istio 庖丁解牛六：多集群网格应用场景">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/service-mesh-istio-limits-and-benefits-part-1/"><i class="fa fa-link"></i>服务网格的三个技术优势及其运维局限-第1部分</a></li>
+         
+        <li><a href="/blog/using-opentracing-with-istio-part-2/"><i class="fa fa-link"></i>洞若观火：使用OpenTracing增强Istio的调用链跟踪-篇二</a></li>
+         
+        <li><a href="/blog/using-opentracing-with-istio-part-1/"><i class="fa fa-link"></i>洞若观火：使用OpenTracing增强Istio的调用链跟踪-篇一</a></li>
+         
+        <li><a href="/blog/google-traffic-director-detail/"><i class="fa fa-link"></i>Google Traffic Director详细介绍</a></li>
+         
+        <li><a href="/blog/microservices-monitoring-with-envoy-service-mesh-prometheus-grafana/"><i class="fa fa-link"></i>Envoy service mesh、Prometheus和Grafana下的微服务监控</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

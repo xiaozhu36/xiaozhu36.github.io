@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Knative Eventing in-memory-channel实现原理解析 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="service mesh, 服务网格, knative, serverless">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="Knative Eventing in-memory-channel实现原理解析" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/knative-eventing-in-memory-channel-deep-dive//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="本文不对基本概念做介绍，本文主要是基于 Kubernetes Event Source example 为例分析 in-memory-channel 的实现原理。">
+  <meta property="og:description" content="本文不对基本概念做介绍，本文主要是基于 Kubernetes Event Source example 为例分析 in-memory-channel 的实现原理。">
+  <meta name="twitter:description" content="本文不对基本概念做介绍，本文主要是基于 Kubernetes Event Source example 为例分析 in-memory-channel 的实现原理。">
+  <meta property="og:description" content="本文不对基本概念做介绍，本文主要是基于 Kubernetes Event Source example 为例分析 in-memory-channel 的实现原理。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="Knative Eventing in-memory-channel实现原理解析 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="Knative Eventing in-memory-channel实现原理解析 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">Knative Eventing in-memory-channel实现原理解析 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>Knative Eventing in-memory-channel实现原理解析</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2019年2月22日
+                            </i>
+                            |
+                            
+                            作者 <a href="http://www.servicemesher.com">牛秋霖</a>
+                            
+                            
+                            
+                            |
+                            2000字 | 阅读大约需要4分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            
+                            归档于 <a href="/categories/knative">knative</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/knative/"><i>#knative</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/serverless/"><i>#serverless</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <p>关于 Knative eventing 的基本概念可以参考:</p>
+<ul>
+<li><a href="https://github.com/knative/docs/blob/master/eventing/README.md">https://github.com/knative/docs/blob/master/eventing/README.md</a></li>
+<li><a href="https://thenewstack.io/knative-enables-portable-serverless-platforms-on-kubernetes-for-any-cloud/">https://thenewstack.io/knative-enables-portable-serverless-platforms-on-kubernetes-for-any-cloud/</a></li>
+</ul>
+<p>本文不对基本概念做介绍，本文主要是基于 <a href="https://github.com/knative/docs/blob/master/eventing/samples/kubernetes-event-source/README.md">Kubernetes Event Source example</a> 为例分析 <a href="https://github.com/knative/eventing/tree/master/config/provisioners/in-memory-channel">in-memory-channel</a> 的实现原理。</p>
+<p>在运行 <a href="https://github.com/knative/docs/blob/master/eventing/samples/kubernetes-event-source/README.md">Kubernetes Event Source example</a> 之前要保证已经安装了 <a href="https://github.com/knative/eventing/tree/master/config/provisioners/in-memory-channel">in-memory-channel</a> , 下面先从 in-memory-channel controller 开始介绍 channel 的工作机制。</p>
+<h2 id="in-memory-channel-controller">in-memory-channel controller</h2>
+<p>in-memory-channel 安装好以后就会自动创建一个 controller 和 in-memory-channel-dispatcher。 dispatcher 启动 http 服务接受 event，并根据 event 所属 channel 自动寻找相关的 subscription 然后把事件发送出去。因为这是一个基于内存实现的 channel 所以仅仅是转发一下事件不能用于生产环境，在生产环境可以使用 gcppubsub、kafka 以及 natss 等存储介质。</p>
+<p>in-memory-channel controller 监听 channel 资源如果发现有 channel 的 provisioner 是自己就开始做 EventResource 到 channel 的 feed(目前是基于 istio 的 virtualService 实现的)</p>
+<p>通过上面的介绍我们发现 channel 其实是一个虚拟的概念作用仅仅是提供一个分组功能，有点儿像是 kubernetes 中的 service 的概念，channel 的作用是：</p>
+<ul>
+<li>提供一种事件从事件源路由到 consumer 的介质</li>
+<li>绑定事件源和 channel (sink)</li>
+<li>把 consumer 绑定到 channel(subscription)</li>
+<li>把接收到的消息 dispatch 到相应的 subscription</li>
+<li>channel 是可以有自己的后端存储的，自己的后端存储可以是任何消息中间件，in-memory 只保存在内存中</li>
+<li>目前 channel 接收和 dispatch eventing 都是基于 http 协议的(<a href="https://github.com/cloudevents/spec/blob/v0.1/spec.md#protocol">CloudEvent 在设计上是支持很多协议的</a>， <a href="https://github.com/knative/eventing/blob/master/docs/spec/interfaces.md#addressable">但是目前 knative 只实现了 http 协议</a>)</li>
+</ul>
+<p>in-memory channel controller 发现如果有 channel 的 provisioner 是 ClusterChannelProvisioner 会做如下三件事情:</p>
+<ul>
+<li>
+<p>创建一个 service，这个 service 就是 event Resource 向自己发送事件时使用的 service，并且 service 会写入到 channel 的 Status.Address.Hostname 字段。channel 这是一个<a href="https://github.com/knative/eventing/blob/master/docs/spec/interfaces.md#addressable">地址可达</a>的资源</p>
+</li>
+<li>
+<p>创建一个 Istio 的 VirtualService，作用是把 Channel 的 service 转换到 in-memory channel dispatcher service 从而达到 channel 和 provisioner <em>绑定</em> 的效果</p>
+</li>
+<li>
+<p>配置 Channel 的 subscriptions</p>
+<p>不过配置 subscriptions 的动作不是在接收到 channel cr 的时候触发的。in-memory-channel controller 会 watch subscriptions 资源，当有 subscriptions 创建或者修改的时候就把相关的 subscription 绑定到 channel 上( <a href="https://github.com/knative/eventing/blob/master/docs/spec/spec.md#group-eventingknativedevv1alpha1">subscribable.subscribers</a>)</p>
+</li>
+</ul>
+<h2 id="创建一个-testchannel">创建一个 testchannel</h2>
+<p><strong>创建 channel</strong></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: eventing.knative.dev/v1alpha1
+<span style="color:#66d9ef">kind</span>: Channel
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: testchannel
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">provisioner</span>:
+    <span style="color:#66d9ef">apiVersion</span>: eventing.knative.dev/v1alpha1
+    <span style="color:#66d9ef">kind</span>: ClusterChannelProvisioner
+    <span style="color:#66d9ef">name</span>: in-memory-channel
+</code></pre></div><p>channel 定义中的 provisioner 是 channel 的实现实体(如果把 channel 比喻成 service/endpoint 的话那么 provisioner 就相当于是 service 对应的 Pod)。 channel 本身其实只是一个概念、一个定义。具体的实现都是 provisioner 来做的。channel 使用哪个 provisioner 就相当于是使用哪一种实现（是不是有一种 StorageClass 的感觉？）。目前 knative 支持的实现有：</p>
+<ul>
+<li>in-memory 一般只在测试时使用</li>
+<li>gcppubsub</li>
+<li>kafka</li>
+<li>natss</li>
+</ul>
+<p>channel 创建提交以后会创建出现下面这样的一个 channel 资源，和一个kubernetes serivce 资源</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">NAME                                       AGE
+channel.eventing.knative.dev/testchannel   7d
+
+NAME                                    TYPE           CLUSTER-IP       EXTERNAL-IP                                           PORT<span style="color:#f92672">(</span>S<span style="color:#f92672">)</span>           AGE
+service/testchannel-channel-9j22r       ClusterIP      10.102.124.54    &lt;none&gt;                                                80/TCP            7d3h
+</code></pre></div><p>这个 service/testchannel-channel-9j22r service 并没有对应到真实的 pod, 因为 channel 只是一个概念具体的实现是需要对应的 provisioner 来实现的，并且 channel 的 status 里面会记录到当前 channel 的 hostname</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">... ...
+<span style="color:#66d9ef">status</span>:
+  <span style="color:#66d9ef">address</span>:
+    <span style="color:#66d9ef">hostname</span>: testchannel-channel-9j22r.default.svc.cluster.local
+</code></pre></div><p>我们以 in-memory-channel provisioner controller 为例说明，在 in-memory-channel 的实现中是通过 istio 的一个 VirtualService 实现的，把到这个 service 的访问直接跳转到 in-memory-channel-dispatcher.knative-eventing.svc.cluster.local 这个 service。而 in-memory-channel-dispatcher.knative-eventing.svc.cluster.local 这个 service 就是 in-memory-channel controller 实现创建的。in-memory-channel controller <em>通过 istio 的 VirtualService 实现了事件源和channel的绑定</em></p>
+<h2 id="创建-k8s-事件源">创建 k8s 事件源</h2>
+<p>k8s 事件源的定义如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: sources.eventing.knative.dev/v1alpha1
+<span style="color:#66d9ef">kind</span>: KubernetesEventSource
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: testevents
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">sink</span>:
+    <span style="color:#66d9ef">apiVersion</span>: eventing.knative.dev/v1alpha1
+    <span style="color:#66d9ef">kind</span>: Channel
+    <span style="color:#66d9ef">name</span>: testchannel
+</code></pre></div><p>事件源通过 spec.sink 定义事件需要发送到哪个 channel 上去。</p>
+<p>K8S 事件源会生成相应的 Deployment 用于收集 kubernetes 事件并发送到相应的 channel，pod 的 &ndash;sink= 启动参数就是到目标 channel 的 url。&ndash;sink 这个参数的 url 就是根据 KubernetesEventSource crd 的 spec.sink 信息获取到目标 channel 然后取的其 status.address.hostname 字段</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: extensions/v1beta1
+<span style="color:#66d9ef">kind</span>: Deployment
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: testevents-n5t2w-qzhbv
+... ...
+<span style="color:#66d9ef">spec</span>:
+  ... ...
+    <span style="color:#66d9ef">spec</span>:
+      <span style="color:#66d9ef">containers</span>:
+      - <span style="color:#66d9ef">args</span>:
+        - --namespace=default
+        - --sink=http://testchannel-channel-9j22r.default.svc.cluster.local/
+        <span style="color:#66d9ef">env</span>:
+        - <span style="color:#66d9ef">name</span>: SINK
+          <span style="color:#66d9ef">value</span>: http://testchannel-channel-9j22r.default.svc.cluster.local/
+</code></pre></div><p>当 testevents-n5t2w-qzhbv pod 发送事件到 <code>http://testchannel-channel-9j22r.default.svc.cluster.local/</code> 时请求会被 sidecar 中的 istio-proxy 转发到 <code>http://in-memory-channel-dispatcher.knative-eventing.svc.cluster.local/</code> (Knative 就是通过 istio 的 virtualService 实现的 eventSource 到 channel 的绑定)从而达到事件转发到 in-memory-channel 的能力。接下来 in-memory-channel 的 dispatcher 把接收到的时候转发给响应的 subscription就完成了实践的整个生命周期的流转。</p>
+<h2 id="总结">总结</h2>
+<p>我们来汇总一下 Knative eventing 涉及到的几个关键概念及其之间的关系。</p>
+<ul>
+<li>event producers</li>
+<li>eventSource</li>
+<li>channel</li>
+<li>provisioners</li>
+<li>subscription</li>
+<li>consumers</li>
+</ul>
+<p>下面我们以 <a href="https://github.com/knative/docs/blob/master/eventing/samples/kubernetes-event-source/README.md">Kubernetes Event Source example</a> 来说明每一个概念对应的角色：</p>
+<ul>
+<li>
+<p>event producers：</p>
+<p><a href="https://github.com/knative/docs/blob/master/eventing/samples/kubernetes-event-source/README.md">Kubernetes Event Source example</a> 是演示如何把 kubernetes 中的事件发送到 channel 并通过 subscription 最终触发 message-dumper 函数执行的例子。这其中 kubernetes 集群就是事件的最初生产者，所以 kubernetes 集群就是 event producers</p>
+</li>
+<li>
+<p>eventSource</p>
+<p>eventSource 不是 event producers ， eventSource 是把 event producers 生成的事件 <em>接入</em> 到 Knative 体系中，其实是一个和外部系统的适配层</p>
+</li>
+<li>
+<p>channel</p>
+<p>是一个逻辑概念，主要是对事件本身、事件的存储以及事件的 subscription 向下传递路径做一个分组归类，每一个 channel 都有一个 status.address.hostname 字段，这个字段确定了如何把事件发送到这个 channel</p>
+</li>
+<li>
+<p>provisioners</p>
+<p>provisioners 是 channel 的存储介质， 可以使用 gcpsubsub、kafka 以及 natss 等产品支持。provisioners 是 channel crd 在创建的时候指定的。这个设计和 kubernetes 的 StorageClass 是一脉相承的。因为 eventSource 是通过 channel 的 status.address.hostname 向 channel post 事件的，所以 in-memory-channel 这个 provisioners 通过 istio virtualService 的方式 <em>在 eventSource 的 sidecar 中劫持了</em> 发向 channel 的事件，直接转发给了 provisioners ，从而实现了 provisioners 和 channel 的动态绑定的功能</p>
+</li>
+<li>
+<p>subscription</p>
+<p>subscription 是一个独立的 crd，一个 channel 可以对应多个 subscription，当 provisioners watch 到一个新的 subscription 是就建立自己管理的 channel 和 subscription 的绑定关系(在 channel 的 spec 中增加到 subscription 的引用列表)。当有事件发送到 channel 时 provisioners 就自动把事件转发给相关的 subscription</p>
+</li>
+<li>
+<p>consumers</p>
+<p>消费事件的角色，和 channel 一样，consumers 也必须是一个地址可达的资源，并通过 status.address.hostname 字段指明如何访问到此 consumer。consumers 是通过 subscription 建立和channel 的关联，从而达到消费事件的目的</p>
+</li>
+</ul>
+<h3 id="参考文档">参考文档</h3>
+<ul>
+<li><a href="https://github.com/knative/docs/blob/master/install/Knative-with-any-k8s.md">Knative Install on a Kubernetes Cluster</a></li>
+<li><a href="https://github.com/knative/eventing/blob/master/docs/spec/overview.md">https://github.com/knative/eventing/blob/master/docs/spec/overview.md</a></li>
+<li><a href="https://github.com/knative/eventing/blob/master/docs/spec/spec.md">https://github.com/knative/eventing/blob/master/docs/spec/spec.md</a></li>
+<li><a href="https://github.com/knative/eventing/blob/master/docs/spec/interfaces.md">https://github.com/knative/eventing/blob/master/docs/spec/interfaces.md</a></li>
+</ul>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/envoy-threading-model/" data-toggle="tooltip" data-placement="top" title="Envoy 架构师 Matt Klein 对 Envoy 线程模型的简介">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/istio-knowledge-map-v0-1-release/" data-toggle="tooltip" data-placement="top" title="Istio知识图谱 v0.1 发布及社区图书孵化">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/knative-serverless-platform/"><i class="fa fa-link"></i>Serverless 平台 knative 简介</a></li>
+         
+        <li><a href="/blog/knative-serving-autoscaler-single-tenancy-deep-dive/"><i class="fa fa-link"></i>基于Kubernetes和Istio的Serverless框架Knative解析之Autoscaler</a></li>
+         
+        <li><a href="/blog/knative-redefine-serverless/"><i class="fa fa-link"></i>Knative：重新定义 serverless</a></li>
+         
+        <li><a href="/blog/serverless-jenkins-with-jenkins-x/"><i class="fa fa-link"></i>Serverless Jenkins 和 Jenkins X</a></li>
+         
+        <li><a href="/blog/traffic-routing-between-fn-functions-using-fn-project-and-istio-fd/"><i class="fa fa-link"></i>使用Istio控制Serverless架构Fn Project中的函数间流量路由</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

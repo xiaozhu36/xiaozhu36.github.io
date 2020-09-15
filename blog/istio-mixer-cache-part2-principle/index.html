@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Istio Mixer Cache工作原理与源码分析part2－工作原理 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="istio, service mesh, 源码解析">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="Istio Mixer Cache工作原理与源码分析part2－工作原理" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/istio-mixer-cache-part2-principle//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="经过前面的基础概念的介绍，我们现在已经可以勾勒出一个mixer cache的实现轮廓，当然实际代码实现时会有很多细节。但是为了方便理解，我们在深入细节之前，先给出一个简化版本，让大家快速了解mixer cache的实现原理。后面的章节我们再逐渐深入。">
+  <meta property="og:description" content="经过前面的基础概念的介绍，我们现在已经可以勾勒出一个mixer cache的实现轮廓，当然实际代码实现时会有很多细节。但是为了方便理解，我们在深入细节之前，先给出一个简化版本，让大家快速了解mixer cache的实现原理。后面的章节我们再逐渐深入。">
+  <meta name="twitter:description" content="经过前面的基础概念的介绍，我们现在已经可以勾勒出一个mixer cache的实现轮廓，当然实际代码实现时会有很多细节。但是为了方便理解，我们在深入细节之前，先给出一个简化版本，让大家快速了解mixer cache的实现原理。后面的章节我们再逐渐深入。">
+  <meta property="og:description" content="经过前面的基础概念的介绍，我们现在已经可以勾勒出一个mixer cache的实现轮廓，当然实际代码实现时会有很多细节。但是为了方便理解，我们在深入细节之前，先给出一个简化版本，让大家快速了解mixer cache的实现原理。后面的章节我们再逐渐深入。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="Istio Mixer Cache工作原理与源码分析part2－工作原理 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="Istio Mixer Cache工作原理与源码分析part2－工作原理 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">Istio Mixer Cache工作原理与源码分析part2－工作原理 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>Istio Mixer Cache工作原理与源码分析part2－工作原理</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2018年6月7日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://skyao.io">敖小剑</a>
+                            
+                            
+                            
+                            |
+                            4700字 | 阅读大约需要10分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            <a href="https://skyao.io/post/201806-istio-mixer-cache-principle/">查看原文</a>
+                            |
+                            
+                            
+                            归档于 <a href="/categories/istio-mixer-cache">istio mixer cache</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/istio/"><i>#istio</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/source-code/"><i>#source code</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <blockquote>
+<p>转载自<a href="https://skyao.io/post/201806-istio-mixer-cache-principle/">敖小剑的博客</a></p>
+</blockquote>
+<h2 id="前言">前言</h2>
+<p>经过前面的基础概念的介绍，我们现在已经可以勾勒出一个mixer cache的实现轮廓，当然实际代码实现时会有很多细节。但是为了方便理解，我们在深入细节之前，先给出一个简化版本，让大家快速了解mixer cache的实现原理。后面的章节我们再逐渐深入。</p>
+<p>Mixer Cache分为两个部分：</p>
+<ol>
+<li>check cache</li>
+<li>quota cache</li>
+</ol>
+<p>简单起见，我们先关注check cache，在check cache讲述清楚之后，我们再继续看quota cache。</p>
+<blockquote>
+<p>备注：istio一直在持续更新，以下代码来源于istio 0.8版本。</p>
+</blockquote>
+<h2 id="mixer-check-cache的构造">Mixer Check Cache的构造</h2>
+<p>Mixer Cache在实现时，在envoy的内存中，保存有两个数据结构：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">CheckCache</span> {
+  std<span style="color:#f92672">::</span>unordered_map<span style="color:#f92672">&lt;</span>std<span style="color:#f92672">::</span>string, Referenced<span style="color:#f92672">&gt;</span> referenced_map_;
+    
+  <span style="color:#66d9ef">using</span> CheckLRUCache <span style="color:#f92672">=</span> utils<span style="color:#f92672">::</span>SimpleLRUCache<span style="color:#f92672">&lt;</span>std<span style="color:#f92672">::</span>string, CacheElem<span style="color:#f92672">&gt;</span>;
+  std<span style="color:#f92672">::</span>unique_ptr<span style="color:#f92672">&lt;</span>CheckLRUCache<span style="color:#f92672">&gt;</span> cache_;
+}
+</code></pre></div><blockquote>
+<p>具体代码: 见istio/proxy项目，文件<code>src/istio/mixerclient/check_cache.h</code></p>
+</blockquote>
+<ol>
+<li>referenced_map：保存的是引用属性</li>
+<li>cache：保存的是check的结果</li>
+</ol>
+<p>这里和一般缓存不一样，有两个map，也就是存在两套key/value两层缓存，为什么要这样设计？</p>
+<h2 id="mixer-check-cache的核心设计">Mixer Check Cache的核心设计</h2>
+<p>缓存在设计上，最核心的内容就是如何设计缓存的key，这个问题在mixer check cache中尤其突出。</p>
+<h3 id="为什么要有两层map">为什么要有两层Map？</h3>
+<p>我们继续以这个最基本的场景为例：</p>
+<p><img src="https://skyao.io/post/201804-istio-mixer-cache-concepts/images/referenced-attributes.jpg" alt="img"></p>
+<p>注意这个场景下属性的使用情况是这样的：</p>
+<ul>
+<li>envoy提交的请求中有5个属性，”a=1,b=2,c=3,e=0,f=0”</li>
+<li>mixer中有三个adapter，每个adapter只使用提交属性中的一个属性a/b/c</li>
+<li>在CheckResponse中返回referencedAttributes字段的内容为”a,b,c”</li>
+</ul>
+<p>要怎么设计这个Mixer check cache？先分析缓存的逻辑语义：</p>
+<ol>
+<li>返回的referencedAttributes字段的内容为”a,b,c”，说明这三个属性被使用</li>
+<li>结合输入的”a=1,b=2,c=3,e=0,f=0”，就可以得知”a=1,b=2,c=3”这个属性和属性的值的组合，代表一个输入，结果是固定而可以缓存的</li>
+<li>如果下一个请求，同样提供”a,b,c”三个属性，并且三个属性的值是”a=1,b=2,c=3”，则可以直接使用这个缓存的结果</li>
+</ol>
+<p>注意：由于哪些属性可能会被使用是取决于运行时实际部署的adapter，因此mixer check cache的key计算时是无法直接指定要计算哪些属性的，也就无法简单的对输入属性做简单计算得到key。这是mixer cache和一般场景下的缓存的关键差异。</p>
+<p>mixer check cache在工作时，如果要命中缓存，就必须带有两层匹配逻辑：</p>
+<ol>
+<li>请求中是否携带有匹配的属性，在上面的例子中，就是要有”a,b,c”三个属性</li>
+<li>这些属性是否具备匹配的值，在上面的例子中，就是要”a=1,b=2,c=3”</li>
+</ol>
+<p>在具体实现上：</p>
+<ul>
+<li>referenced_map 是第一层缓存，用来保存引用属性的组合，注意只有属性名，这里不保存属性值</li>
+<li>cache 是第二层缓存，用来保存输入的签名（根据引用属性的值计算而来）/value （check的检查结果）</li>
+</ul>
+<h3 id="两层cache是如何工作的">两层cache是如何工作的？</h3>
+<p>为了避免陷入代码细节，我们先不看代码具体实现（这是下一章的内容），先只看工作原理：</p>
+<ul>
+<li>referenced_map 用来保存哪些属性组合已经被缓存，比如 <code>{&quot;k1&quot;: &quot;a,b,c&quot;}</code> 这样表示当前只有一个属性组合”a,b,c”被保存，为了简单我们先忽略key的计算方式。</li>
+<li>cache用来保存输入的签名(简单理解为有效输入内容”a=1,b=2,c=3”的hash结果)和check 结果（简化为true/false表示是否通过），比如 <code>{ &quot;a=1,b=2,c=3&quot;: &quot;true&quot; }</code></li>
+</ul>
+<p>我们来看各种场景下的请求和缓存的匹配请求，先看最理想的缓存命中的场景：</p>
+<ul>
+<li>
+<p>请求为：”a=1,b=2,c=3,e=0,f=0”</p>
+<p>这个请求和被缓存的请求是一模一样的，我们期待可以命中缓存。</p>
+<p>匹配时，先进行第一层匹配：输入的”a=1,b=2,c=3,e=0,f=0”和 referenced_map {“k1”: “a,b,c”} 进行检查，发现输入的”a=1,b=2,c=3,e=0,f=0”可以和保存的”a,b,c”属性组合匹配。</p>
+<p>然后继续，第二层缓存就可以简单通过key来匹配了。注意在对输入进行签名时，只需要计算引用属性的hash值，即只需要计算”a=1,b=2,c=3”，再通过这个签名在cache中找到缓存结果。</p>
+<p>这便是标准的mixer check cache的匹配姿势。</p>
+</li>
+<li>
+<p>请求为：”a=1,b=2,c=3,e=1,f=2”</p>
+<p>差异在于e/f属性的值有所不同，考虑到e/f两个属性没有adapter使用，和”a=1,b=2,c=3,e=0,f=0”等效，我们期待可以命中缓存。</p>
+<p>第一层匹配，输入的”a=1,b=2,c=3,e=1,f=2”和{“k1”: “a,b,c”} 命中，由于属性组合是”a,b,c”，因此计算签名时还是计算”a=1,b=2,c=3”，因此可以命中第二层缓存。</p>
+<p>通过这种在签名时忽略未被adapter使用的属性的方式，mixer check cache 做到了只检查被adapter使用的属性，而其他属性的值不会影响。</p>
+</li>
+</ul>
+<p>我们再来看缓存不命中的典型场景，此时会多一个保存新结果到缓存的过程：</p>
+<ul>
+<li>
+<p>新请求：”a=1,b=2,c=10,e=0,f=0”</p>
+<p>不同在于c的取值有变化，这是一个新的有效输入，和已经缓存的”a=1,b=2,c=3”不同，应该无法命中。</p>
+<p>匹配时，第一层匹配命中，计算签名时计算的输入是”a=1,b=2,c=10”，得到的签名结果自然和缓存的”a=1,b=2,c=3”的签名不同，因此第二层缓存没有命中。</p>
+<p>这是典型的属性组合匹配但是属性具体值不匹配的场景，我们看mixer check cache的后续处理。</p>
+<p>缓存不命中，就需要向mixer发起远程，得到应答，应答中给出adapter使用的属性情况，此时依然是”a,b,c”，和检查的结果，我们假定这次是false。即此时我们得到了一个新的输入和结果的对应关系，我们将这个结果保存起来：referenced_map 中现有的值是 {“k1”: “a,b,c”}，无需改变。cache 从 { “a=1,b=2,c=3”: “true” } 增加新结果，变为 { “a=1,b=2,c=3”: “true”, “a=1,b=2,c=10”: “false”}</p>
+</li>
+<li>
+<p>继续发送请求：”a=1,b=2,c=10,e=0,f=0”/”a=1,b=2,c=3,e=0,f=0”</p>
+<p>如果继续有这样的请求进来，则继续命中。</p>
+</li>
+<li>
+<p>新请求：”a=1,b=20,c=10,e=0,f=0”</p>
+<p>如果属性a/b/c的值继续变化，则继续重复前面的不命中后更新缓存的步骤。</p>
+</li>
+</ul>
+<h3 id="absence-key">absence key</h3>
+<p>通过上面稍显枯燥的描述，我想大家基本可以了解 mixer check cache 的工作原理，但是注意这个是经过简化的最简单版本，我们现在来加上 <code>absence key</code> 这个极其重要的概念。</p>
+<p>什么叫做 absence key ？我们需要继续看回这个图片，注意mixer adapter使用的属性是a/b/c三个：</p>
+<p><img src="https://skyao.io/post/201804-istio-mixer-cache-concepts/images/referenced-attributes.jpg" alt="img"></p>
+<p>前面我们列出来的所有场景中，每个输入中都包含有a/b/c三个属性，考虑到其他不使用的属性在匹配过程中会被忽略而不影响，我们来将关注点放在a/b/c三个属性上。需要考虑这种可能：如果a/b/c三个属性不是每次都同时提供，而是少一个或者多个，结果会怎么样？</p>
+<p>此时两层缓存的数据为：</p>
+<ul>
+<li>referenced_map = {“k1”: “a,b,c”}</li>
+<li>cache = { “a=1,b=2,c=3”: “true”, “a=1,b=2,c=10”: “false”}</li>
+</ul>
+<p>如果我们有一个输入 ”a=1,b=2,c不存在,e=0,f=0” ，注意在这个输入中 c没有出现的。此时肯定缓存无法匹配，需要发送请求到mixer，我们再假设mixer adapter的处理逻辑在输入为”a=1,b=2,c不存在”的结果为”false”(这样可以和输入为”a=1,b=2,c=3”的结果”true”区分开)。</p>
+<p>设计上有个问题：mixer该怎么返回引用属性来让mixer check cache可以正确的保存这个结果并用于后续的请求？</p>
+<table>
+<thead>
+<tr>
+<th>输入</th>
+<th>输出</th>
+<th>引用属性</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>”a=1,b=2,c=3,e=0,f=0”</td>
+<td>true</td>
+<td>“a,b,c”</td>
+</tr>
+<tr>
+<td>”a=1,b=2,c不存在,e=0,f=0”</td>
+<td>false</td>
+<td>“a,b”还是”a,b,c”？</td>
+</tr>
+</tbody>
+</table>
+<p>关键点：当输入中c不存在时，mixer的response中 referenced attribute 应该返回 “a,b” 还是 “a,b,c”？</p>
+<p>先回顾一下 referenced attribute 的概念：按照我们之前介绍的逻辑，referenced attribute 返回的是 mixer adapter 使用到的属性。换句话说，这些属性之外的其他属性，是不会影响mixer adapter处理结果的，因此在缓存保存和匹配时都可以忽略。</p>
+<p>首先来看，如果返回 “a,b” 会如何？这表示 c/e/f 属性可以被忽略，也就是不管c取值如何，是否出现，都不影响check的结果。即如果”a=1,b=2,c不存在,e=0,f=0”的结果为false，按照引用属性为”a,b”进行缓存，后面的”a=1,b=2,c=3,e=0,f=0”的请求，会被忽略c属性而命中”a=1,b=2”的缓存结果，导致返回false。</p>
+<p>因此 mixer check cache 在设计中，引入了 <code>absence key</code> 的概念，mixer 的reponse里面，会明确指出：在输入为”a=1,b=2,c不存在,e=0,f=0”，输出为false这个场景下，referenced attribute 不仅仅包括出现在输入中的 a/b 两个属性，还有 c 这个虽然在输入中没有出现但是 mixer adapter 实际也使用了的属性的（属性c没有出现可以视为属性c的一个特别值）。这个没出现的属性c 被称为 <code>absence key</code>。</p>
+<p>此时mixer check cache 在做缓存时，要处理 “a/b/c不存在” 这种特别的属性组合，具体步骤为：</p>
+<ol>
+<li>第一层缓存 referenced_map = {“k1”: “a,b,c”} 和输入”a=1,b=2,c不存在,e=0,f=0” 因为c的缺席而无法匹配</li>
+<li>发起对mixer的请求，获取新的应答，结果为false，引用属性为”a,b”和absence key c，我们简写为”a,b,c不存在”。</li>
+<li>保存结果到第一层缓存 referenced_map 更新为 {“k1”: “a,b,c”, “k2”: “a,b,c不存在” }</li>
+<li>保存结果到第二层缓存 cache 更新为 “a=1,b=2,c=3”: “true”, “a=1,b=2,c=10”: “false”, “a=1,b=2”: “false”}</li>
+</ol>
+<p>之后的请求匹配缓存的过程，会稍is有不同，体现在第一层缓存的匹配上，注意此时有两个属性组合 {“k1”: “a,b,c”, “k2”: “a,b,c不存在” }：</p>
+<ul>
+<li>如果是 ”a=1,b=2,c=3,e=0,f=0” 这种a/b/c三个属性都提供的输入，则会匹配到 “k1”: “a,b,c”</li>
+<li>如果是 ”a=1,b=2,c不存在,e=0,f=0” 这种提供了a/b属性而c没有提供的输入，则会匹配到 “k2”: “a,b,c不存在”</li>
+</ul>
+<p>第二层缓存的匹配方式没有变化，注意由于属性c不存在，因此在计算”a=1,b=2,c不存在,e=0,f=0”这个输入的签名时，只需要计算”a=1,b=2”。</p>
+<blockquote>
+<p>需要额外指出的是，当有多个属性被 mixer adapter 使用，而出现某个或者某几个属性不存在的场景，是可能有多种的，以上面”a,b,c”三个属性为例，会有”a,b”/“a,c”/“b,c”/“a”/“b”/“c”/“”(即abc都不存在)7种情况，加上”a,b,c”都出现的情况，referenced_map 中会需要保存最多8种属性组合。而且，mixer adapter使用的属性越多，这个数量还会急剧增加。</p>
+<p>备注：这个地方istio有一个bug，在研读代码时发现的，后来提交fix给了istio，后面我会结合代码给大家讲解。</p>
+</blockquote>
+<h2 id="总结">总结</h2>
+<p>Mixer check Cache的设计，由于受限于无法得知mixer adaper会使用哪些属性，因此在设计上和普通缓存差异极大，必须明确引用属性和absence key的概念，才能正确理解mixer check cache。</p>
+<p>下一节，我们终于可以展开源码了。</p>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/istio-mixer-cache-part1-concepts/" data-toggle="tooltip" data-placement="top" title="Istio Mixer Cache工作原理与源码分析part1－基本概念">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/service-mesh-security-addressing-attack-vectors-with-istio/" data-toggle="tooltip" data-placement="top" title="Service Mesh安全：用Istio应对攻击">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/istio-mixer-cache-part1-concepts/"><i class="fa fa-link"></i>Istio Mixer Cache工作原理与源码分析part1－基本概念</a></li>
+         
+        <li><a href="/blog/deepin-service-mesh-tech-details/"><i class="fa fa-link"></i>深入解读Service Mesh背后的技术细节</a></li>
+         
+        <li><a href="/blog/istio-service-mesh-tutorial/"><i class="fa fa-link"></i>Istio Service Mesh教程</a></li>
+         
+        <li><a href="/blog/introducing-the-istio-v1alpha3-routing-api/"><i class="fa fa-link"></i>Istio v1aplha3 routing API介绍</a></li>
+         
+        <li><a href="/blog/manage-microservices-traffic-using-istio/"><i class="fa fa-link"></i>使用Istio为微服务提供高级流量管理和请求跟踪功能</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

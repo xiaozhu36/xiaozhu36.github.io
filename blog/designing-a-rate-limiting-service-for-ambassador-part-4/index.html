@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>速率限制系列part4—为Ambassador API网关设计速率限制服务 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="service mesh, 速率限制, 分布式系统">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="速率限制系列part4—为Ambassador API网关设计速率限制服务" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/designing-a-rate-limiting-service-for-ambassador-part-4//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="先前关于速率限制文章主要描述如何构建并部署基于Java的速率限制服务，该服务可以和开源的Ambassador API网关以及Kubernetes集成。 大家或许会疑惑怎么样才能更好地设计速率限制服务，尤其是如何保证Ambassador以及其底层的Envoy代理的灵活性？这篇文章将给大家启发。">
+  <meta property="og:description" content="先前关于速率限制文章主要描述如何构建并部署基于Java的速率限制服务，该服务可以和开源的Ambassador API网关以及Kubernetes集成。 大家或许会疑惑怎么样才能更好地设计速率限制服务，尤其是如何保证Ambassador以及其底层的Envoy代理的灵活性？这篇文章将给大家启发。">
+  <meta name="twitter:description" content="先前关于速率限制文章主要描述如何构建并部署基于Java的速率限制服务，该服务可以和开源的Ambassador API网关以及Kubernetes集成。 大家或许会疑惑怎么样才能更好地设计速率限制服务，尤其是如何保证Ambassador以及其底层的Envoy代理的灵活性？这篇文章将给大家启发。">
+  <meta property="og:description" content="先前关于速率限制文章主要描述如何构建并部署基于Java的速率限制服务，该服务可以和开源的Ambassador API网关以及Kubernetes集成。 大家或许会疑惑怎么样才能更好地设计速率限制服务，尤其是如何保证Ambassador以及其底层的Envoy代理的灵活性？这篇文章将给大家启发。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="速率限制系列part4—为Ambassador API网关设计速率限制服务 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="速率限制系列part4—为Ambassador API网关设计速率限制服务 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">速率限制系列part4—为Ambassador API网关设计速率限制服务 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>速率限制系列part4—为Ambassador API网关设计速率限制服务</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2018年7月11日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://blog.getambassador.io/@danielbryantuk">Daniel Bryant</a>
+                            
+                            
+                            | 译者 <a href="https://github.com/edwin19861218">戴佳顺</a>
+                            
+                            
+                            | 审校者
+                            
+                            <a href="https://jimmysong.io"><i>宋净超</i></a>
+                            
+                            
+                            |
+                            2200字 | 阅读大约需要5分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            <a href="https://blog.getambassador.io/designing-a-rate-limiting-service-for-ambassador-f460e9fabedb">查看原文</a>
+                            |
+                            
+                            
+                            归档于 <a href="/categories/microservices">microservices</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/rate-limiting/"><i>#rate limiting</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/distributing-system/"><i>#distributing system</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <p><a href="https://blog.getambassador.io/rate-limiting-a-useful-tool-with-distributed-systems-6be2b1a4f5f4">先前</a>关于速率限制文章主要描述如何构建并部署基于Java的速率限制服务，该服务可以和开源的Ambassador API网关以及Kubernetes集成（文章的<a href="/blog/rate-limiting-a-useful-tool-with-distributed-systems-part1">第1部分</a>和<a href="/blog/rate-limiting-for-api-gateway-daniel-bryant-part2">第2部分</a>请见这里）。 大家或许会疑惑怎么样才能更好地设计速率限制服务，尤其是如何保证Ambassador以及其底层的Envoy代理的灵活性？这篇文章将给大家启发。</p>
+<h2 id="设置场景">设置场景</h2>
+<p>如果你还没有阅读这个系列的第3部分“<a href="/blog/implementing-a-java-rate-limiting-service-for-the-ambassador-api-gateway-part3">基于Ambassador API网关实现Java速率限制服务</a>”，我建议你先阅读（文章的<a href="/blog/rate-limiting-a-useful-tool-with-distributed-systems-part1">第1部分</a>和<a href="/blog/rate-limiting-for-api-gateway-daniel-bryant-part2">第2部分</a>请见这里 ）。其中最关键的是<a href="https://www.getambassador.io/reference/services/rate-limit-service">Ambassador API网关</a>，其就像其底层使用的<a href="https://www.envoyproxy.io/docs/envoy/latest/api-v1/route_config/rate_limits">Envoy代理</a>一样，通过请求另一个服务来决定一个请求的速率是否需要被限制。这是关注点分离（和单一原则）设计的良好实现。同时由于Ambassador可作为Kubernetes原生API网关，因此你可以很方便将rate limiter部署为Kubernetes基础服务，用来管理平台的容错特性，同时其也很容易进行扩展。</p>
+<p>下文假设你已成功将Ambassador部署进Kubernetes集群，同时也根据我先前文章中所描述的那样完成速率限制服务部署。以下是基于Java开发的速率限制服务其所使用的Kubernetes配置文件：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ratelimiter
+  annotations:
+    getambassador.io/config: |
+      ---
+      apiVersion: ambassador/v0
+      kind: RateLimitService
+      name: ratelimiter_svc
+      service: <span style="color:#e6db74">&#34;ratelimiter:50051&#34;</span>
+  labels:
+    app: ratelimiter
+spec:
+  type: ClusterIP
+  selector:
+    app: ratelimiter
+  ports:
+  - protocol: TCP
+    port: <span style="color:#ae81ff">50051</span>
+    name: http
+---
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: ratelimiter
+  labels:
+    app: ratelimiter
+spec:
+  replicas: <span style="color:#ae81ff">1</span>
+  selector:
+    matchLabels:
+      app: ratelimiter
+  template:
+    metadata:
+      labels:
+        app: ratelimiter
+    spec:
+      containers:
+      - name: ratelimiter
+        image: danielbryantuk/ratelimiter:0.3
+        ports:
+        - containerPort: <span style="color:#ae81ff">50051</span>
+</code></pre></div><h2 id="描述符descriptor">描述符（descriptor）</h2>
+<p>Ambassador中速率限制功能的灵活性主要通过在Kubernetes配置上指定描述符和请求头实现，这些参数会被传递到速率限制服务实例中。 以下文为例，首先看一下先前文章中探讨过的my shopfront应用程序的Ambassador配置：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    service: ambassador
+  name: ambassador
+  annotations:
+    getambassador.io/config: |
+      ---
+      apiVersion: ambassador/v0
+      kind:  Mapping
+      name:  shopfront_stable
+      prefix: /shopfront/
+      service: shopfront:8010
+      rate_limits:
+        - descriptor: Example descriptor
+          headers:
+            - <span style="color:#e6db74">&#34;X-MyHeader&#34;</span>
+        - descriptor: Y header descriptor
+          headers:
+            - <span style="color:#e6db74">&#34;Y-MyHeader&#34;</span>
+</code></pre></div><p>可以看到在rate_limits配置中有两个YAML元素，每个元素都有不同的描述符和请求头。根据<a href="https://www.getambassador.io/user-guide/rate-limiting-tutorial#2-configure-ambassador-mappings">Ambassador速率限制</a>文档中所述，当请求头在配置中定义，并出现在请求元数据中，其才能被速率限制。比如说：</p>
+<ul>
+<li>如果访问shopfront的请求没有包含请求头，其就不符合速率限制条件（即不会对在Ambassador的其他配置中所定义的速率限制服务生效）</li>
+<li>通过请求头“X-MyHeader:123”向shopfront服务发出的请求可能受到速率限制。速率限制服务将接收与“X-MyHeader”请求头相匹配的rate_limits元素所关联的描述符信息，并以“generic_key”为名，这里值为“Example descriptor”。因此，速率限制服务将收到如下请求元数据：[{“generic_key”,“Example descriptor”},{“X-MyHeader”,”123”}]</li>
+<li>通过请求头“Y-MyHeader:ABC”向shopfront服务发出的请求可能受到速率限制。速率限制服务将接收与“Y-MyHeader”请求头相匹配的rate_limits元素所关联的描述符信息，并以“generic_key”为名，这里值为“Y header descriptor”。因此，速率限制服务将收到如下请求元数据：[{“generic_key”,“Y header descriptor”},{“Y-MyHeader”,”ABC”}]</li>
+</ul>
+<p>是否进行速率限制是由速率限制服务决定的，该服务只需在Envoy的<a href="https://github.com/envoyproxy/envoy/blob/master/source/common/ratelimit/ratelimit.proto">ratelimit.proto</a> gRPC接口中返回的适当值：OK, OVER_LIMIT 或 UNKNOWN即可。根据上文描述，你可以在两个地方添加包含描述符和请求头的请求元数据，使其可在速率限制服务中使用：可以在部署时添加到Ambassador Kubernetes配置中；或在程序运行时添加。</p>
+<h2 id="速率限制服务元数据样例">速率限制服务元数据样例</h2>
+<p>举个例子。假设你的企业已经创建了一个移动应用程序，该程序通过Ambassador API网关与后端服务进行通信，并且你希望对普通用户和测试用户使用不同的规则进行速率限制，同时你也希望对未认证用户也这么进行。你可以在请求头中访问UserID和UserType数据：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    service: BackendService
+  name: BackendService
+  annotations:
+    getambassador.io/config: |
+      ---
+      apiVersion: ambassador/v0
+      kind:  Mapping
+      name:  backend_app
+      prefix: /app/
+      service: backend_app:8010
+      rate_limits:
+        - descriptor: Mobile app ingress - authenticated
+          headers:
+            -<span style="color:#e6db74">&#34;UserID&#34;</span>
+            -<span style="color:#e6db74">&#34;UserType&#34;</span>
+        - descriptor: Mobile app ingress - unauthenticated
+</code></pre></div><p>任何包含请求头“UserID”和“UserType”的请求都将被转发到速率限制服务，同时请求也包含（generic_key）描述符“Mobile app ingress - authenticated”。未包含请求头的请求会被第二个描述符捕获，并被转发到只包含（generic_key）描述符“Mobile app ingress - unauthenticated”的速率限制服务中。你可以通过任意语言的算法实现上述速率限制功能。</p>
+<h2 id="结论">结论</h2>
+<p>如果你正在考虑<a href="https://eng.lyft.com/announcing-ratelimit-c2e8f3182555">inspiration</a>，或<a href="https://github.com/lyft/ratelimit">现成可用的Ambassador限速服务</a>，请务必留心Envoy文档和Lyft GitHub库。尤其是Lyft参考Envoy所实现的<a href="https://github.com/lyft/ratelimit">速率限制</a>方案非常实用，它既可作为可插拔的解决方案，也可以作为解决方案的指南用于在自定义速率限制服务中实现配置加载和运行时加载。</p>
+<p>你可以在先前文章“<a href="https://blog.getambassador.io/implementing-a-java-rate-limiting-service-for-the-ambassador-api-gateway-e09d542455da">基于Ambassador API网关实现Java速率限制服务</a>”中找到有关在Kubernetes中安装Ambassador API网关和配置速率限制的教程。同样，欢迎你在<a href="https://gitter.im/datawire/ambassador">Ambassador Gitter</a>提问。</p>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/istio-service-mesh-source-code-pilot-agent-deepin/" data-toggle="tooltip" data-placement="top" title="Service Mesh深度学习系列part1—istio源码分析之pilot-agent模块分析">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/ab-testing-on-kubernetes-with-istio-0-8/" data-toggle="tooltip" data-placement="top" title="使用Istio 0.8对Kubernetes进行A/B测试">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/implementing-a-java-rate-limiting-service-for-the-ambassador-api-gateway-part3/"><i class="fa fa-link"></i>速率限制part3—基于Ambassador API网关实现Java速率限制服务</a></li>
+         
+        <li><a href="/blog/rate-limiting-for-api-gateway-daniel-bryant-part2/"><i class="fa fa-link"></i>速率限制part2—作用于API网关的速率限制</a></li>
+         
+        <li><a href="/blog/rate-limiting-a-useful-tool-with-distributed-systems-part1/"><i class="fa fa-link"></i>速率限制part1—分布式系统的一个实用工具</a></li>
+         
+        <li><a href="/blog/istio-service-mesh-source-code-pilot-agent-deepin/"><i class="fa fa-link"></i>Service Mesh深度学习系列part1—istio源码分析之pilot-agent模块分析</a></li>
+         
+        <li><a href="/blog/istio-future-service-mesh/"><i class="fa fa-link"></i>Istio以及Service Mesh的未来</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

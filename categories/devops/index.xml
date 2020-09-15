@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>DevOps on ServiceMesher</title>
+    <link>https://www.servicemesher.com/categories/devops/</link>
+    <description>Recent content in DevOps on ServiceMesher</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh</language>
+    <lastBuildDate>Wed, 21 Aug 2019 15:39:09 +1000</lastBuildDate>
+    
+	<atom:link href="https://www.servicemesher.com/categories/devops/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>基于Flux项目的云原生GitOps实践</title>
+      <link>https://www.servicemesher.com/blog/flux-get-start-easy/</link>
+      <pubDate>Wed, 21 Aug 2019 15:39:09 +1000</pubDate>
+      
+      <guid>https://www.servicemesher.com/blog/flux-get-start-easy/</guid>
+      <description>本文对GitOps理念进行了深入的理解和详细的介绍，并使用Weaveworks开源的GitOps工具Flux通过Git管理Kubernetes集群。</description>
+    </item>
+    
+    <item>
+      <title>GitOps与ChatOps的落地实践</title>
+      <link>https://www.servicemesher.com/blog/gitops-and-chatops/</link>
+      <pubDate>Thu, 11 Jul 2019 09:24:17 +0800</pubDate>
+      
+      <guid>https://www.servicemesher.com/blog/gitops-and-chatops/</guid>
+      <description>本文介绍GitOps和ChatOps这两种DevOps实践，通过版本控制软件Git和实时聊天软件来达到提升交付速度和研发效率的目的。</description>
+    </item>
+    
+    <item>
+      <title>Prow 快速入门向导</title>
+      <link>https://www.servicemesher.com/blog/prow-quick-start-guide/</link>
+      <pubDate>Mon, 01 Jul 2019 03:13:13 +0800</pubDate>
+      
+      <guid>https://www.servicemesher.com/blog/prow-quick-start-guide/</guid>
+      <description>Prow 是 Google 发起的适应云原生开源项目的 ChatOps 系统。Kubernetes、Istio 等项目都使用 Prow 实现开源协同。我们将以一个测试代码仓库为例，来演示在一个本地k8s集群上使用 Prow 来实现CI/CD的诸多效果。</description>
+    </item>
+    
+    <item>
+      <title>使用Jenkins X实现ChatOps</title>
+      <link>https://www.servicemesher.com/blog/implementing-chatops-with-jenkins-x/</link>
+      <pubDate>Thu, 06 Jun 2019 04:30:44 +0800</pubDate>
+      
+      <guid>https://www.servicemesher.com/blog/implementing-chatops-with-jenkins-x/</guid>
+      <description>本文很好的阐述了如何使用Jenkins X来实践ChatOps，文中手把手带我们从零开始完成了一次Kubernetes Native的CI/CD之旅。</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>使用Minikube-in-a-Container和Jenkins构建Istio · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="minikube, 容器, Jenkis, Istio, CI/CD, Jenkinsfile">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="使用Minikube-in-a-Container和Jenkins构建Istio" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/building-istio-with-minikube-in-a-container-and-jenkins//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="本文讲述如何制作一个新的 Minikube-in-a-Container 容器和使用 Jenkins Pipeline 来构建和测试 Istio 的流程脚本。">
+  <meta property="og:description" content="本文讲述如何制作一个新的 Minikube-in-a-Container 容器和使用 Jenkins Pipeline 来构建和测试 Istio 的流程脚本。">
+  <meta name="twitter:description" content="本文讲述如何制作一个新的 Minikube-in-a-Container 容器和使用 Jenkins Pipeline 来构建和测试 Istio 的流程脚本。">
+  <meta property="og:description" content="本文讲述如何制作一个新的 Minikube-in-a-Container 容器和使用 Jenkins Pipeline 来构建和测试 Istio 的流程脚本。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="使用Minikube-in-a-Container和Jenkins构建Istio logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="使用Minikube-in-a-Container和Jenkins构建Istio logo" class="visible-xs visible-sm">
+                    <span class="sr-only">使用Minikube-in-a-Container和Jenkins构建Istio - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>使用Minikube-in-a-Container和Jenkins构建Istio</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2018年6月4日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://blog.aspenmesh.io/blog/2018/01/building-istio-with-minikube-in-a-container-and-jenkins/">Andrew Jenkins</a>
+                            
+                            
+                            | 译者 <a href="https://github.com/edwin19861218">戴佳顺</a>
+                            
+                            
+                            | 审校者
+                            
+                            <a href="https://jimmysong.io"><i>宋净超</i></a>
+                            
+                            
+                            |
+                            3300字 | 阅读大约需要7分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            <a href="https://blog.aspenmesh.io/blog/2018/01/building-istio-with-minikube-in-a-container-and-jenkins/">查看原文</a>
+                            |
+                            
+                            
+                            归档于 <a href="/categories/istio">istio</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/istio/"><i>#istio</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/jenkins/"><i>#jenkins</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <p>AspenMesh提供一种Istio的分布式架构支持，这意味着即使与上游Istio项目无关，我们也需要能够测试和修复Bug。为此我们已开发构建了我们自己的打包和测试基础架构方案。如果你对Istio的CI（持续集成）也感兴趣，请参考我们已经投入使用，可能有用但还没有提交给Circle CI或GKE的组件。</p>
+<p>这篇文章描述的是我们如何制作一个新的<code>Minikube-in-a-Container</code>容器和使用<code>Jenkins Pipeline</code>来构建和测试Istio的流程脚本。如果你觉得有必要，你可以通过<code>docker run</code>上运行minikube容器，然后在容器中部署功能性的kubernetes集群，不需要使用时可随时删除。Jenkins bits现在可帮助你构建Istio，也可以作为初始环境，以便在容器内构建容器。</p>
+<h2 id="minikube-in-a-container">Minikube-in-a-container</h2>
+<p>这部分描述了我们如何构建一个可以在构建过程中用来运行Istio冒烟测试的Minikube-in-a-container镜像。我们最初不是这么想的，我们最初使用本地localkube环境。我们不能让它在特定环境外工作，我们认为这是由于localkube和minikube之间有一点差异导致的。所以这是一个作为我们修复它使它能正常工作的记录。我们还添加了一些额外选项和工具，以便在生成的容器中使用Istio。这没有什么太多花样，但如果你要做类似的事情，我们希望它给你启发。</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/building-istio-with-minikube-in-a-container-and-jenkins/78a165e1gy1frx72gvbeqj20az0960t7.jpg" alt="minikube"></p>
+<p><a href="https://github.com/kubernetes/minikube">Minikube</a>可能对你来说是一个可以在随身携带的笔记本上通过虚机运行自己kubernetes集群的非常熟悉的项目。这种方法非常方便，但在某些情况下（比如不提供嵌套虚拟化的云提供商），你就不能或者不希望基于虚机来完成了。由于docker现在可以运行在docker内部，我们决定尝试在docker容器内制作我们自己的kubernetes集群。一个非持久性的kubernetes容器很容易启动，也可进行一些测试，并在完成后进行删除。同时这也非常适合持续集成。</p>
+<p>在我们的模型方案中，Kubernetes集群创建子docker容器（而不是Jérôme Petazzoni所<a href="http://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/">提到</a>的兄弟容器方案）。我们是故意这样做的，宁愿隔离子容器，而不是共享Docker构建的缓存。但是你应该在将你应用改造为DinD（docker in docker）之前阅读Jérôme的文章，也许DooD（在docker out of docker）是对你而言更好的方案。这篇文章供你参考。我们避免架构“变得更坏”的同时，对看起来“坏”和“丑”部分也应进行避免。</p>
+<p>当你启动docker容器时，会要求docker在OS内核中创建和设置一些命名空间（namespaces），然后在通过这些命名空间启动你的容器。命名空间像一个沙箱：当你在命名空间中（即通过命名空间隔离），通常只能看到命名空间内的东西。chroot命令，不仅影响文件系统，还影响PID，网络接口等。如果你通过 <code>--privileged</code> 参数启动了一个docker容器，那么所涉及的命名空间隔离将获得额外的权限，比如创建更多子命名空间隔离的能力。这是完成docker-in-docker（即在docker中运行docker）的核心技巧。有关更多细节，Jérôme是这方面的专家，请在<a href="https://blog.docker.com/2013/09/docker-can-now-run-within-docker/">这里</a>关注他的详细说明。</p>
+<p>总之，这就是大致步骤：</p>
+<ol>
+<li>
+<p>构建一个容器环境，完成docker，minikube，kubectl和依赖项的安装。</p>
+</li>
+<li>
+<p>添加一个假的systemctl shim来欺骗Minikube在没有真正安装systemd的环境中运行。</p>
+</li>
+<li>
+<p>使用 <code>--privileged</code> 参数启动容器</p>
+</li>
+<li>
+<p>让容器启动它自己内部的dockerd，这就是DinD的一部分。</p>
+</li>
+<li>
+<p>让容器通过参数 <code>minikube --vm-driver = none</code> 启动minikube，以便在容器中的minikube可以与与之一起运行的dockerd连接。</p>
+<p>所有你需要做的就是通过 <code>docker run --privileged</code> 运行容器，接着你就可以去使用kubectl了。这时如果你愿意，你可以在容器内运行kubectl，并得到一个真正的用完可随时删除的环境。</p>
+</li>
+</ol>
+<p>你现在可以试试它：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker run --privileged --rm -it quay.io/aspenmesh/minikube-dind
+docker exec -it &lt;container&gt; /bin/bash
+<span style="color:#75715e"># kubectl get nodes</span>
+&lt;....&gt;
+<span style="color:#75715e"># kubectl create -f https://k8s.io/docs/tasks/debug-application-cluster/shell-demo.yaml</span>
+<span style="color:#75715e"># kubectl exec -it shell-demo -- /bin/bash</span>
+</code></pre></div><p>当你退出时，启动时 <code>--rm</code> 参数使docker容器实例会被卸载并完全删除。</p>
+<p>对于比较重量级的使用方案，你可能需要通过<code>docker cp</code>命令将kubeconfig文件存放到主机上，并通过8443端口暴露的kube API与容器内的kubernetes进行通信。</p>
+<p>下面是可以使用的Dockerfile（你可以复制它，其中的相关支持脚本在<a href="https://gist.github.com/andrewjjenkins/798f5c736a187d616d256095662c0a76">这里</a>）：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Portions Copyright 2016 The Kubernetes Authors All rights reserved.</span>
+<span style="color:#75715e"># Portions Copyright 2018 AspenMesh</span>
+#
+<span style="color:#75715e"># Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);</span>
+<span style="color:#75715e"># you may not use this file except in compliance with the License.</span>
+<span style="color:#75715e"># You may obtain a copy of the License at</span>
+#
+<span style="color:#75715e">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+#
+<span style="color:#75715e"># Unless required by applicable law or agreed to in writing, software</span>
+<span style="color:#75715e"># distributed under the License is distributed on an &#34;AS IS&#34; BASIS,</span>
+<span style="color:#75715e"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span style="color:#75715e"># See the License for the specific language governing permissions and</span>
+<span style="color:#75715e"># limitations under the License.</span>
+#
+<span style="color:#75715e"># Based on:</span>
+<span style="color:#75715e"># https://github.com/kubernetes/minikube/tree/master/deploy/docker/localkube-dind</span>
+
+
+FROM debian:jessie
+
+<span style="color:#75715e"># Install minikube dependencies</span>
+RUN DEBIAN_FRONTEND<span style="color:#f92672">=</span>noninteractive apt-get update -y <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  DEBIAN_FRONTEND<span style="color:#f92672">=</span>noninteractive apt-get -yy -q --no-install-recommends install <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  iptables <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  ebtables <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  ethtool <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  ca-certificates <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  conntrack <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  socat <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  git <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  nfs-common <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  glusterfs-client <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  cifs-utils <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  apt-transport-https <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  ca-certificates <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  curl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  gnupg2 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  software-properties-common <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  bridge-utils <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  ipcalc <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  aufs-tools <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  sudo <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  <span style="color:#f92672">&amp;&amp;</span> DEBIAN_FRONTEND<span style="color:#f92672">=</span>noninteractive apt-get clean <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+<span style="color:#75715e"># Install docker</span>
+RUN <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  apt-key export <span style="color:#e6db74">&#34;9DC8 5822 9FC7 DD38 854A E2D8 8D81 803C 0EBF CD88&#34;</span> | gpg - <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  echo <span style="color:#e6db74">&#34;deb [arch=amd64] https://download.docker.com/linux/debian jessie stable&#34;</span> &gt;&gt; <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    /etc/apt/sources.list.d/docker.list <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  DEBIAN_FRONTEND<span style="color:#f92672">=</span>noninteractive apt-get update <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  DEBIAN_FRONTEND<span style="color:#f92672">=</span>noninteractive apt-get -yy -q --no-install-recommends install <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    docker-ce <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  <span style="color:#f92672">&amp;&amp;</span> DEBIAN_FRONTEND<span style="color:#f92672">=</span>noninteractive apt-get clean <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+VOLUME /var/lib/docker
+EXPOSE <span style="color:#ae81ff">2375</span>
+
+<span style="color:#75715e"># Install minikube</span>
+RUN curl -Lo minikube https://storage.googleapis.com/minikube/releases/v0.24.1/minikube-linux-amd64 <span style="color:#f92672">&amp;&amp;</span> chmod +x minikube
+ENV MINIKUBE_WANTUPDATENOTIFICATION<span style="color:#f92672">=</span>false
+ENV MINIKUBE_WANTREPORTERRORPROMPT<span style="color:#f92672">=</span>false
+ENV CHANGE_MINIKUBE_NONE_USER<span style="color:#f92672">=</span>true
+<span style="color:#75715e"># minikube --vm-driver=none checks systemctl before starting.  Instead of</span>
+<span style="color:#75715e"># setting up a real systemd environment, install this shim to tell minikube</span>
+<span style="color:#75715e"># what it wants to know: localkube isn&#39;t started yet.</span>
+COPY fake-systemctl.sh /usr/local/bin/systemctl
+EXPOSE <span style="color:#ae81ff">8443</span>
+
+<span style="color:#75715e"># Install kubectl</span>
+RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.9.1/bin/linux/amd64/kubectl <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  chmod a+x kubectl <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  mv kubectl /usr/local/bin
+
+<span style="color:#75715e"># Copy local start.sh</span>
+COPY start.sh /start.sh
+RUN chmod a+x /start.sh
+
+<span style="color:#75715e"># If nothing else specified, start up docker and kubernetes.</span>
+CMD /start.sh &amp; sleep <span style="color:#ae81ff">4</span> <span style="color:#f92672">&amp;&amp;</span> tail -F /var/log/docker.log /var/log/dind.log /var/log/minikube-start.log
+</code></pre></div><h2 id="istio整合jenkins">Istio整合Jenkins</h2>
+<p>现在我们已经构建了Kubernetes-in-a-container环境，我们可以将它用于我们的Istio版本。将构建系统Docker化非常有好处，因为开发人员可以快速创建用于CI构建的真实可用实例。以下是我们用于Istio构建的CI大致架构：</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/building-istio-with-minikube-in-a-container-and-jenkins/78a165e1gy1frx9by15u1j20b20bhdgg.jpg" alt=""></p>
+<ol>
+<li>
+<p><strong>Jenkins工作节点</strong>： 这是一个让Jenkins运行构建作业的虚拟机。它可能在同一时间被多个不同的构建作业共享。我们在工作节点上安装的任何工具对每个构建作业而言都是本地范围内（因此它不会影响其他构建），同时工作节点生命周期是临时短暂的（我们为了节省成本自动弹性缩放Jenkins工作节点），这一点很重要。</p>
+</li>
+<li>
+<p><strong>Minikube容器</strong>： 我们所做的第一件事就是构建并进入到我们上文所谈到的Minikube容器。构建作业的其余部分在此容器（或其子容器）内进行。Jenkins打包的工作区挂载到这里。Jenkins的docker插件负责在成功或失败后卸载删除这个我们需要清理的，涉及正在运行的Kubernetes和Istio相关组件的容器。</p>
+</li>
+<li>
+<p><strong>构建作业的容器</strong>：这是一个包含安装golang相关及其他构建工具的容器。这是我们编译Istio并构建其容器的地方。我们在minikube容器中测试这些组件，如果测试通过，则认为构建成功并将容器推送到我们的容器仓库中。</p>
+</li>
+</ol>
+<p>Jenkinsfile的大部分内容都是关于如何设置这些部分。接着，我们运行相同的步骤来构建Istio，以便在你的笔记本上进行 <code>make depend</code>、<code>make build</code>、<code>make test</code> 。</p>
+<p>在这里查看Jenkinsfile：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lua" data-lang="lua">node(<span style="color:#e6db74">&#39;docker&#39;</span>) {
+  properties([disableConcurrentBuilds()])
+
+  wkdir <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;src/istio.io/istio&#34;</span>
+
+  stage(<span style="color:#e6db74">&#39;Checkout&#39;</span>) {
+    checkout scm
+  }
+
+  <span style="color:#f92672">//</span> withRegistry writes to <span style="color:#f92672">/</span>home<span style="color:#f92672">/</span>ubuntu<span style="color:#f92672">/</span>.dockercfg outside of the container
+  <span style="color:#f92672">//</span> (even <span style="color:#66d9ef">if</span> you run it inside the docker plugin) which won<span style="color:#e6db74">&#39;t be visible
+</span><span style="color:#e6db74">  // inside the builder container, so copy them somewhere that will be
+</span><span style="color:#e6db74">  // visible.  We will symlink to .dockercfg only when needed to reduce
+</span><span style="color:#e6db74">  // the chance of accidentally using the credentials outside of push
+</span><span style="color:#e6db74">  docker.withRegistry(&#39;</span>https:<span style="color:#f92672">//</span>quay.io<span style="color:#e6db74">&#39;, &#39;</span>name<span style="color:#f92672">-</span>of<span style="color:#f92672">-</span>your<span style="color:#f92672">-</span>credentials<span style="color:#f92672">-</span><span style="color:#66d9ef">in</span><span style="color:#f92672">-</span>jenkins<span style="color:#e6db74">&#39;) {
+</span><span style="color:#e6db74">    stage(&#39;</span>Load Push Credentials<span style="color:#e6db74">&#39;) {
+</span><span style="color:#e6db74">      sh &#34;cp ~/.dockercfg ${pwd()}/.dockercfg-quay-creds&#34;
+</span><span style="color:#e6db74">    }
+</span><span style="color:#e6db74">  }
+</span><span style="color:#e6db74">
+</span><span style="color:#e6db74">  k8sImage = docker.build(
+</span><span style="color:#e6db74">    &#34;k8s-${env.BUILD_TAG}&#34;,
+</span><span style="color:#e6db74">    &#34;-f $wkdir/.jenkins/Dockerfile.minikube &#34; +
+</span><span style="color:#e6db74">    &#34;$wkdir/.jenkins/&#34;
+</span><span style="color:#e6db74">  )
+</span><span style="color:#e6db74">  k8sImage.withRun(&#39;</span><span style="color:#75715e">--privileged&#39;) { k8s -&gt;</span>
+    stage(<span style="color:#e6db74">&#39;Get kubeconfig&#39;</span>) {
+      sh <span style="color:#e6db74">&#34;docker exec ${k8s.id} /bin/bash -c </span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">while ! [ -e /kubeconfig ]; do echo waiting for kubeconfig; sleep 3; done</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">&#34;</span>
+      sh <span style="color:#e6db74">&#34;rm -f ${pwd()}/kubeconfig &amp;&amp; docker cp ${k8s.id}:/kubeconfig ${pwd()}/kubeconfig&#34;</span>
+
+      <span style="color:#f92672">//</span> Replace <span style="color:#e6db74">&#34;127.0.0.1&#34;</span> with the path that peer containers can use to
+      <span style="color:#f92672">//</span> get to minikube.
+      <span style="color:#f92672">//</span> minikube will bake certs including the subject <span style="color:#e6db74">&#34;kubernetes&#34;</span> so
+      <span style="color:#f92672">//</span> the kube<span style="color:#f92672">-</span>api server needs to be reachable from the client<span style="color:#e6db74">&#39;s concept
+</span><span style="color:#e6db74">      // of &#34;https://kubernetes:8443&#34; or kubectl will refuse to connect. 
+</span><span style="color:#e6db74">      sh &#34;sed -i&#39;&#39; -e &#39;</span>s;server: https:<span style="color:#f92672">//</span><span style="color:#ae81ff">127.0.0.1</span>:<span style="color:#ae81ff">8443</span>;server: https:<span style="color:#f92672">//</span>kubernetes:<span style="color:#ae81ff">8443</span>;<span style="color:#e6db74">&#39; kubeconfig&#34;
+</span><span style="color:#e6db74">    }
+</span><span style="color:#e6db74">
+</span><span style="color:#e6db74">    builder = docker.build(
+</span><span style="color:#e6db74">      &#34;istio-builder-${env.BUILD_TAG}&#34;,
+</span><span style="color:#e6db74">      &#34;-f $wkdir/.jenkins/Dockerfile.jenkins-build &#34; +
+</span><span style="color:#e6db74">        &#34;--build-arg UID=`id -u` --build-arg GID=`id -g` &#34; +
+</span><span style="color:#e6db74">        &#34;$wkdir/.jenkins&#34;,
+</span><span style="color:#e6db74">    )
+</span><span style="color:#e6db74">
+</span><span style="color:#e6db74">    builder.inside(
+</span><span style="color:#e6db74">      &#34;-e GOPATH=${pwd()} &#34; +
+</span><span style="color:#e6db74">      &#34;-e HOME=${pwd()} &#34; +
+</span><span style="color:#e6db74">      &#34;-e PATH=${pwd()}/bin:</span><span style="color:#960050;background-color:#1e0010">\</span><span style="color:#e6db74">$PATH &#34; +
+</span><span style="color:#e6db74">      &#34;-e KUBECONFIG=${pwd()}/kubeconfig &#34; +
+</span><span style="color:#e6db74">      &#34;-e DOCKER_HOST=</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">tcp://kubernetes:2375</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74"> &#34; +
+</span><span style="color:#e6db74">      &#34;--link ${k8s.id}:kubernetes&#34;
+</span><span style="color:#e6db74">    ) {
+</span><span style="color:#e6db74">      stage(&#39;</span>Check<span style="color:#e6db74">&#39;) {
+</span><span style="color:#e6db74">        sh &#34;ls -al&#34;
+</span><span style="color:#e6db74">
+</span><span style="color:#e6db74">        // If there are old credentials from a previous build, destroy them -
+</span><span style="color:#e6db74">        // we will only load them when needed in the push stage
+</span><span style="color:#e6db74">        sh &#34;rm -f ~/.dockercfg&#34;
+</span><span style="color:#e6db74">
+</span><span style="color:#e6db74">        sh &#34;cd $wkdir &amp;&amp; go get -u github.com/golang/lint/golint&#34;
+</span><span style="color:#e6db74">        sh &#34;cd $wkdir &amp;&amp; make check&#34;
+</span><span style="color:#e6db74">      }
+</span><span style="color:#e6db74">
+</span><span style="color:#e6db74">      stage(&#39;</span>Build<span style="color:#e6db74">&#39;) {
+</span><span style="color:#e6db74">        sh &#34;cd $wkdir &amp;&amp; make depend&#34;
+</span><span style="color:#e6db74">        sh &#34;cd $wkdir &amp;&amp; make build&#34;
+</span><span style="color:#e6db74">      }
+</span><span style="color:#e6db74">
+</span><span style="color:#e6db74">      stage(&#39;</span>Test<span style="color:#e6db74">&#39;) {
+</span><span style="color:#e6db74">        sh &#34;cp kubeconfig $wkdir/pilot/platform/kube/config&#34;
+</span><span style="color:#e6db74">        sh &#34;&#34;&#34;PROXYVERSION=</span><span style="color:#960050;background-color:#1e0010">\</span><span style="color:#e6db74">$(grep envoy-debug $wkdir/pilot/docker/Dockerfile.proxy_debug  |cut -d: -f2) &amp;&amp;
+</span><span style="color:#e6db74">          PROXY=debug-</span><span style="color:#960050;background-color:#1e0010">\</span><span style="color:#e6db74">$PROXYVERSION &amp;&amp;
+</span><span style="color:#e6db74">          curl -Lo - https://storage.googleapis.com/istio-build/proxy/envoy-</span><span style="color:#960050;background-color:#1e0010">\</span><span style="color:#e6db74">$PROXY.tar.gz | tar xz &amp;&amp;
+</span><span style="color:#e6db74">          mv usr/local/bin/envoy ${pwd()}/bin/envoy &amp;&amp;
+</span><span style="color:#e6db74">          rm -r usr/&#34;&#34;&#34;
+</span><span style="color:#e6db74">        sh &#34;cd $wkdir &amp;&amp; make test&#34;
+</span><span style="color:#e6db74">      }
+</span><span style="color:#e6db74">
+</span><span style="color:#e6db74">      stage(&#39;</span>Push<span style="color:#e6db74">&#39;) {
+</span><span style="color:#e6db74">        sh &#34;cd &amp;&amp; ln -sf .dockercfg-quay-creds .dockercfg&#34;
+</span><span style="color:#e6db74">        sh &#34;cd $wkdir &amp;&amp; &#34; +
+</span><span style="color:#e6db74">          &#34;make HUB=yourhub TAG=$BUILD_TAG push&#34;
+</span><span style="color:#e6db74">        gitTag = getTag(wkdir)
+</span><span style="color:#e6db74">        if (gitTag) {
+</span><span style="color:#e6db74">          sh &#34;cd $wkdir &amp;&amp; &#34; +
+</span><span style="color:#e6db74">            &#34;make HUB=yourhub TAG=$gitTag push&#34;
+</span><span style="color:#e6db74">        }
+</span><span style="color:#e6db74">        sh &#34;cd &amp;&amp; rm .dockercfg&#34;
+</span><span style="color:#e6db74">      }
+</span><span style="color:#e6db74">    }
+</span><span style="color:#e6db74">  }
+</span><span style="color:#e6db74">}
+</span><span style="color:#e6db74">
+</span><span style="color:#e6db74">String getTag(String wkdir) {
+</span><span style="color:#e6db74">  return sh(
+</span><span style="color:#e6db74">    script: &#34;cd $wkdir &amp;&amp; &#34; +
+</span><span style="color:#e6db74">      &#34;git describe --exact-match --tags </span><span style="color:#960050;background-color:#1e0010">\</span><span style="color:#e6db74">$GIT_COMMIT || true&#34;,
+</span><span style="color:#e6db74">    returnStdout: true
+</span><span style="color:#e6db74">  ).trim()
+</span><span style="color:#e6db74">}
+</span></code></pre></div><p>如果你想获取本文中的文件和支持脚本，你可以点击<a href="https://gist.github.com/andrewjjenkins/798f5c736a187d616d256095662c0a76">这里</a>。</p>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/istio-0-8-release-note/" data-toggle="tooltip" data-placement="top" title="Istio 0.8发布了！">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/the-path-to-service-mesh/" data-toggle="tooltip" data-placement="top" title="服务网格之路">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/gitops-for-istio-manage-istio-config-like-code/"><i class="fa fa-link"></i>Istio的GitOps—像代码一样管理Istio配置</a></li>
+         
+        <li><a href="/blog/istio-0-8-release-note/"><i class="fa fa-link"></i>Istio 0.8发布了！</a></li>
+         
+        <li><a href="/blog/deepin-service-mesh-tech-details/"><i class="fa fa-link"></i>深入解读Service Mesh背后的技术细节</a></li>
+         
+        <li><a href="/blog/istio-service-mesh-tutorial/"><i class="fa fa-link"></i>Istio Service Mesh教程</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

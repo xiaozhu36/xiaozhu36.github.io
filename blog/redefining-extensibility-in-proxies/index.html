@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>重新定义代理的扩展性：WebAssembly在Envoy与Istio中的应用 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="service mesh, 服务网格, wasm, istio">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="重新定义代理的扩展性：WebAssembly在Envoy与Istio中的应用" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/redefining-extensibility-in-proxies//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="编者按 istio1.5架构发生了重大升级，用于扩展代理服务器的新接口允许将Istio可扩展性从控制平面移至Sidecar代理本身，本文探讨采用Istio采用Wasm技术的背景和未来生态发展的考虑">
+  <meta property="og:description" content="编者按 istio1.5架构发生了重大升级，用于扩展代理服务器的新接口允许将Istio可扩展性从控制平面移至Sidecar代理本身，本文探讨采用Istio采用Wasm技术的背景和未来生态发展的考虑">
+  <meta name="twitter:description" content="编者按 istio1.5架构发生了重大升级，用于扩展代理服务器的新接口允许将Istio可扩展性从控制平面移至Sidecar代理本身，本文探讨采用Istio采用Wasm技术的背景和未来生态发展的考虑">
+  <meta property="og:description" content="编者按 istio1.5架构发生了重大升级，用于扩展代理服务器的新接口允许将Istio可扩展性从控制平面移至Sidecar代理本身，本文探讨采用Istio采用Wasm技术的背景和未来生态发展的考虑" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="重新定义代理的扩展性：WebAssembly在Envoy与Istio中的应用 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="重新定义代理的扩展性：WebAssembly在Envoy与Istio中的应用 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">重新定义代理的扩展性：WebAssembly在Envoy与Istio中的应用 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>重新定义代理的扩展性：WebAssembly在Envoy与Istio中的应用</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2020年3月7日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://istio.io">Istio</a>
+                            
+                            
+                            | 译者 <a href="https://lupeier.com">陆培尔</a>
+                            
+                            
+                            |
+                            4100字 | 阅读大约需要9分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            <a href="https://istio.io/blog/2020/wasm-announce/">查看原文</a>
+                            |
+                            
+                            
+                            归档于 <a href="/categories/istio">istio</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/servicemesh/"><i>#ServiceMesh</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/istio/"><i>#Istio</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/wasm/"><i>#Wasm</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/envoy/"><i>#Envoy</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <blockquote>
+<p>译者注：Istio的架构在1.5版本中发生了翻天覆地的变化，控制平面从微服务回归单体，pilot、citadel、galley等控制平面组件整合成了单一的istiod二进制文件，同时饱受诟病的mixer同志终于在1.5中deprecated了，社区呼声很高的Wasm以Proxy-Wasm plugins的方式登上历史舞台，官方承诺在1.6版本中提供标准的wasm插件配置API，甚至还推出了webassemblyhub这样的类似应用商店的服务，构建wasm plugin生态的野心不可谓不大。结合代理无关的ABI标准，只能说谷歌又在下一盘大棋。mixer的两大核心功能，check和report，分别使用Proxy-Wasm plugins和telemetry V2替代，曾经所谓的Mixer V2计划也渐渐烟消云散，湮没在历史尘埃中。本文翻译官方的技术博客，来一探本次的划时代变更proxy-wasm plugin的究竟。</p>
+</blockquote>
+<p>自2016年采用<a href="https://www.envoyproxy.io/">Envoy</a>以来，Istio项目一直希望提供一个平台，在此平台上可以构建丰富的扩展，以满足用户的多样化需求。 有很多理由可以向服务网格的数据平面添加功能-支持更新的协议，与专有安全控件集成或通过自定义指标增强可观察性等。</p>
+<p>在过去的一年半中，我们在Google的团队一直在努力使用<a href="https://webassembly.org/">WebAssembly</a>向Envoy代理添加动态可扩展性。 我们很高兴今天与大家分享这项工作，并推出<a href="https://github.com/proxy-wasm/spec">WebAssembly (Wasm) for Proxies</a> (Proxy-Wasm)：我们打算标准化的ABI； SDK； 它的第一个主要实现是新型的，低延迟的<a href="https://istio.io/docs/reference/config/telemetry">Istio遥测系统</a>。</p>
+<p>我们还与社区紧密合作，以确保为用户提供良好的开发人员体验，以帮助他们快速入门。 Google团队一直与<a href="https://solo.io/">Solo.io</a>团队紧密合作，他们已经构建了<a href="https://webassemblyhub.io/">WebAssembly Hub</a>，该服务用于构建，共享，发现和部署Wasm扩展。 使用WebAssembly Hub，Wasm扩展与容器一样易于管理，安装和运行。</p>
+<p>这项工作今天发布了Alpha版本，还有很多工作要做，但是我们很高兴将其交到开发人员手中，以便他们可以开始尝试由此带来的巨大可能性。</p>
+<h2 id="背景">背景</h2>
+<p>Istio和Envoy项目的创建原则都是基于对可扩展性的需求，但是两个项目采用了不同的方法。 Istio项目的重点是启用具有轻量级开发人员体验的称为<a href="https://istio.io/docs/reference/config/policy-and-telemetry/mixer-overview/">Mixer</a>的通用进程外扩展模型，而Envoy则专注于代理内<a href="https://www.envoyproxy.io/docs/envoy/latest/extending/extending">扩展</a>。</p>
+<p>每种方法都有其优点和缺点。 Istio模型导致严重的资源效率低下，从而影响了尾部延迟和资源利用率。 该模型在本质上也受到限制-例如，它永远不会为实现<a href="https://blog.envoyproxy.io/how-to-write-envoy-filters-like-a-ninja-part-1-d166e5abec09">自定义协议处理</a>提供支持。</p>
+<p>Envoy模型强化了整体的构建过程，并要求使用C++编写扩展，从而限制了开发人员生态系统。 为集群发布新的扩展需要推入新的二进制文件并重新启动，这可能很难协调，并且会造成停机风险。 这也激励了开发人员向Envoy上游提交他们的扩展，而这些扩展仅由一小部分生产环境使用，只是为了肩负其发布机制。</p>
+<p>随着时间的流逝，Istio的一些对性能最敏感的功能已进入Envoy的上游，例如<a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/rbac_filter">流量策略检查</a>和<a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/rbac_filter">遥测报告</a>。 尽管如此，我们一直希望将单个堆栈融合以实现可扩展性，从而减少折衷：这使Envoy版本与其扩展生态系统脱钩，使开发人员能够使用他们选择的语言进行工作，并使Istio可靠地推出新功能而不会造成停机风险。</p>
+<h2 id="什么是webassembly">什么是WebAssembly？</h2>
+<p><a href="https://webassembly.org/">WebAssembly</a>（Wasm）是一种可移植的字节码格式，用于以接近本机的速度执行以<a href="https://github.com/appcypher/awesome-wasm-langs">多种语言</a>编写的代码。 其最初的<a href="https://webassembly.org/docs/high-level-goals/">设计目标</a>与上述挑战很好地吻合，并且在其背后得到了可观的行业支持。 Wasm是在所有主要浏览器中本地运行的第四种标准语言（继HTML，CSS和JavaScript之后），于2019年12月成为<a href="https://www.w3.org/TR/wasm-core-1/">W3C Recommendation</a>。这使我们有信心对其进行战略下注。</p>
+<p>尽管WebAssembly最初是作为客户端技术而诞生的，但在服务器上使用它具有许多优点。 运行时是内存安全的，并且经过沙盒处理以确保安全。 有一个大型工具生态系统可用于以文本或二进制格式编译和调试Wasm。 <a href="https://www.w3.org/">W3C</a>和<a href="https://bytecodealliance.org/">BytecodeAlliance</a>已成为其他服务器端工作的活跃中枢。 例如，Wasm社区正在W3C标准化<a href="https://hacks.mozilla.org/2019/03/standardizing-wasi-a-webassembly-system-interface/">“WebAssembly系统接口”（WASI）</a>，并提供一个示例实现，该示例为Wasm“程序”提供类似于OS的抽象。</p>
+<h2 id="为envoy带来webassembly">为Envoy带来WebAssembly</h2>
+<p><a href="https://github.com/envoyproxy/envoy/issues/4272">在过去的18个月中</a>，我们一直与Envoy社区合作，将Wasm可扩展性纳入Envoy并在上游做出贡献。 我们很高兴地宣布，此特性在<a href="https://istio.io/news/releases/1.5.x/announcing-1.5/">Istio 1.5</a>随附的Envoy版本中Alpha可用，其源代码包含在<a href="https://github.com/envoyproxy/envoy-wasm/">envoy-wasm</a>开发分支中，并且正在努力将其合并到Envoy主干中。 该实现使用内置在Google高性能<a href="https://v8.dev/">V8引擎</a>中的WebAssembly运行时。</p>
+<p>除了底层的运行时，我们还构建了：</p>
+<ul>
+<li>
+<p>用于在代理中嵌入Wasm的通用应用程序二进制接口（ABI），这意味着编译后的扩展将在不同版本的Envoy或其他代理（如果他们选择实施ABI）下也可以使用</p>
+</li>
+<li>
+<p>用于在<a href="https://github.com/proxy-wasm/proxy-wasm-cpp-sdk">C++</a>，<a href="https://github.com/proxy-wasm/proxy-wasm-rust-sdk">Rust</a>和<a href="https://github.com/solo-io/proxy-runtime">AssemblyScript</a>中轻松进行扩展开发的SDK，还有更多后续更新</p>
+</li>
+<li>
+<p>有关如何在Istio和独立的Envoy中进行部署的综合<a href="https://docs.solo.io/web-assembly-hub/latest/tutorial_code/">示例和说明</a></p>
+</li>
+<li>
+<p>允许使用其他Wasm运行时的抽象，包括“空”运行时，该运行时将在本地把扩展编译进Envoy中，这对于测试和调试非常有用</p>
+</li>
+</ul>
+<p>使用Wasm扩展Envoy可以为我们带来几个主要好处：</p>
+<ul>
+<li>
+<p>敏捷性：可以使用Istio控制平面在运行时交付和重新加载扩展。 这样可以快速进行扩展的开发→测试→发布周期，而无需Envoy的重启。</p>
+</li>
+<li>
+<p>标准发布：合并到主树中之后，Istio和其他人将能够使用Envoy的标准发布，而不是自定义版本。 这也将使Envoy社区有更多的时间将某些内置扩展迁移到该模型，从而减少其受支持的覆盖区域。</p>
+</li>
+<li>
+<p>可靠性和隔离性：扩展部署在具有资源限制的沙箱中，这意味着它们现在可以崩溃或泄漏内存，而不会影响Envoy主进程。 CPU和内存使用率也可以受到限制。</p>
+</li>
+<li>
+<p>安全性：沙盒具有用于与Envoy进行通信的明确定义的API，因此扩展只能访问并修改连接或请求中有限数量的属性。 此外，由于Envoy会协调此交互过程，因此可以隐藏或清除扩展中的敏感信息（例如，HTTP标头中的“Authorization”和“ Cookie”属性，或客户端的IP地址）。</p>
+</li>
+<li>
+<p>灵活性：<a href="https://github.com/appcypher/awesome-wasm-langs">可以将30多种编程语言编译为WebAssembly</a>，从而使来自各种背景（C++，Go，Rust，Java，TypeScript等）的开发人员都可以使用他们选择的语言来编写Envoy扩展。</p>
+</li>
+</ul>
+<p>“看到WASM在Envoy中的支持，我感到非常兴奋； 这是Envoy可扩展性的未来。 Envoy的WASM支持与社区驱动hub相结合，将在服务网格和API网关用例中释放出令人难以置信的网络领域创新。 我迫不及待地想看到社区的建设向前发展。” –Envoy创作者Matt Klein。</p>
+<p>有关实现的技术细节，请关注即将在<a href="https://blog.envoyproxy.io/">Envoy博客</a>上发布的帖子。</p>
+<p>主机环境和扩展之间的<a href="https://github.com/proxy-wasm">Proxy-Wasm</a>接口有意设计为与代理无关。 我们已将其内置到Envoy中，但旨在供其他代理供应商采用。 我们希望看到一个世界，您可以获取为Istio和Envoy编写的扩展，并在其他基础架构中运行它。 您很快就会听到更多有关此的信息。</p>
+<h2 id="在istio中构建webassembly">在Istio中构建WebAssembly</h2>
+<p>为了提高性能，Istio将其几个扩展移动到了1.5版本中内置的Envoy构建中。 在执行此工作时，我们一直在测试以确保这些相同的扩展可以作为Proxy-Wasm模块进行编译和运行，而行为没有任何变化。 鉴于我们认为Wasm目前的支持为Alpha，因此我们还没有准备好将此设置设为默认设置。 然而，这使我们对通用方法以及已开发的主机环境ABI和SDK充满了信心。</p>
+<p>我们还非常小心地确保Istio控制平面及其<a href="https://istio.io/docs/reference/config/networking/envoy-filter/">Envoy配置API</a>可以支持Wasm。 我们有一些示例来说明如何执行几种常见的定制操作，例如定制标头解码或程序化路由，这是用户的常见要求。 当我们将支持转移到Beta时，您将看到说明在Istio中使用Wasm的最佳实践的文档。</p>
+<p>最后，我们正在与许多编写了<a href="https://istio.io/docs/reference/config/policy-and-telemetry/adapters/">Mixer适配器</a>的供应商合作，以帮助他们迁移到Wasm —如果这是前进的最佳途径。 Mixer将在将来的版本中转为社区项目，在那里它将仍可用于遗留用例。</p>
+<h2 id="开发者体验">开发者体验</h2>
+<p>没有出色的开发人员体验，再强大的工具也毫无用处。 Solo.io<a href="https://www.solo.io/blog/an-extended-and-improved-webassembly-hub-to-helps-bring-the-power-of-webassembly-to-envoy-and-istio/">最近宣布</a>发布<a href="https://webassemblyhub.io/">WebAssembly Hub</a>，这是一套用于构建，部署，共享和发现Envoy和Istio的Envoy Proxy Wasm扩展的工具和存储库。</p>
+<p>WebAssembly Hub完全自动化了开发和部署Wasm扩展所需的许多步骤。 使用WebAssembly Hub工具，用户可以轻松地以任何受支持的语言将其代码编译为Wasm扩展。 然后，可以将这些扩展上传到Hub注册表，并使用单个命令将其部署和取消部署到Istio。</p>
+<p>在后台，Hub会处理很多细节问题，例如引入正确的工具链，ABI版本验证，权限控制等。 该工作流程还通过自动化扩展部署，消除了跨Istio服务代理的配置更改带来的麻烦。 该工具可帮助用户和运维人员避免由于配置错误或版本不匹配而引起的意外行为。</p>
+<p>WebAssembly Hub工具提供了功能强大的CLI和优雅且易于使用的图形用户界面。 WebAssembly Hub的一个重要目标是简化构建Wasm模块的体验，并为开发人员提供共享和发现有用扩展的协作场所。</p>
+<p>请查看<a href="https://docs.solo.io/web-assembly-hub/latest/tutorial_code/">入门指南</a>，以创建您的第一个Proxy-Wasm扩展。</p>
+<h2 id="下一步">下一步</h2>
+<p>除了努力发布Beta版，我们还致力于确保围绕Proxy-Wasm有一个持久的社区。 ABI需要最终确定，而将其转变为标准的工作将会在适当的标准机构内获得更广泛的反馈后完成。 向Envoy主干提供上游支持的工作仍在进行中。 我们还在为工具和WebAssembly Hub寻找合适的社区之家。</p>
+<p>原文：<a href="https://istio.io/blog/2020/wasm-announce/">Redefining extensibility in proxies - introducing WebAssembly to Envoy and Istio</a></p>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/istio-1-5-explanation/" data-toggle="tooltip" data-placement="top" title="拥抱变化 —— Istio 1.5 新特性解读">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/202003-k8s-scheduling-framework/" data-toggle="tooltip" data-placement="top" title="浅谈 Kubernetes Scheduling-Framework 插件的实现">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/201911-envoy-memory-optimize/"><i class="fa fa-link"></i>如何降低Istio服务网格中Envoy的内存开销？</a></li>
+         
+        <li><a href="/blog/201910-what-can-service-mesh-learn-from-sdn/"><i class="fa fa-link"></i>Service Mesh是下一代SDN吗？</a></li>
+         
+        <li><a href="/blog/201910-pilot-code-deep-dive/"><i class="fa fa-link"></i>Istio Pilot代码深度解析</a></li>
+         
+        <li><a href="/blog/istio-analysis-6/"><i class="fa fa-link"></i>Istio 庖丁解牛六：多集群网格应用场景</a></li>
+         
+        <li><a href="/blog/istio-analysis-5/"><i class="fa fa-link"></i>Istio 庖丁解牛五：多集群网格实现分析</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

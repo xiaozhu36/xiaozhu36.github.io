@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Istio Pilot代码深度解析 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="service mesh, 服务网格, istio">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="Istio Pilot代码深度解析" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/201910-pilot-code-deep-dive//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="在Istio架构中，Pilot组件属于最核心的组件，负责了服务网格中的流量管理以及控制面和数据面之间的配置下发。Pilot内部的代码结构比较复杂，本文中我们将通过对Pilot的代码的深入分析来了解Pilot实现原理。">
+  <meta property="og:description" content="在Istio架构中，Pilot组件属于最核心的组件，负责了服务网格中的流量管理以及控制面和数据面之间的配置下发。Pilot内部的代码结构比较复杂，本文中我们将通过对Pilot的代码的深入分析来了解Pilot实现原理。">
+  <meta name="twitter:description" content="在Istio架构中，Pilot组件属于最核心的组件，负责了服务网格中的流量管理以及控制面和数据面之间的配置下发。Pilot内部的代码结构比较复杂，本文中我们将通过对Pilot的代码的深入分析来了解Pilot实现原理。">
+  <meta property="og:description" content="在Istio架构中，Pilot组件属于最核心的组件，负责了服务网格中的流量管理以及控制面和数据面之间的配置下发。Pilot内部的代码结构比较复杂，本文中我们将通过对Pilot的代码的深入分析来了解Pilot实现原理。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="Istio Pilot代码深度解析 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="Istio Pilot代码深度解析 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">Istio Pilot代码深度解析 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>Istio Pilot代码深度解析</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2019年10月23日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://zhaohuabing.com">赵化冰</a>
+                            
+                            
+                            
+                            | 审校者
+                            
+                            <a href="https://guangmingluo.github.io/guangmingluo.io/"><i>罗广明</i></a>
+                            
+                            
+                            |
+                            4900字 | 阅读大约需要10分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            <a href="https://zhaohuabing.com/post/2019-10-21-pilot-discovery-code-analysis/">查看原文</a>
+                            |
+                            
+                            
+                            归档于 <a href="/categories/istio">istio</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/istio/"><i>#istio</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <h2 id="istio-pilot-组件介绍">Istio Pilot 组件介绍</h2>
+<p>在Istio架构中，Pilot组件属于最核心的组件，负责了服务网格中的流量管理以及控制面和数据面之间的配置下发。Pilot内部的代码结构比较复杂，本文中我们将通过对Pilot的代码的深入分析来了解Pilot实现原理。</p>
+<p>首先我们来看一下Pilot在Istio中的功能定位，Pilot将服务信息和配置数据转换为xDS接口的标准数据结构，通过gRPC下发到数据面的Envoy。如果把Pilot看成一个处理数据的黑盒，则其有两个输入，一个输出：</p>
+<p><img src="pilot-input-output.svg" alt="Pilot的输入与输出"></p>
+<p>目前Pilot的输入包括两部分数据来源：</p>
+<ul>
+<li>服务数据： 来源于各个服务注册表(Service Registry)，例如Kubernetes中注册的Service，Consul Catalog中的服务等。</li>
+<li>配置规则： 各种配置规则，包括路由规则及流量管理规则等，通过Kubernetes CRD(Custom Resources Definition)形式定义并存储在Kubernetes中。</li>
+</ul>
+<p>Pilot的输出为符合xDS接口的数据面配置数据，并通过gRPC Streaming接口将配置数据推送到数据面的Envoy中。</p>
+<p>备注：Istio代码库在不停变化更新中，本文分析所基于的代码commit为: d539abe00c2599d80c6d64296f78d3bb8ab4b033</p>
+<h2 id="pilot-discovery-代码结构">Pilot-Discovery 代码结构</h2>
+<p>Istio Pilot的代码分为Pilot-Discovery和Pilot-Agent，其中Pilot-Agent用于在数据面负责Envoy的生命周期管理，Pilot-Discovery才是控制面进行流量管理的组件，本文将重点分析控制面部分，即Pilot-Discovery的代码。</p>
+<p>下图是Pilot-Discovery组件代码的主要结构：
+<img src="pilot-discovery.svg" alt="Pilot-Discovery代码结构"></p>
+<p>Pilot-Discovery的入口函数为：pilot/cmd/pilot-discovery/main.go中的main方法。main方法中创建了Discovery Server，Discovery Server中主要包含三部分逻辑：</p>
+<h3 id="config-controller">Config Controller</h3>
+<p>Config Controller用于管理各种配置数据，包括用户创建的流量管理规则和策略。Istio目前支持三种类型的Config Controller：</p>
+<ul>
+<li>Kubernetes：使用Kubernetes来作为配置数据的存储，该方式直接依附于Kubernetes强大的CRD机制来存储配置数据，简单方便，是Istio最开始使用的配置存储方案。</li>
+<li>MCP (Mesh Configuration Protocol)：使用Kubernetes来存储配置数据导致了Istio和Kubernetes的耦合，限制了Istio在非Kubernetes环境下的运用。为了解决该耦合，Istio社区提出了MCP，MCP定义了一个向Istio控制面下发配置数据的标准协议，Istio Pilot作为MCP Client，任何实现了MCP协议的Server都可以通过MCP协议向Pilot下发配置，从而解除了Istio和Kubernetes的耦合。如果想要了解更多关于MCP的内容，请参考文后的链接。</li>
+<li>Memory：一个在内存中的Config Controller实现，主要用于测试。</li>
+</ul>
+<p>目前Istio的配置包括：</p>
+<ul>
+<li>Virtual Service: 定义流量路由规则。</li>
+<li>Destination Rule: 定义和一个服务或者subset相关的流量处理规则，包括负载均衡策略，连接池大小，断路器设置，subset定义等等。</li>
+<li>Gateway: 定义入口网关上对外暴露的服务。</li>
+<li>Service Entry: 通过定义一个Service Entry可以将一个外部服务手动添加到服务网格中。</li>
+<li>Envoy Filter: 通过Pilot在Envoy的配置中添加一个自定义的Filter。</li>
+</ul>
+<h3 id="service-controller">Service Controller</h3>
+<p>Service Controller用于管理各种Service Registry，提出服务发现数据，目前Istio支持的Service Registry包括：</p>
+<ul>
+<li>Kubernetes：对接Kubernetes Registry，可以将Kubernetes中定义的Service和Instance采集到Istio中。</li>
+<li>Consul： 对接Consul Catalog，将Consul中定义的Service采集到Istio中。</li>
+<li>MCP： 和MCP config controller类似，从MCP Server中获取Service和Service Instance。</li>
+<li>Memory： 一个内存中的Service Controller实现，主要用于测试。</li>
+</ul>
+<h3 id="discovery-service">Discovery Service</h3>
+<p>Discovery Service中主要包含下述逻辑：</p>
+<ul>
+<li>启动gRPC Server并接收来自Envoy端的连接请求。</li>
+<li>接收Envoy端的xDS请求，从Config Controller和Service Controller中获取配置和服务信息，生成响应消息发送给Envoy。</li>
+<li>监听来自Config Controller的配置变化消息和来自Service Controller的服务变化消息，并将配置和服务变化内容通过xDS接口推送到Envoy。（备注：目前Pilot未实现增量变化推送，每次变化推送的是全量配置，在网格中服务较多的情况下可能会有性能问题）。</li>
+</ul>
+<h2 id="pilot-discovery-业务流程">Pilot-Discovery 业务流程</h2>
+<p>Pilot-Disocvery包括以下主要的几个业务流程：</p>
+<h3 id="初始化pilot-discovery的各个主要组件">初始化Pilot-Discovery的各个主要组件</h3>
+<p>Pilot-Discovery命令的入口为pilot/cmd/pilot-discovery/main.go中的main方法，在该方法中创建Pilot Server,Server代码位于文件pilot/pkg/bootstrap/server.go中。Server主要做了下面一些初始化工作：</p>
+<ul>
+<li>创建并初始化Config Controller。</li>
+<li>创建并初始化Service Controller。</li>
+<li>创建并初始化Discovery Server，Pilot中创建了基于Envoy V1 API的HTTP Discovery Server和基于Envoy V2 API的GPRC Discovery Server。由于V1已经被废弃，本文将主要分析V2 API的gRPC Discovery Server。</li>
+<li>将Discovery Server注册为Config Controller和Service Controller的Event Handler，监听配置和服务变化消息。</li>
+</ul>
+<p><img src="pilot-discovery-initialization.svg" alt=""></p>
+<h3 id="创建grpc-server并接收envoy的连接请求">创建gRPC Server并接收Envoy的连接请求</h3>
+<p>Pilot Server创建了一个gRPC Server，用于监听和接收来自Envoy的xDS请求。pilot/pkg/proxy/envoy/v2/ads.go 中的 DiscoveryServer.StreamAggregatedResources方法被注册为gRPC Server的服务处理方法。</p>
+<p>当gRPC Server收到来自Envoy的连接时，会调用DiscoveryServer.StreamAggregatedResources方法，在该方法中创建一个XdsConnection对象，并开启一个goroutine从该connection中接收客户端的xDS请求并进行处理；如果控制面的配置发生变化，Pilot也会通过该connection把配置变化主动推送到Envoy端。</p>
+<p><img src="pilot-discovery-receive-connection.svg%22" alt=""></p>
+<h3 id="配置变化后向envoy推送更新">配置变化后向Envoy推送更新</h3>
+<p>这是Pilot中最复杂的一个业务流程，主要是因为代码中采用了多个channel和queue对变化消息进行合并和转发。该业务流程如下：</p>
+<ol>
+<li>Config Controller或者Service Controller在配置或服务发生变化时通过回调方法通知Discovery Server，Discovery Server将变化消息放入到Push Channel中。</li>
+<li>Discovery Server通过一个goroutine从Push Channel中接收变化消息，将一段时间内连续发生的变化消息进行合并。如果超过指定时间没有新的变化消息，则将合并后的消息加入到一个队列Push Queue中。</li>
+<li>另一个goroutine从Push Queue中取出变化消息，生成XdsEvent，发送到每个客户端连接的Push Channel中。</li>
+<li>在DiscoveryServer.StreamAggregatedResources方法中从Push Channel中取出XdsEvent，然后根据上下文生成符合xDS接口规范的DiscoveryResponse，通过gRPC推送给Envoy端。（gRPC会为每个client连接单独分配一个goroutine来进行处理，因此不同客户端连接的StreamAggregatedResources处理方法是在不同goroutine中处理的）</li>
+</ol>
+<p><img src="pilot-discovery-push-changes.svg" alt=""></p>
+<h3 id="响应envoy主动发起的xds请求">响应Envoy主动发起的xDS请求</h3>
+<p>Pilot和Envoy之间建立的是一个双向的Streaming gRPC服务调用，因此Pilot可以在配置变化时向Envoy推送，Envoy也可以主动发起xDS调用请求获取配置。Envoy主动发起xDS请求的流程如下：</p>
+<ol>
+<li>Envoy通过创建好的gRPC连接发送一个DiscoveryRequest</li>
+<li>Discovery Server通过一个goroutine从XdsConnection中接收来自Envoy的DiscoveryRequest，并将请求发送到ReqChannel中</li>
+<li>Discovery Server的另一个goroutine从ReqChannel中接收DiscoveryRequest，根据上下文生成符合xDS接口规范的DiscoveryResponse，然后返回给Envoy。</li>
+</ol>
+<p><img src="pilot-discovery-client-request.svg%22" alt=""></p>
+<h3 id="discovery-server业务处理关键代码片段">Discovery Server业务处理关键代码片段</h3>
+<p>下面是Discovery Server的关键代码片段和对应的业务逻辑注解，为方便阅读，代码中只保留了逻辑主干，去掉了一些不重要的细节。</p>
+<h4 id="处理xds请求和推送的关键代码">处理xDS请求和推送的关键代码</h4>
+<p>该部分关键代码位于 <code>istio.io/istio/pilot/pkg/proxy/envoy/v2/ads.go</code> 文件的StreamAggregatedResources 方法中。StreamAggregatedResources方法被注册为gRPC Server的handler，对于每一个客户端连接，gRPC Server会启动一个goroutine来进行处理。</p>
+<p>代码中主要包含以下业务逻辑：</p>
+<ul>
+<li>从gRPC连接中接收来自Envoy的xDS 请求，并放到一个channel reqChannel中。</li>
+<li>从reqChannel中接收xDS请求，根据xDS请求的类型构造响应并发送给Envoy。</li>
+<li>从connection的pushChannel中接收Service或者Config变化后的通知，构造xDS响应消息，将变化内容推送到Envoy端。</li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// StreamAggregatedResources implements the ADS interface.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">DiscoveryServer</span>) <span style="color:#a6e22e">StreamAggregatedResources</span>(<span style="color:#a6e22e">stream</span> <span style="color:#a6e22e">ads</span>.<span style="color:#a6e22e">AggregatedDiscoveryService_StreamAggregatedResourcesServer</span>) <span style="color:#66d9ef">error</span> {
+        
+    <span style="color:#f92672">......</span>
+
+    <span style="color:#75715e">//创建一个goroutine来接收来自Envoy的xDS请求，并将请求放到reqChannel中
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">con</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">newXdsConnection</span>(<span style="color:#a6e22e">peerAddr</span>, <span style="color:#a6e22e">stream</span>)
+    <span style="color:#a6e22e">reqChannel</span> <span style="color:#f92672">:=</span> make(<span style="color:#66d9ef">chan</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">xdsapi</span>.<span style="color:#a6e22e">DiscoveryRequest</span>, <span style="color:#ae81ff">1</span>)
+    <span style="color:#66d9ef">go</span> <span style="color:#a6e22e">receiveThread</span>(<span style="color:#a6e22e">con</span>, <span style="color:#a6e22e">reqChannel</span>, <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">receiveError</span>)
+
+     <span style="color:#f92672">......</span>
+    
+    <span style="color:#66d9ef">for</span> {
+        <span style="color:#66d9ef">select</span>{
+        <span style="color:#75715e">//从reqChannel接收Envoy端主动发起的xDS请求
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">case</span> <span style="color:#a6e22e">discReq</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">reqChannel</span>:        
+            <span style="color:#75715e">//根据请求的类型构造相应的xDS Response并发送到Envoy端
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">switch</span> <span style="color:#a6e22e">discReq</span>.<span style="color:#a6e22e">TypeUrl</span> {
+            <span style="color:#66d9ef">case</span> <span style="color:#a6e22e">ClusterType</span>:
+                <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">pushCds</span>(<span style="color:#a6e22e">con</span>, <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">globalPushContext</span>(), <span style="color:#a6e22e">versionInfo</span>())
+            <span style="color:#66d9ef">case</span> <span style="color:#a6e22e">ListenerType</span>:
+                <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">pushLds</span>(<span style="color:#a6e22e">con</span>, <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">globalPushContext</span>(), <span style="color:#a6e22e">versionInfo</span>())
+            <span style="color:#66d9ef">case</span> <span style="color:#a6e22e">RouteType</span>:
+                <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">pushRoute</span>(<span style="color:#a6e22e">con</span>, <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">globalPushContext</span>(), <span style="color:#a6e22e">versionInfo</span>())
+            <span style="color:#66d9ef">case</span> <span style="color:#a6e22e">EndpointType</span>:
+                <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">pushEds</span>(<span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">globalPushContext</span>(), <span style="color:#a6e22e">con</span>, <span style="color:#a6e22e">versionInfo</span>(), <span style="color:#66d9ef">nil</span>)
+            }
+
+        <span style="color:#75715e">//从PushChannel接收Service或者Config变化后的通知
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">case</span> <span style="color:#a6e22e">pushEv</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">con</span>.<span style="color:#a6e22e">pushChannel</span>:
+            <span style="color:#75715e">//将变化内容推送到Envoy端
+</span><span style="color:#75715e"></span>            <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">pushConnection</span>(<span style="color:#a6e22e">con</span>, <span style="color:#a6e22e">pushEv</span>)   
+        }            
+    }
+}
+</code></pre></div><h4 id="处理服务和配置变化的关键代码">处理服务和配置变化的关键代码</h4>
+<p>该部分关键代码位于 <code>istio.io/istio/pilot/pkg/proxy/envoy/v2/discovery.go</code> 文件中，用于监听服务和配置变化消息，并将变化消息合并后通过Channel发送给前面提到的 StreamAggregatedResources 方法进行处理。</p>
+<p>ConfigUpdate是处理服务和配置变化的回调函数，service controller和config controller在发生变化时会调用该方法通知Discovery Server。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">DiscoveryServer</span>) <span style="color:#a6e22e">ConfigUpdate</span>(<span style="color:#a6e22e">req</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">model</span>.<span style="color:#a6e22e">PushRequest</span>) {
+  <span style="color:#a6e22e">inboundConfigUpdates</span>.<span style="color:#a6e22e">Increment</span>()
+
+  <span style="color:#75715e">//服务或配置变化后，将一个PushRequest发送到pushChannel中
+</span><span style="color:#75715e"></span>  <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">pushChannel</span> <span style="color:#f92672">&lt;-</span> <span style="color:#a6e22e">req</span>
+}
+</code></pre></div><p>在debounce方法中将连续发生的PushRequest进行合并，如果一段时间内没有收到新的PushRequest，再发起推送；以避免由于服务和配置频繁变化给系统带来较大压力。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// The debounce helper function is implemented to enable mocking
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">debounce</span>(<span style="color:#a6e22e">ch</span> <span style="color:#66d9ef">chan</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">model</span>.<span style="color:#a6e22e">PushRequest</span>, <span style="color:#a6e22e">stopCh</span> <span style="color:#f92672">&lt;-</span><span style="color:#66d9ef">chan</span> <span style="color:#66d9ef">struct</span>{}, <span style="color:#a6e22e">pushFn</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">req</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">model</span>.<span style="color:#a6e22e">PushRequest</span>)) {
+
+    <span style="color:#f92672">......</span>
+
+    <span style="color:#a6e22e">pushWorker</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">func</span>() {
+        <span style="color:#a6e22e">eventDelay</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Since</span>(<span style="color:#a6e22e">startDebounce</span>)
+        <span style="color:#a6e22e">quietTime</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Since</span>(<span style="color:#a6e22e">lastConfigUpdateTime</span>)
+
+        <span style="color:#75715e">// it has been too long or quiet enough
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">//一段时间内没有收到新的PushRequest，再发起推送
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">eventDelay</span> <span style="color:#f92672">&gt;=</span> <span style="color:#a6e22e">DebounceMax</span> <span style="color:#f92672">||</span> <span style="color:#a6e22e">quietTime</span> <span style="color:#f92672">&gt;=</span> <span style="color:#a6e22e">DebounceAfter</span> {
+            <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">req</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+                <span style="color:#a6e22e">pushCounter</span><span style="color:#f92672">++</span>
+                <span style="color:#a6e22e">adsLog</span>.<span style="color:#a6e22e">Infof</span>(<span style="color:#e6db74">&#34;Push debounce stable[%d] %d: %v since last change, %v since last push, full=%v&#34;</span>,
+                <span style="color:#a6e22e">pushCounter</span>, <span style="color:#a6e22e">debouncedEvents</span>,
+                <span style="color:#a6e22e">quietTime</span>, <span style="color:#a6e22e">eventDelay</span>, <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Full</span>)
+
+                <span style="color:#a6e22e">free</span> = <span style="color:#66d9ef">false</span>
+                <span style="color:#66d9ef">go</span> <span style="color:#a6e22e">push</span>(<span style="color:#a6e22e">req</span>)
+                <span style="color:#a6e22e">req</span> = <span style="color:#66d9ef">nil</span>
+                <span style="color:#a6e22e">debouncedEvents</span> = <span style="color:#ae81ff">0</span>
+            }
+        } <span style="color:#66d9ef">else</span> {
+           <span style="color:#a6e22e">timeChan</span> = <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">After</span>(<span style="color:#a6e22e">DebounceAfter</span> <span style="color:#f92672">-</span> <span style="color:#a6e22e">quietTime</span>)
+        }
+    }
+    <span style="color:#66d9ef">for</span> {
+        <span style="color:#66d9ef">select</span> {
+        <span style="color:#f92672">......</span>
+
+        <span style="color:#66d9ef">case</span> <span style="color:#a6e22e">r</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">ch</span>:
+            <span style="color:#a6e22e">lastConfigUpdateTime</span> = <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>()
+            <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">debouncedEvents</span> <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> {
+                <span style="color:#a6e22e">timeChan</span> = <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">After</span>(<span style="color:#a6e22e">DebounceAfter</span>)
+                <span style="color:#a6e22e">startDebounce</span> = <span style="color:#a6e22e">lastConfigUpdateTime</span>
+            }
+            <span style="color:#a6e22e">debouncedEvents</span><span style="color:#f92672">++</span>
+            <span style="color:#75715e">//合并连续发生的多个PushRequest
+</span><span style="color:#75715e"></span>            <span style="color:#a6e22e">req</span> = <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Merge</span>(<span style="color:#a6e22e">r</span>)
+        <span style="color:#66d9ef">case</span> <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">timeChan</span>:
+           <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">free</span> {
+               <span style="color:#a6e22e">pushWorker</span>()
+            }
+        <span style="color:#66d9ef">case</span> <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">stopCh</span>:
+            <span style="color:#66d9ef">return</span>
+    }
+  }
+}
+</code></pre></div><h3 id="完整的业务流程">完整的业务流程</h3>
+<p><img src="pilot-discovery-sequence.svg%22" alt=""></p>
+<h2 id="参考阅读">参考阅读</h2>
+<ul>
+<li><a href="https://docs.google.com/document/d/1o2-V4TLJ8fJACXdlsnxKxDv2Luryo48bAhR8ShxE5-k/">Mesh Configuration Protocol (MCP)</a></li>
+<li><a href="https://docs.google.com/document/d/1S5ygkxR1alNI8cWGG4O4iV8zp8dA6Oc23zQCvFxr83U/">Pilot Decomposition</a></li>
+<li><a href="https://zhaohuabing.com/post/2019-02-18-pilot-service-registry-code-analysis/">Istio 服务注册插件机制代码解析</a></li>
+</ul>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/challenges-of-adopting-service-mesh-in-enterprise-organizations/" data-toggle="tooltip" data-placement="top" title="企业组织中采用服务网格的挑战">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/service-mesh-meetup-chengdu-20191028/" data-toggle="tooltip" data-placement="top" title="第七届Service Mesh Meetup成都站回顾">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/istio-analysis-6/"><i class="fa fa-link"></i>Istio 庖丁解牛六：多集群网格应用场景</a></li>
+         
+        <li><a href="/blog/istio-analysis-5/"><i class="fa fa-link"></i>Istio 庖丁解牛五：多集群网格实现分析</a></li>
+         
+        <li><a href="/blog/how-to-pick-gateway-for-service-mesh/"><i class="fa fa-link"></i>如何为服务网格选择入口网关？</a></li>
+         
+        <li><a href="/blog/istio-analysis-4/"><i class="fa fa-link"></i>Istio 庖丁解牛四：pilot discovery</a></li>
+         
+        <li><a href="/blog/istio-monitoring-explained/"><i class="fa fa-link"></i>Istio 监控详解</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

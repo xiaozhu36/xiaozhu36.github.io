@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>手工打造像Istio中一样的Sidecar代理 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="service mesh, 服务网格, istio">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="手工打造像Istio中一样的Sidecar代理" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/hand-crafting-a-sidecar-proxy-like-istio//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="本文介绍了一种实现简单HTTP流量嗅探代理的基本步骤，并进行了相关实验验证，生动展现了Istio实现流量管理的核心原理与概念。">
+  <meta property="og:description" content="本文介绍了一种实现简单HTTP流量嗅探代理的基本步骤，并进行了相关实验验证，生动展现了Istio实现流量管理的核心原理与概念。">
+  <meta name="twitter:description" content="本文介绍了一种实现简单HTTP流量嗅探代理的基本步骤，并进行了相关实验验证，生动展现了Istio实现流量管理的核心原理与概念。">
+  <meta property="og:description" content="本文介绍了一种实现简单HTTP流量嗅探代理的基本步骤，并进行了相关实验验证，生动展现了Istio实现流量管理的核心原理与概念。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="手工打造像Istio中一样的Sidecar代理 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="手工打造像Istio中一样的Sidecar代理 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">手工打造像Istio中一样的Sidecar代理 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>手工打造像Istio中一样的Sidecar代理</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2019年3月18日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://venilnoronha.io/">Venil Noronha</a>
+                            
+                            
+                            | 译者 <a href="https://github.com/SataQiu">邱世达</a>
+                            
+                            
+                            | 审校者
+                            
+                            <a href="https://github.com/haiker2011"><i>孙海洲</i></a>
+                            
+                            
+                            |
+                            3000字 | 阅读大约需要6分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            <a href="https://venilnoronha.io/hand-crafting-a-sidecar-proxy-like-istio">查看原文</a>
+                            |
+                            
+                            
+                            归档于 <a href="/categories/istio">istio</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/istio/"><i>#istio</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/sidecar/"><i>#sidecar</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <p>sidecar代理模式是一个重要的概念，它允许<a href="https://istio.io/">Istio</a>为<a href="https://en.wikipedia.org/wiki/Microservices#Service_Mesh">服务网格</a>中运行的服务提供路由、度量、安全和其他功能。在这篇文章中，我将解释为Istio提供支持的关键技术，同时还将向您展示一种构建简单的HTTP流量嗅探sidecar代理的方法。</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/hand-crafting-a-sidecar-proxy-like-istio/007uElTfly1g13lok0vq4j318g0lqt8v.jpg" alt=""></p>
+<h2 id="引言">引言</h2>
+<p>服务网格的实现通常依赖于sidecar代理，这些代理使得服务网格能够控制、观察和加密保护应用程序。sidecar代理是反向代理，所有流量在到达目标服务之前流过它。代理将分析流经自己的流量并生成有用的统计信息，而且还能提供灵活的路由功能。此外，代理还可以使用<a href="https://venilnoronha.io/a-step-by-step-guide-to-mtls-in-go">mTLS</a>来加密保护应用程序流量。</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/hand-crafting-a-sidecar-proxy-like-istio/007uElTfly1g13lxd0qs0j30mm0a9goa.jpg" alt=""></p>
+<p>在这篇文章中，我们将构建一个简单的sidecar代理，它可以嗅探HTTP流量并生成统计信息，例如请求大小，响应状态等。然后，我们将在<a href="https://kubernetes.io/">Kubernetes</a> Pod中部署HTTP服务，配置sidecar代理，并检查生成的统计信息。</p>
+<h2 id="构建http流量嗅探代理">构建HTTP流量嗅探代理</h2>
+<p>Istio依靠<a href="https://www.envoyproxy.io/">Envoy</a>来代理网络流量。Envoy代理被打包为一个容器，并部署在一个Pod中的服务容器旁边。在这篇文章中，我们将使用Golang来构建一个可以嗅探HTTP流量的微型代理。</p>
+<p>我们的代理需要在TCP端口上侦听传入的HTTP请求，然后将它们转发到目标地址。因为在我们的例子中，代理和服务都驻留在同一个Pod中，所以目标主机可以通过环回IP地址（即，127.0.0.1）进行寻址。但是，我们仍然需要一个端口号来标识目标服务。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">const</span> (
+        <span style="color:#a6e22e">proxyPort</span>   = <span style="color:#ae81ff">8000</span>
+        <span style="color:#a6e22e">servicePort</span> = <span style="color:#ae81ff">80</span>
+)
+</code></pre></div><p>现在，我们可以开始编写代理的骨架代码了。代理将侦听<code>proxyPort</code>上的请求并将请求转发给<code>servicePort</code>。代理将在服务每个请求后最终打印统计信息。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// Create a structure to define the proxy functionality.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Proxy</span> <span style="color:#66d9ef">struct</span>{}
+
+<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">p</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Proxy</span>) <span style="color:#a6e22e">ServeHTTP</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">req</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) {
+	<span style="color:#75715e">// Forward the HTTP request to the destination service.
+</span><span style="color:#75715e"></span>        <span style="color:#a6e22e">res</span>, <span style="color:#a6e22e">duration</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">forwardRequest</span>(<span style="color:#a6e22e">req</span>)
+
+	<span style="color:#75715e">// Notify the client if there was an error while forwarding the request.
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+                <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">err</span>.<span style="color:#a6e22e">Error</span>(), <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusBadGateway</span>)
+                <span style="color:#66d9ef">return</span>
+        }
+
+	<span style="color:#75715e">// If the request was forwarded successfully, write the response back to
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// the client.
+</span><span style="color:#75715e"></span>        <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">writeResponse</span>(<span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">res</span>)
+
+	<span style="color:#75715e">// Print request and response statistics.
+</span><span style="color:#75715e"></span>        <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">printStats</span>(<span style="color:#a6e22e">req</span>, <span style="color:#a6e22e">res</span>, <span style="color:#a6e22e">duration</span>)
+}
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+	<span style="color:#75715e">// Listen on the predefined proxy port.
+</span><span style="color:#75715e"></span>        <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ListenAndServe</span>(<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;:%d&#34;</span>, <span style="color:#a6e22e">proxyPort</span>), <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Proxy</span>{})
+}
+</code></pre></div><p>代理最重要的部分是它转发请求的能力。我们首先在代理实现中定义此功能。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">p</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Proxy</span>) <span style="color:#a6e22e">forwardRequest</span>(<span style="color:#a6e22e">req</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Response</span>, <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>, <span style="color:#66d9ef">error</span>) {
+	<span style="color:#75715e">// Prepare the destination endpoint to forward the request to.
+</span><span style="color:#75715e"></span>        <span style="color:#a6e22e">proxyUrl</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;http://127.0.0.1:%d%s&#34;</span>, <span style="color:#a6e22e">servicePort</span>, <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">RequestURI</span>)
+
+	<span style="color:#75715e">// Print the original URL and the proxied request URL.
+</span><span style="color:#75715e"></span>        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Original URL: http://%s:%d%s\n&#34;</span>, <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Host</span>, <span style="color:#a6e22e">servicePort</span>, <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">RequestURI</span>)
+        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Proxy URL: %s\n&#34;</span>, <span style="color:#a6e22e">proxyUrl</span>)
+
+	<span style="color:#75715e">// Create an HTTP client and a proxy request based on the original request.
+</span><span style="color:#75715e"></span>        <span style="color:#a6e22e">httpClient</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Client</span>{}
+        <span style="color:#a6e22e">proxyReq</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">NewRequest</span>(<span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Method</span>, <span style="color:#a6e22e">proxyUrl</span>, <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Body</span>)
+
+	<span style="color:#75715e">// Capture the duration while making a request to the destination service.
+</span><span style="color:#75715e"></span>        <span style="color:#a6e22e">start</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>()
+        <span style="color:#a6e22e">res</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">httpClient</span>.<span style="color:#a6e22e">Do</span>(<span style="color:#a6e22e">proxyReq</span>)
+        <span style="color:#a6e22e">duration</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Since</span>(<span style="color:#a6e22e">start</span>)
+
+	<span style="color:#75715e">// Return the response, the request duration, and the error.
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">res</span>, <span style="color:#a6e22e">duration</span>, <span style="color:#a6e22e">err</span>
+}
+</code></pre></div><p>现在我们得到了代理请求的响应，让我们定义将其写回客户端的逻辑。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">p</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Proxy</span>) <span style="color:#a6e22e">writeResponse</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">res</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Response</span>) {
+	<span style="color:#75715e">// Copy all the header values from the response.
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">values</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">Header</span> {
+                <span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">Header</span>()[<span style="color:#a6e22e">name</span>] = <span style="color:#a6e22e">values</span>
+        }
+
+	<span style="color:#75715e">// Set a special header to notify that the proxy actually serviced the request.
+</span><span style="color:#75715e"></span>        <span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">Header</span>().<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;Server&#34;</span>, <span style="color:#e6db74">&#34;amazing-proxy&#34;</span>)
+
+	<span style="color:#75715e">// Set the status code returned by the destination service.
+</span><span style="color:#75715e"></span>        <span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">WriteHeader</span>(<span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">StatusCode</span>)
+
+	<span style="color:#75715e">// Copy the contents from the response body.
+</span><span style="color:#75715e"></span>        <span style="color:#a6e22e">io</span>.<span style="color:#a6e22e">Copy</span>(<span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">Body</span>)
+
+	<span style="color:#75715e">// Finish the request.
+</span><span style="color:#75715e"></span>        <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">Body</span>.<span style="color:#a6e22e">Close</span>()
+}
+</code></pre></div><p>代理的最后一部分是打印统计信息。让我们继续将其实现。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">p</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Proxy</span>) <span style="color:#a6e22e">printStats</span>(<span style="color:#a6e22e">req</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>, <span style="color:#a6e22e">res</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Response</span>, <span style="color:#a6e22e">duration</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>) {
+        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Request Duration: %v\n&#34;</span>, <span style="color:#a6e22e">duration</span>)
+        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Request Size: %d\n&#34;</span>, <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">ContentLength</span>)
+        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Response Size: %d\n&#34;</span>, <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">ContentLength</span>)
+        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Response Status: %d\n\n&#34;</span>, <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">StatusCode</span>)
+}
+</code></pre></div><p>至此，我们已经构建了一个功能齐全的HTTP流量嗅探代理。</p>
+<h2 id="为代理构建容器镜像">为代理构建容器镜像</h2>
+<p>Istio打包了Envoy并将其作为sidecar容器运行在服务容器旁边。让我们构建一个代理容器镜像，运行上面的Go代码来模仿Istio的运行模式。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Dockerfile" data-lang="Dockerfile"><span style="color:#75715e"># Use the Go v1.12 image for the base.</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">FROM</span><span style="color:#e6db74"> golang:1.12</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># Copy the proxy code to the container.</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">COPY</span> main.go .<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># Run the proxy on container startup.</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">ENTRYPOINT</span> [ <span style="color:#e6db74">&#34;go&#34;</span> ]<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">CMD</span> [ <span style="color:#e6db74">&#34;run&#34;</span>, <span style="color:#e6db74">&#34;main.go&#34;</span> ]<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># Expose the proxy port.</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">EXPOSE</span><span style="color:#e6db74"> 8000</span><span style="color:#960050;background-color:#1e0010">
+</span></code></pre></div><p>要构建代理容器镜像，我们可以简单地执行以下Docker命令：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ docker build -t venilnoronha/amazing-proxy:latest -f Dockerfile .
+</code></pre></div><h2 id="设置pod网络">设置Pod网络</h2>
+<p>我们需要设置Pod网络以确保sidecar代理能够接收所有应用程序的流量，以便它可以对其进行分析并转发到所需的目标。实现此目的的一种方法是要求用户将所有客户端请求地址指向代理端口，同时将代理配置为指向目标服务端口。这使用户体验变得复杂。更好更透明的方法是使用Linux内核中的<a href="https://en.wikipedia.org/wiki/Netfilter">Netfilter/iptables</a>组件。</p>
+<h3 id="kubernetes-网络">Kubernetes 网络</h3>
+<p>为了更好地理解，让我们列出Kubernetes向Pod公开的网络接口。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl run -i --rm --restart<span style="color:#f92672">=</span>Never busybox --image<span style="color:#f92672">=</span>busybox -- sh -c <span style="color:#e6db74">&#34;ip addr&#34;</span>
+
+1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu <span style="color:#ae81ff">65536</span> qdisc noqueue qlen <span style="color:#ae81ff">1000</span>
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+
+174: eth0@if175: &lt;BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN&gt; mtu <span style="color:#ae81ff">1500</span> qdisc noqueue
+    link/ether 02:42:ac:11:00:05 brd ff:ff:ff:ff:ff:ff
+    inet 172.17.0.5/16 brd 172.17.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+</code></pre></div><p>如您所见，Pod可以访问至少2个网络接口，即<code>lo</code>和<code>eth0</code>。<code>lo</code>接口表示环回地址，<code>eth0</code>表示以太网。这里要注意的是这些是虚拟的而不是真正的接口。</p>
+<h3 id="使用iptables进行端口映射">使用iptables进行端口映射</h3>
+<p><code>iptables</code>最简单的用途是将一个端口映射到另一个端口。我们可以利用它来透明地将流量路由到我们的代理。Istio正是基于这个确切的概念来建立它的Pod网络。</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/hand-crafting-a-sidecar-proxy-like-istio/007uElTfly1g13msbkiasj30so0ab784.jpg" alt=""></p>
+<p>这里的想法是将<code>eth0</code>接口上的服务端口（<code>80</code>）映射到代理端口（<code>8000</code>）。这将确保每当容器尝试通过端口<code>80</code>访问服务时，来自容器外部的流量就会路由到代理。如上图所示，我们让<code>lo</code>接口将Pod内部流量直接路由到目标服务，即没有跳转到代理服务。</p>
+<h3 id="init容器">Init容器</h3>
+<p>Kubernetes允许在Pod运行普通容器之前运行<code>init容器</code>。Istio使用init容器来设置Pod网络，以便设置必要的iptables规则。这里，让我们做同样的事情来将Pod外部流量路由到代理。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e">#!/bin/bash
+</span><span style="color:#75715e"></span>
+<span style="color:#75715e"># Forward TCP traffic on port 80 to port 8000 on the eth0 interface.</span>
+iptables -t nat -A PREROUTING -p tcp -i eth0 --dport <span style="color:#ae81ff">80</span> -j REDIRECT --to-port <span style="color:#ae81ff">8000</span>
+
+<span style="color:#75715e"># List all iptables rules.</span>
+iptables -t nat --list
+</code></pre></div><p>我们现在可以使用此初始化脚本创建Docker容器镜像。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Dockerfile" data-lang="Dockerfile"><span style="color:#75715e"># Use the latest Ubuntu image for the base.</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">FROM</span><span style="color:#e6db74"> ubuntu:latest</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># Install the iptables command.</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> apt-get update <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    apt-get install -y iptables<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># Copy the initialization script into the container.</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">COPY</span> init.sh /usr/local/bin/<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># Mark the initialization script as executable.</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> chmod +x /usr/local/bin/init.sh<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># Start the initialization script on container startup.</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">ENTRYPOINT</span> [<span style="color:#e6db74">&#34;init.sh&#34;</span>]<span style="color:#960050;background-color:#1e0010">
+</span></code></pre></div><p>要构建Docker镜像，只需执行以下命令：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ docker build -t venilnoronha/init-networking:latest -f Dockerfile .
+</code></pre></div><h2 id="演示">演示</h2>
+<p>我们已经构建了一个代理和一个init容器来建立Pod网络。现在是时候进行测试了。为此，我们将使用<a href="http://httpbin.org/">httpbin</a>容器作为服务。</p>
+<h3 id="部署-deployment">部署 Deployment</h3>
+<p>Istio自动注入init容器和代理。但是，对于我们的实验，可以手动制作Pod yaml。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: v1
+<span style="color:#66d9ef">kind</span>: Pod
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: httpbin-pod
+  <span style="color:#66d9ef">labels</span>:
+    <span style="color:#66d9ef">app</span>: httpbin
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">initContainers</span>:
+  - <span style="color:#66d9ef">name</span>: init-networking
+    <span style="color:#66d9ef">image</span>: venilnoronha/init-networking
+    <span style="color:#66d9ef">securityContext</span>:
+      <span style="color:#66d9ef">capabilities</span>:
+        <span style="color:#66d9ef">add</span>:
+        - NET_ADMIN
+      <span style="color:#66d9ef">privileged</span>: <span style="color:#66d9ef">true</span>
+  <span style="color:#66d9ef">containers</span>:
+  - <span style="color:#66d9ef">name</span>: service
+    <span style="color:#66d9ef">image</span>: kennethreitz/httpbin
+    <span style="color:#66d9ef">ports</span>:
+    - <span style="color:#66d9ef">containerPort</span>: <span style="color:#ae81ff">80</span>
+  - <span style="color:#66d9ef">name</span>: proxy
+    <span style="color:#66d9ef">image</span>: venilnoronha/amazing-proxy
+    <span style="color:#66d9ef">ports</span>:
+    - <span style="color:#66d9ef">containerPort</span>: <span style="color:#ae81ff">8000</span>
+</code></pre></div><p>我们已经设置了具有<code>root</code>权限的init容器，并将<code>proxy</code>和<code>service</code>配置为普通容器。要在Kubernetes集群上部署它，我们可以执行以下命令：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl apply -f httpbin.yaml
+</code></pre></div><h3 id="测试">测试</h3>
+<p>为了测试部署，我们首先确定Pod的ClusterIP。为此，我们可以执行以下命令：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get pods -o wide
+NAME          READY     STATUS    RESTARTS   AGE       IP           NODE
+httpbin-pod   2/2       Running   <span style="color:#ae81ff">0</span>          21h       172.17.0.4   minikube
+</code></pre></div><p>我们现在需要从Pod外部生成流量。为此，我将使用<code>busybox</code>容器通过<code>curl</code>发出HTTP请求。</p>
+<p>首先，我们向httpbin服务发送一个GET请求。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl run -i --rm --restart<span style="color:#f92672">=</span>Never busybox --image<span style="color:#f92672">=</span>odise/busybox-curl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>          -- sh -c <span style="color:#e6db74">&#34;curl -i 172.17.0.4:80/get?query=param&#34;</span>
+
+HTTP/1.1 <span style="color:#ae81ff">200</span> OK
+Content-Length: <span style="color:#ae81ff">237</span>
+Content-Type: application/json
+Server: amazing-proxy
+</code></pre></div><p>然后，再发送一个POST请求。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl run -i --rm --restart<span style="color:#f92672">=</span>Never busybox --image<span style="color:#f92672">=</span>odise/busybox-curl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>          -- sh -c <span style="color:#e6db74">&#34;curl -i -X POST -d &#39;body=parameters&#39; 172.17.0.4:80/post&#34;</span>
+
+HTTP/1.1 <span style="color:#ae81ff">200</span> OK
+Content-Length: <span style="color:#ae81ff">317</span>
+Content-Type: application/json
+Server: amazing-proxy
+</code></pre></div><p>最后，向<code>/status</code>端点发送一个GET请求。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl run -i --rm --restart<span style="color:#f92672">=</span>Never busybox --image<span style="color:#f92672">=</span>odise/busybox-curl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>          -- sh -c <span style="color:#e6db74">&#34;curl -i http://172.17.0.4:80/status/429&#34;</span>
+
+HTTP/1.1 <span style="color:#ae81ff">429</span> Too Many Requests
+Content-Length: <span style="color:#ae81ff">0</span>
+Content-Type: text/html; charset<span style="color:#f92672">=</span>utf-8
+Server: amazing-proxy
+</code></pre></div><p>请注意，我们将请求发送到端口<code>80</code>，即服务端口而不是代理端口。<code>iptables</code>规则确保首先将其路由到代理，然后将请求转发给服务。此外，我们还看到了额外的请求头<code>Server: amazing-proxy</code>，这个请求头是我们手动实现的的代理自动加上的。</p>
+<h3 id="代理统计">代理统计</h3>
+<p>现在我们来看看代理生成的统计数据。为此，我们可以运行以下命令：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl logs httpbin-pod --container<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;proxy&#34;</span>
+
+Original URL: http://172.17.0.4:80/get?query<span style="color:#f92672">=</span>param
+Proxy URL: http://127.0.0.1:80/get?query<span style="color:#f92672">=</span>param
+Request Duration: 1.979348ms
+Request Size: <span style="color:#ae81ff">0</span>
+Response Size: <span style="color:#ae81ff">237</span>
+Response Status: <span style="color:#ae81ff">200</span>
+
+Original URL: http://172.17.0.4:80/post
+Proxy URL: http://127.0.0.1:80/post
+Request Duration: 2.026861ms
+Request Size: <span style="color:#ae81ff">15</span>
+Response Size: <span style="color:#ae81ff">317</span>
+Response Status: <span style="color:#ae81ff">200</span>
+
+Original URL: http://172.17.0.4:80/status/429
+Proxy URL: http://127.0.0.1:80/status/429
+Request Duration: 1.191793ms
+Request Size: <span style="color:#ae81ff">0</span>
+Response Size: <span style="color:#ae81ff">0</span>
+Response Status: <span style="color:#ae81ff">429</span>
+</code></pre></div><p>如您所见，我们确实看到代理的结果与我们生成的请求相匹配。</p>
+<h2 id="结论">结论</h2>
+<p>本文中，我们实现了一个简单的HTTP流量嗅探代理，使用init容器将其嵌入Kubernetes Pod与原有服务无缝连接。而且，我们也了解了<code>iptables</code>是如何提供灵活的网络，以便在处理代理时提供优良的用户体验的。最重要的是，我们已经学会了关于Istio实现的一些关键概念。</p>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/istio-analysis-1/" data-toggle="tooltip" data-placement="top" title="Istio 庖丁解牛一：组件概览">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/istio-pilot-service-registry-code-analysis/" data-toggle="tooltip" data-placement="top" title="Istio 服务注册插件机制代码解析">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/envoy-sidecar-injection-in-istio-service-mesh-deep-dive/"><i class="fa fa-link"></i>理解 Istio Service Mesh 中 Envoy 代理 Sidecar 注入及流量劫持</a></li>
+         
+        <li><a href="/blog/istio-analysis-1/"><i class="fa fa-link"></i>Istio 庖丁解牛一：组件概览</a></li>
+         
+        <li><a href="/blog/istio-vs-hystrix-circuit-breaker/"><i class="fa fa-link"></i>微服务断路器模式实现：Istio vs Hystrix</a></li>
+         
+        <li><a href="/blog/custom-istio-mixer-adapter/"><i class="fa fa-link"></i>自定义Istio Mixer Adapter示例教程（附源码）</a></li>
+         
+        <li><a href="/blog/application-metrics-in-istio/"><i class="fa fa-link"></i>Istio中的应用程序指标度量</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

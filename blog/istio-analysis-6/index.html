@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Istio 庖丁解牛六：多集群网格应用场景 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="service mesh, 服务网格, istio">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="Istio 庖丁解牛六：多集群网格应用场景" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/istio-analysis-6//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="利用 istio 多集群能力实现「异地容灾」和「地域感知负载均衡」">
+  <meta property="og:description" content="利用 istio 多集群能力实现「异地容灾」和「地域感知负载均衡」">
+  <meta name="twitter:description" content="利用 istio 多集群能力实现「异地容灾」和「地域感知负载均衡」">
+  <meta property="og:description" content="利用 istio 多集群能力实现「异地容灾」和「地域感知负载均衡」" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="Istio 庖丁解牛六：多集群网格应用场景 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="Istio 庖丁解牛六：多集群网格应用场景 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">Istio 庖丁解牛六：多集群网格应用场景 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>Istio 庖丁解牛六：多集群网格应用场景</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2019年8月1日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://imfox.io">钟华</a>
+                            
+                            
+                            
+                            |
+                            2800字 | 阅读大约需要6分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            
+                            归档于 <a href="/categories/istio">istio</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/istio/"><i>#istio</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <p>随着容器技术的流行，大量互联网公司和传统 IT 企业都在尝试应用容器化和服务上云。容器化是一个持续的过程，伴随着多地域部署、安全等级隔离、多云和混合云等复杂的场景需求。</p>
+<p><a href="https://www.servicemesher.com/blog/istio-analysis-5/">上篇文章</a>中我们成功将广州和新加坡 2 地的 kubernetes 集群连通为一个服务网格，实现了多集群服务透明共享：recommend v1 和 recommend v2 分别部署在广州和新加坡地域， 但是两地用户都可以无差别的访问到任一版本。</p>
+<p><img src="https://zhongfox-blogimage-1256048497.cos.ap-guangzhou.myqcloud.com/2019-07-31-132130.png" alt="image-20190730145706365"></p>
+<p>接下来我们上述环境中， 尝试几个多集群服务网格的应用场景，包括：</p>
+<ul>
+<li>
+<p>异地容灾</p>
+</li>
+<li>
+<p>地域感知负载均衡</p>
+</li>
+<li>
+<p>多地域负载策略分析</p>
+</li>
+</ul>
+<p>相关代码汇总于：<a href="https://github.com/zhongfox/multicluster-demo">zhongfox/multicluster-demo</a></p>
+<h2 id="异地容灾">异地容灾</h2>
+<p>要保证系统高可用和良好的用户体验，服务多副本部署、特别是异地多副本部署是必不可少的架构， 即使对于吞吐量低压力小的应用，考虑「墨菲定律」单点部署仍是应该尽量避免的。对于 SLA 要求较高的关键系统，两地部署甚至多地部署应对容灾也是非常必要的。</p>
+<p>在已部署的环境中， 我们尝试将广州集群中的 recommend v1 服务副本数删除至 0 个，模拟广州集群 recommend 服务实例不可用：</p>
+<p><img src="https://zhongfox-blogimage-1256048497.cos.ap-guangzhou.myqcloud.com/2019-07-31-132139.png" alt="image-20190730160311846"></p>
+<p>这时候我们分别多次访问广州和新加坡商城应用， 发现任一入口访问， 页面都可以正常显示， 且「推荐商品」板块显示的都是 recommend v2 版本， 也就是部署在新加坡地域的有 banner 的版本：</p>
+<p><img src="https://zhongfox-blogimage-1256048497.cos.ap-guangzhou.myqcloud.com/2019-07-31-132343.png" alt="image-20190730161028904"></p>
+<p>现在我们把广州集群 recommend v1 服务扩容为 1 个副本，将新加坡集群 recommend v2 服务副本数降至 0，类似的， 我们可以验证， 两地访问商城应用， 页面显示都正常，而且显示的都是广州集群无 banner 的 recommend v1 版本：</p>
+<p><img src="https://zhongfox-blogimage-1256048497.cos.ap-guangzhou.myqcloud.com/2019-07-31-132349.png" alt="image-20190730162048948"></p>
+<hr>
+<h2 id="地域感知负载均衡">地域感知负载均衡</h2>
+<p>在多地域部署架构中，地域感知负载均衡需求主要源自以下需求：</p>
+<ul>
+<li>在跨地域部署的多集群中，各地域可能会部署本地区定制化的服务，比如不同地区的服务会有不同的显示语言或定制功能，或者某些服务只在特定区域开放。这些场景要求服务间的访问不能随机路由，需要优先（或只能）访问本地域服务。</li>
+<li>在用作容灾在多地域架构中， 往往会有一个主集群， 拥有较为充足的服务资源， 而容灾地域的资源仅保证服务基本可用。因此我们要求正常情况下，请求能由主集群提供服务，流量不要地域间随机路由。</li>
+<li>即使不是以上场景，考虑 2 个异地对等集群，提供服务和持有资源完全相同， 我们也应该尽量满足本地域内闭环服务， 因为跨地域的服务访问往往会有较大的延迟，用户体验差， 且可能会让容错性较差的系统出现服务雪崩的风险。</li>
+</ul>
+<p><a href="https://istio.io/docs/ops/traffic-management/locality-load-balancing/">Locality Load Balancing</a> 是 istio 1.1 增加的 experimental 特性，接下来我们在上述环境中验证此特性：</p>
+<p>首先我们先还原上个场景的修改，将广州地域和新加坡地域的 recommend 服务副本都设置为 1：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">% kubectl --context guangzhou -nbase scale deploy/recommend-v1 --replicas<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>
+% kubectl --context singapore -nbase scale deploy/recommend-v2 --replicas<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>
+</code></pre></div><p>然后开启 Locality Load Balancing：设置 Pilot 的环境变量：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">% kubectl -n istio-system --context guangzhou edit deploy istio-pilot
+......
+<span style="color:#66d9ef">env</span>:
+- <span style="color:#66d9ef">name</span>: PILOT_ENABLE_LOCALITY_LOAD_BALANCING
+  <span style="color:#66d9ef">value</span>: <span style="color:#e6db74">&#34;ON&#34;</span>
+</code></pre></div><p>稍等片刻，分别通过广州和新加坡地域入口多次访问商城应用，可以发现广州入口一直展示 recommend v1 版本，新加坡地域一直展示 recommend v2 版本：</p>
+<p><img src="https://zhongfox-blogimage-1256048497.cos.ap-guangzhou.myqcloud.com/2019-07-31-132357.png" alt="image-20190730170628865"></p>
+<p>开启「地域感知负载均衡」后， 因为流量都在同一个集群中，所以访问速度开启之前，会提升很多，我们实测一下， 在开启「地域感知负载均衡」前后，使用 ab 工具， 模拟访问 2 个地域各 100 次：</p>
+<p><img src="https://zhongfox-blogimage-1256048497.cos.ap-guangzhou.myqcloud.com/2019-07-31-132402.png" alt="image-20190730210957025"></p>
+<p>上图所示，开启「地域感知负载均衡」功能后，请求平均耗时从大概 1116~ 1159 毫秒下降到了 117~132 毫秒。</p>
+<hr>
+<h2 id="多地域负载策略分析">多地域负载策略分析</h2>
+<p>在 kubernetes 平台， istio 根据 kubernetes node 上的<a href="https://kubernetes.io/docs/reference/kubernetes-api/labels-annotations-taints/#failure-domain-beta-kubernetes-io-region">约定地域标签</a>，来确定 node 上包含的 pod 的地域亲和度,  在 TKE 上， node 默认有了地域标签：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">~ % kubectl --context guangzhou get node --show-labels
+NAME
+172.16.48.35   ......
+failure-domain.beta.kubernetes.io/region<span style="color:#f92672">=</span>gz,
+failure-domain.beta.kubernetes.io/zone<span style="color:#f92672">=</span><span style="color:#ae81ff">100002</span>
+
+~ % kubectl --context singapore get node --show-labels
+NAME
+172.22.0.42   ......
+failure-domain.beta.kubernetes.io/region<span style="color:#f92672">=</span>sg,
+failure-domain.beta.kubernetes.io/zone<span style="color:#f92672">=</span><span style="color:#ae81ff">900001</span>
+</code></pre></div><p><code>failure-domain.beta.kubernetes.io/region</code>表示地域， <code>failure-domain.beta.kubernetes.io/zone</code>表示可用区。</p>
+<p>地域负载均衡默认会使用地域优先策略，具体讲，一个具体区域的 envoy 会将其他实例做如下优先级处理：</p>
+<ol>
+<li>Priority 0 最高优先级：相同地域且相同区域</li>
+<li>Priority 1 第二优先级：相同地域但不同区域</li>
+<li>Priority 2 最低优先级：不同地域</li>
+</ol>
+<p>考虑开启「地域感知负载均衡」后， 整个服务网格如何做失效转移：</p>
+<p>为了减少低效的跨地域访问，istio 会尽量保证按照地域优先级负载均衡；但是当本地域服务的可用性降低时，流量应该适当的转移一部分到下一优先级的地域去，流量的转移应该尽量平滑。流量转移的时机不应该等到本区域服务可用性降至零后才开始， 因为这会有服务中断甚至雪崩的风险。</p>
+<p>在 envoy 负载均衡策略中，有一个很重要的参数：<a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/overprovisioning#arch-overview-load-balancing-overprovisioning-factor">Overprovisioning Factor</a> 可以翻译为 「预留资源」参数，区域流量降级的时机和比例，会受到本区域的「服务可用性」和「预留资源」参数共同决定。istio 中「预留资源」参数默认是 1.4。</p>
+<p>可以这样理解「预留资源」参数：指定区域部署的服务资源， 通常会高于系统实际需要的服务资源，以应对可能出现的各种异常导致的可用性降低。比如本区域 recommend 服务预估 100 副本可以满足用户需求，按照容灾经验我们可能会部署 140 副本。当本区域因为异常导致副本数下降，可用性降低时， 系统应该判断，只有副本数低于 100 时，才开始将多余流量转移到下一级地域。</p>
+<p>基于以上网格环境， 我们对地域负载策略进行验证：</p>
+<p>在广州集群中， 我们再部署一个新的 recommend deployment，名为 recommend-unhealthy，这个副本的推荐接口直接返回状态码 502，用以模拟不可用的服务实例：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-ruby" data-lang="ruby">get <span style="color:#e6db74">&#39;/recommend&#39;</span> <span style="color:#66d9ef">do</span>
+  status <span style="color:#ae81ff">502</span>
+<span style="color:#66d9ef">end</span>
+</code></pre></div><p>同时我们给 recommd 服务加上<a href="https://istio.io/docs/reference/config/networking/v1alpha3/destination-rule/#OutlierDetection">断路器</a>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: networking.istio.io/v1alpha3
+<span style="color:#66d9ef">kind</span>: DestinationRule
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: recommend
+  <span style="color:#66d9ef">namespace</span>: base
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">host</span>: recommend.base.svc.cluster.local
+  <span style="color:#66d9ef">trafficPolicy</span>:
+    <span style="color:#66d9ef">tls</span>:
+      <span style="color:#66d9ef">mode</span>: ISTIO_MUTUAL
+    <span style="color:#66d9ef">outlierDetection</span>:
+      <span style="color:#66d9ef">consecutiveErrors</span>: <span style="color:#ae81ff">3</span>
+      <span style="color:#66d9ef">interval</span>: 30s
+      <span style="color:#66d9ef">baseEjectionTime</span>: 3m
+</code></pre></div><p>表示 recommend 服务实例，如果连续 3 次访问失败，将标记为不可用。不可用实例将被隔离于可用实例之外，持续 3 分钟。</p>
+<p>以上操作可以通过执行以下命令实现：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">kubectl --context guangzhou -nbase apply -f install/locality-load-balancing.yaml
+</code></pre></div><p><img src="https://zhongfox-blogimage-1256048497.cos.ap-guangzhou.myqcloud.com/2019-07-31-132411.png" alt="image-20190731162858461"></p>
+<p>广州集群 2 个  recommend 共同组成该地域的服务 endpoints, 广州 recommend 服务的健康度（可用性）可以表示为：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">health <span style="color:#f92672">=</span> recommend-v1-replicas / <span style="color:#f92672">(</span>recommend-v1-replicas + recommend-unhealthy-replicas<span style="color:#f92672">)</span>
+</code></pre></div><p>按照默认 Overprovisioning Factor 为 1.4，广州集群负载均衡流量百分比数为：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">guangzhou-LB <span style="color:#f92672">=</span> min<span style="color:#f92672">(</span>100, 1.4 * <span style="color:#ae81ff">100</span> * health<span style="color:#f92672">)</span>
+</code></pre></div><p>新加坡流量百分比数：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">singapore-LB <span style="color:#f92672">=</span> <span style="color:#ae81ff">100</span> - guangzhou-LB
+</code></pre></div><p>编写一个 <a href="https://github.com/zhongfox/multicluster-demo/blob/master/install/recommend_stat.rb">ruby 程序</a> 进行验证：</p>
+<p>最初 recommend v1 副本数为 14， recommend unhealthy 副本数为 0， 一直保持 2 个 deployment 的副本总和为 14， 逐渐增加 unhealthy 副本的比重， 等待所有 pod ready 后， 使用广州网关入口发起 1000 次请求， 然后根据响应内容判断 recommend 服务的负载均衡情况：如果内容不包含 recommend banner，是由广州集群提供服务， 如果内容包括 recommend banner， 那么请求就是转移到了新加坡集群，测试结果如下图：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">ruby ./install/recommend_stat.rb --ip 134.175.211.151 --count <span style="color:#ae81ff">1000</span>
+</code></pre></div><p><img src="https://zhongfox-blogimage-1256048497.cos.ap-guangzhou.myqcloud.com/2019-07-31-132416.png" alt="image-20190731203938329"></p>
+<p>数据统计可以看出，广州健康副本（v1）由 14 个下降到 10 个的过程中，不会出现流量降级到新加坡，当广州健康副本数低于 10 个后，部分流量将会被负载均衡的新加坡集群：</p>
+<p><img src="https://zhongfox-blogimage-1256048497.cos.ap-guangzhou.myqcloud.com/2019-07-31-132421.png" alt="image-20190731205538360"></p>
+<p>只要广州主集群的健康度不为 0（v1 副本 &gt; 0）, 则第一优先级的广州集群负载流量也会大于 0，保证剩余的可用性尽量满足地域就近负载。</p>
+<p>随着 unhealthy 副本数的增加，我们可以看到访问的错误请求数目并未按比例增加，一直保持在一个平稳的错误值，这是因为我们上面给 recommend 服务配置了断路器，因此服务整体的高可用性得以保证。</p>
+<hr>
+<p>在更多个集群连通的网格中，负载算法支持多层降级，另外每个地域也可以显示指定流量降级时的下级集群， 各集群的负载权重也可以手动设置。</p>
+<p>利用 Istio 和 envoy 的以上能力，结合各集群的资源情况和业务规划，可以让我们调配出高可用、高性能的多集群服务网格。</p>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/service-mesh-istio-limits-and-benefits-part-2/" data-toggle="tooltip" data-placement="top" title="服务网格的三个技术优势及其运维局限-第2部分">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/cloud-native-api-gateway-part-1/" data-toggle="tooltip" data-placement="top" title="构建云原生微服务网关-篇一：Ambassador">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/istio-analysis-5/"><i class="fa fa-link"></i>Istio 庖丁解牛五：多集群网格实现分析</a></li>
+         
+        <li><a href="/blog/how-to-pick-gateway-for-service-mesh/"><i class="fa fa-link"></i>如何为服务网格选择入口网关？</a></li>
+         
+        <li><a href="/blog/istio-analysis-4/"><i class="fa fa-link"></i>Istio 庖丁解牛四：pilot discovery</a></li>
+         
+        <li><a href="/blog/istio-monitoring-explained/"><i class="fa fa-link"></i>Istio 监控详解</a></li>
+         
+        <li><a href="/blog/the-service-mesh-era-istios-role-in-the-future-of-hybrid-cloud/"><i class="fa fa-link"></i>服务网格时代：Istio在混合云未来扮演的角色</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

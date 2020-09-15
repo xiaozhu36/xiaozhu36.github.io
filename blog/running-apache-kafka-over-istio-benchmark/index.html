@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>运行在Istio之上的Apache Kafka——基准测试 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="service mesh, 服务网格">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="运行在Istio之上的Apache Kafka——基准测试" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/running-apache-kafka-over-istio-benchmark//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="作者对在Istio环境下运行的Kafka进行了基准测试，并对测试结果进行了分析。">
+  <meta property="og:description" content="作者对在Istio环境下运行的Kafka进行了基准测试，并对测试结果进行了分析。">
+  <meta name="twitter:description" content="作者对在Istio环境下运行的Kafka进行了基准测试，并对测试结果进行了分析。">
+  <meta property="og:description" content="作者对在Istio环境下运行的Kafka进行了基准测试，并对测试结果进行了分析。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="运行在Istio之上的Apache Kafka——基准测试 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="运行在Istio之上的Apache Kafka——基准测试 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">运行在Istio之上的Apache Kafka——基准测试 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>运行在Istio之上的Apache Kafka——基准测试</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2019年8月4日
+                            </i>
+                            |
+                            
+                            作者 Balint Molnar
+                            
+                            
+                            | 译者 <a href="https://github.com/malphi">马若飞</a>
+                            
+                            
+                            | 审校者
+                            
+                            <a href="https://jimmysong.io"><i>宋净超</i></a>
+                            
+                            
+                            |
+                            6500字 | 阅读大约需要13分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            <a href="https://banzaicloud.com/blog/kafka-on-istio-performance">查看原文</a>
+                            |
+                            
+                            
+                            归档于 <a href="/categories/service-mesh">Service Mesh</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/service-mesh/"><i>#Service Mesh</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <h2 id="编者按">编者按</h2>
+<blockquote>
+<p>本文是一篇Kafka的基准测试分析报告，作者详细介绍了测试的环境和配置选择，并在单集群、多集群、多云、混合云等各种场景下进行了A/B测试和性能分析，评估了Istio的引入对性能的影响情况。最后对作者所在公司Banzai Cloud的云产品进行了介绍。</p>
+</blockquote>
+<p>我们的容器管理平台<a href="https://github.com/banzaicloud/pipeline">Pipeline</a>以及CNCF认证的Kubernetes发行版<a href="https://github.com/banzaicloud/pke">PKE</a>的一个关键特性是，它们能够在多云和混合云环境中无缝地构建并运行。虽然<a href="https://github.com/banzaicloud/pipeline">Pipeline</a>用户的需求因他们采用的是单云方法还是多云方法而有所不同，但通常基于这些关键特性中的一个或多个：</p>
+<ul>
+<li><a href="https://banzaicloud.com/blog/multi-cloud-apps/">多云应用管理</a></li>
+<li><a href="https://banzaicloud.com/blog/istio-multicluster-the-easy-way/">一个基于Istio的自动化服务网格，用于多云和混合云部署</a></li>
+<li><a href="https://banzaicloud.com/blog/multi-cloud-fedv2/">基于Kubernetes federation v2（集群联邦）的联合资源和应用部署</a></li>
+</ul>
+<p>随着采用基于<a href="https://github.com/banzaicloud/istio-operator">Istio operator</a>的多集群和多混合云的增加，对运行接入到服务网格中的分布式或去中心化的应用的能力的需求也增加了。我们的客户在Kubernetes上大规模运行的托管应用之一是<strong>Apache Kafka</strong>。我们认为，<strong>在Kubernetes上运行Apache Kafka最简单的方法</strong>是使用Banzai Cloud的<a href="https://banzaicloud.com/tags/kafka">Kafka spotguide</a>来构建我们的<a href="https://banzaicloud.com/blog/kafka-operator/">Kafka operator</a>。然而，到目前为止，我们的重点一直是自动化和操作单个集群Kafka部署。</p>
+<h2 id="tldr">TLDR</h2>
+<ul>
+<li>我们已经添加了在Istio上运行Kafka所需的支持 (使用<a href="https://github.com/banzaicloud/kafka-operator">Kafka</a> 和 <a href="https://github.com/banzaicloud/istio-operator">Istio operator</a>，并通过 <a href="https://github.com/banzaicloud/pipeline">Pipeline</a>编排）.</li>
+<li>在Istio上运行Kafka不会增加性能开销 (不同于典型的mTLS，在SSL/TLS上运行Kafka是一样的)。</li>
+<li>使用 <a href="https://github.com/banzaicloud/pipeline">Pipeline</a>，你可以创建跨多云和混合云环境的Kafka集群。</li>
+</ul>
+<p><strong>带有生产者ACK设置为all的3个broker、3个partition和3个replication因子场景的指标预览：</strong></p>
+<h3 id="单集群结果">单集群结果</h3>
+<table>
+<thead>
+<tr>
+<th align="left">Kafka cluster</th>
+<th align="left">Google GKE  平均磁盘 IO / broker</th>
+<th align="left">Amazon EKS  平均磁盘 IO / broker</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">Kafka</td>
+<td align="left">417MB/s</td>
+<td align="left">439MB/s</td>
+</tr>
+<tr>
+<td align="left">Kafka 启用 SSL/TLS</td>
+<td align="left">274MB/s</td>
+<td align="left">306MB/s</td>
+</tr>
+<tr>
+<td align="left">Kafka 基于 Istio</td>
+<td align="left">417MB/s</td>
+<td align="left">439MB/s</td>
+</tr>
+<tr>
+<td align="left">Kafka 基于 Istio 并开启mTLS</td>
+<td align="left">323MB/s</td>
+<td align="left">340MB/s</td>
+</tr>
+</tbody>
+</table>
+<h3 id="多集群结果">多集群结果</h3>
+<table>
+<thead>
+<tr>
+<th align="left">Kafka 集群基于 Istio 并开启 mTLS</th>
+<th align="left">平均磁盘 IO / broker</th>
+<th align="left">集群间平均延迟</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">GKE eu-west1 &lt;-&gt; GKE eu-west4</td>
+<td align="left">211MB/s</td>
+<td align="left">7 ms</td>
+</tr>
+<tr>
+<td align="left">EKS eu-north1 &lt;-&gt; EKS eu-west1</td>
+<td align="left">85MB/s</td>
+<td align="left">24 ms</td>
+</tr>
+<tr>
+<td align="left">EKS eu-central1 &lt;-&gt; GKE eu-west3</td>
+<td align="left">115MB/s</td>
+<td align="left">2 ms</td>
+</tr>
+</tbody>
+</table>
+<p>如果您想深入研究相关的统计数据，可以在 <a href="https://github.com/banzaicloud/kafka-operator/tree/master/docs/benchmarks">这里</a>找到所有数据。</p>
+<h2 id="在istio服务网格上运行kafka">在Istio服务网格上运行Kafka</h2>
+<p>Kafka社区对如何利用更多的Istio功能非常感兴趣，例如开箱即用的Tracing，穿过协议过滤器的mTLS等。尽管这些功能有不同的需求，如Envoy、Istio和其他各种GitHub repos和讨论板上所反映的那样。大部分的这些特性已经在我们的<a href="https://beta.banzaicloud.io/">Pipeline platform</a>的<a href="https://banzaicloud.com/tags/kafka/">Kafka spotguide</a>中，包括监控、仪表板、安全通信、集中式的日志收集、自动伸缩，Prometheus警报，自动故障恢复等等。我们和客户错过了一个重要的功能：网络故障和多网络拓扑结构的支持。我们之前已经利用<a href="https://banzaicloud.com/blog/istio-the-simple-way/">Backyards</a>和<a href="https://github.com/banzaicloud/istio-operator">Istio operator</a>解决过此问题。现在，探索在Istio上运行Kafka的时机已经到来，并在单云多区、多云，特别是混合云环境中自动创建Kafka集群。</p>
+<p><img src="https://banzaicloud.com/img/blog/kafka-perf/kafka-multi-perf.png" alt="setup"></p>
+<blockquote>
+<p>让Kafka在Istio上运行并不容易，需要时间以及在Kafka和Istio方面的大量专业知识。经过一番努力和决心，我们完成了要做的事情。然后我们以迭代的方式自动化了整个过程，使其在<a href="https://beta.banzaicloud.io/">Pipeline platform</a>上运行的尽可能顺利。对于那些想要通读这篇文章并了解问题所在的人——具体的来龙去脉——我们很快将在另一篇文章中进行深入的技术探讨。同时，请随时查看相关的GitHub代码库。</p>
+</blockquote>
+<h3 id="认知偏差">认知偏差</h3>
+<p><em>认知偏差是一个概括性术语，指的是信息的上下文和结构影响个人判断和决策的系统方式。影响个体的认知偏差有很多种，但它们的共同特征是，与人类的个性相一致，它们会导致判断和决策偏离理性的客观。</em></p>
+<p>自从<a href="https://github.com/banzaicloud/istio-operator">Istio operator</a>发布以来，我们发现自己陷入了一场关于Istio的激烈辩论中。我们已经在Helm（和Helm 3）中目睹了类似的过程，并且很快意识到关于这个主题的许多最激进的观点并不是基于第一手的经验。当我们与对Istio的复杂性有一些疑问的人产生共鸣的时候——这正是我们开源了<a href="https://github.com/banzaicloud/istio-operator">Istio operator</a>和发布<a href="https://banzaicloud.com/blog/istio-multicluster-the-easy-way/">Backyards</a>产品背后的根本原因——我们真的不同意大多数性能相关的争论。是的，Istio有很多“方便”的特性你可能需要也可能不需要，其中一些特性可能会带来额外的延迟，但是问题是和往常一样，这样做是否值得?</p>
+<blockquote>
+<p>注意：是的，在运行一个包含大量微服务、策略实施和原始遥测数据过程的大型Istio集群时，我们已经看到了Mixer性能下降和其他的问题，对此表示关注；Istio社区正在开发一个<code>mixerless</code>版本——其大部分功能会叠加到Envoy上。</p>
+</blockquote>
+<h3 id="做到客观测量先行">做到客观，测量先行</h3>
+<p>在我们就是否向客户发布这些特性达成一致之前，我们决定进行一个性能测试。我们使用了几个在基于Istio服务网格上运行Kafka的测试场景来实现这点。你可能注意到，Kafka是一个数据密集型的应用，因此我们希望通过在依赖和不依赖Istio的两种情况下进行测试，以测量其增加的开销。此外，我们对Istio如何处理数据密集型应用很感兴趣，在这些应用程序中保持I/O吞吐量恒定，让所有组件负荷都达到了最大值。</p>
+<blockquote>
+<p>我们使用了新版本的 <a href="https://github.com/banzaicloud/kafka-operator">Kafka operator</a>，它提供了Istio服务网格的原生支持（版本 &gt;=0.5.0）。</p>
+</blockquote>
+<h2 id="基准测试安装设置">基准测试安装设置</h2>
+<p>为了验证我们的多云设置，我们决定先用各种Kubernetes集群场景测试Kafka：</p>
+<ul>
+<li>单机群，3个broker，3个topic分3个partition，复制因子设置为3，<strong>关闭TLS</strong></li>
+<li>单机群，3个broker，3个topic分3个partition，复制因子设置为3，<strong>启用TLS</strong></li>
+</ul>
+<p>这些设置对于检查Kafka在选定环境中的实际性能是非常必要的，且没有潜在的Istio开销。</p>
+<p>为了对Kafka进行基准测试，我们决定使用两个最流行的云提供商下的Kubernetes解决方案，Amazon EKS和Google GKE。我们希望最小化配置和避免任何潜在的CNI配置不匹配问题，因此决定使用云提供商管理的K8s发行版。</p>
+<blockquote>
+<p>在另一篇文章中，我们将发布混合云Kafka集群的基准测试，其中会使用自己的Kubernetes发行版<a href="https://github.com/banzaicloud/pke">PKE</a>。</p>
+</blockquote>
+<p>我们想要模拟经常在<a href="https://github.com/banzaicloud/pipeline">Pipeline</a>平台上的一个用例，因此部署了跨可用区的节点，Zookeeper和客户端也位于不同的节点中。</p>
+<p>下面是使用到的实例类型：</p>
+<h3 id="amazon-eks">AMAZON EKS</h3>
+<table>
+<thead>
+<tr>
+<th align="left">Broker</th>
+<th align="left">Zookeeper</th>
+<th align="left">Client</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">3x r5.4xlarge</td>
+<td align="left">3x c5.xlarge</td>
+<td align="left">3x c5.2xlarge</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>仅供参考，Amazon在一天剩下的时间里会在30分钟后对小型实例类型磁盘IO进行节流。你可以从 <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSOptimized.html#ebs-optimization-support">这里</a>读到更多信息。</p>
+</blockquote>
+<p>对于存储，我们请求了Amazon提供的<code>IOPS SSD（io1）</code>，在上面列出的实例中，它可以持续的达到437MB/s吞吐量。</p>
+<h3 id="google-gke">GOOGLE GKE</h3>
+<table>
+<thead>
+<tr>
+<th align="left">Broker</th>
+<th align="left">Zookeeper</th>
+<th align="left">Client</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">3x n1-standard-16</td>
+<td align="left">3x n1-standard-2</td>
+<td align="left">4x n1-standard-8</td>
+</tr>
+</tbody>
+</table>
+<p>存储方面，我们设置了Google的<code>pd-ssd</code>，根据文档，它可以达到<code>400MB/s</code>。</p>
+<h3 id="kafka和加载工具">KAFKA和加载工具</h3>
+<p>Kafka方面，我们使用了3个topic，partition 数量和 replication 因子都设置为 3。 基于测试的目的我们使用了默认的配置值，除了 <code>broker.rack,min.insync.replicas</code>。</p>
+<p>在基准测试中，我们使用自定义构建的Kafka Docker映像<code>banzaicloud/ Kafka:2.12-2.1.1</code>。它使用Java 11、Debian并包含2.1.1版本的Kafka。Kafka容器配置为使用4个CPU内核和12GB内存， Java的堆大小为10GB。</p>
+<blockquote>
+<p>banzaicloud/kafka:2.12-2.1.1 镜像是基于 wurstmeister/kafka:2.12-2.1.1 镜像的， 但为了SSL库的性能提升，我们想用 Java 11 代替 Java 8。</p>
+</blockquote>
+<p>加载工具使用 <a href="https://github.com/jamiealquiza/sangrenel">sangrenel</a>生成，它是一个基于Go语言实现的Kafka性能工具，配置如下：</p>
+<ul>
+<li>512 字节的消息尺寸</li>
+<li>不压缩</li>
+<li>required-acks 设置为 all</li>
+<li>worker设置为20个</li>
+</ul>
+<p>为了得到准确的结果，我们使用Grafana 仪表板<a href="https://grafana.com/dashboards/1860">1860</a>的可视化NodeExporter指标监控整个架构。我们不断增加生产者的数量，直到达到架构或Kafka的极限。</p>
+<blockquote>
+<p>为基准测试创建的架构已经超出了这篇文章的范围，但是如果你对重现它感兴趣，我们建议使用<a href="https://github.com/banzaicloud/pipeline">Pipeline管道</a>和访问<a href="https://github.com/banzaicloud/kafka-operator/">Kafka-operator</a> 的GitHub获取更多细节。</p>
+</blockquote>
+<h2 id="基准测试环境">基准测试环境</h2>
+<p>在讨论Kafka的基准测试结果之前，我们还对环境进行了测试。由于Kafka是一个极端数据密集型的应用，我们特别关注在测试磁盘速度和网络性能；根据经验，这是对Kafka影响最大的指标。网络性能方面，我们使用了一个名为<code>iperf</code>的工具。创建了两个相同的基于Ubuntu的Pod：一个是服务端，另一个是客户端。</p>
+<ul>
+<li>在 Amazon EKS 上我们测量到了 <code>3.01 Gbits/sec</code> 的吞吐量。</li>
+<li>在 Google GKE 上我们测量到了 <code>7.60 Gbits/sec</code> 的吞吐量。</li>
+</ul>
+<p>为了确定磁盘速度，我们在基于容器的Ubuntu系统下使用了一个叫 <code>dd</code>的工具。</p>
+<ul>
+<li>在Amazon EKS上我们测量的结果是 <code>437MB/s</code>（这与Amazon为该实例和ssd类型提供的内容完全一致）。</li>
+<li>在Google GKE上我们测量的结果是 <code>400MB/s</code>（这也与谷歌为其实例和ssd类型提供的内容一致）。</li>
+</ul>
+<p>现在我们对环境有了更好的理解，让我们继续讨论部署到Kubernetes的Kafka集群。</p>
+<h2 id="单集群">单集群</h2>
+<h3 id="google-gke-1">Google GKE</h3>
+<h4 id="kafka部署在kubernetes---没有istio">Kafka部署在Kubernetes - 没有Istio</h4>
+<p>在我们得到关于EKS的结果之后，我们对Kafka在GKE上达到 <code>417MB/s</code> 的磁盘吞吐量并不感到惊讶。该性能受到实例的磁盘IO限制。</p>
+<p><img src="https://banzaicloud.com/img/blog/kafka-perf/kafka-notls-gke.png" alt="img"></p>
+<h4 id="kafka基于kubernetes-开启tls---没有istio">Kafka基于Kubernetes 开启TLS - 没有Istio</h4>
+<p>一旦我们为Kafka打开SSL/TLS，和预期的一样并且已经多次<a href="https://blog.mimacom.com/apache-kafka-with-ssltls-performance/">基准测试</a>过，就会出现性能损失。众所周知，Java的SSL/TLS（插件化的）实现性能很差，而且它在Kafka中导致了<a href="https://issues.apache.org/jira/browse/KAFKA-2561">性能问题</a>。不过在最近的实现版本（9+）中有一些改进，因此我们升级到了Java 11。结果如下:</p>
+<ul>
+<li>吞吐量<code>274MB/s</code> ，大约30% 吞吐量损失</li>
+<li>和没有TLS比较，包速率有大约两倍的提升</li>
+</ul>
+<p><img src="https://banzaicloud.com/img/blog/kafka-perf/kafka-tls-gke.png" alt="img"></p>
+<h4 id="kafka基于kubernetes---且有istio">Kafka基于Kubernetes - 且有Istio</h4>
+<p>我们急切地想知道在Istio中部署和使用Kafka时是否会增加开销和有性能损失。结果很有希望:</p>
+<ul>
+<li>没有性能损失</li>
+<li>CPU方面略有增加</li>
+</ul>
+<p><img src="https://banzaicloud.com/img/blog/kafka-perf/kafka-notls-gke-istio.png" alt="img"></p>
+<h4 id="kafka基于kubernetes---有istio并开启mtls">Kafka基于Kubernetes - 有Istio并开启mTLS</h4>
+<p>接下来，我们在Istio上启用了mTLS，并重用了相同的Kafka部署。结果比基于Kubernetes的Kafka并开启了SSL/TLS的要好。</p>
+<ul>
+<li>吞吐量<code>323MB/s</code> ，大约20% 吞吐量损失</li>
+<li>和没有TLS比较大约有2倍的包速率提升</li>
+</ul>
+<p><img src="https://banzaicloud.com/img/blog/kafka-perf/kafka-tls-gke-istio.png" alt="img"></p>
+<h3 id="amazon-eks-1">Amazon EKS</h3>
+<h4 id="kafka基于kubernetes---没有istio">Kafka基于Kubernetes - 没有Istio</h4>
+<p>在这个配置下我们得到了一个相当可观的写入速度<code>439MB/s</code>，如果消息的尺寸是512字节，那么它就是<code>892928消息/秒</code>。事实上，我们压榨出了AWS <code>r5.4xlarge</code>这种实例的磁盘吞吐量最大的负荷能力。</p>
+<p><img src="https://banzaicloud.com/img/blog/kafka-perf/kafka-notls-eks.png" alt="img"></p>
+<h4 id="kafka基于kubernetes并开启tls---没有istio">Kafka基于Kubernetes并开启TLS - 没有Istio</h4>
+<p>一旦我们再次为Kafka打开SSL/TLS，并进行了多次<a href="https://blog.mimacom.com/apache-kafka-with-ssltls-performance/">基准测试</a>，就像预期的那样会出现性能损失。Java的SSL/TLS实现性能问题在EKS上和GKE一样存在。不过正如我们之前所说，最近的版本已经有了改进。因此我们将其升级到Java 11，结果如下：</p>
+<ul>
+<li>吞吐量<code>306MB/s</code> ，大约30% 吞吐量损失</li>
+<li>和没有TLS比较，大约2倍包速率提升</li>
+</ul>
+<p><img src="https://banzaicloud.com/img/blog/kafka-perf/kakfa-tls-eks.png" alt="img"></p>
+<h4 id="kafka基于kubernetes---有istio">Kafka基于Kubernetes - 有Istio</h4>
+<p>和以前一样，结果也很好：</p>
+<ul>
+<li>没有性能损失</li>
+<li>CPU使用方面有轻微增加</li>
+</ul>
+<p><img src="https://banzaicloud.com/img/blog/kafka-perf/kafka-notls-eks-istio.png" alt="img"></p>
+<h4 id="kafka基于kubernetes---有istio且开启mtls">Kafka基于Kubernetes - 有Istio且开启mTLS</h4>
+<p>接下来，我们在Istio上启用了mTLS，并重用了相同的Kafka部署。同样的，结果比Kafka在Kubernetes上直接使用SSL/TLS要好。</p>
+<ul>
+<li>吞吐量<code>340MB/s</code> ，大约20%吞吐量损耗</li>
+<li>包速率增加了，但低于两倍</li>
+</ul>
+<p><img src="https://banzaicloud.com/img/blog/kafka-perf/kafka-tls-eks-istio.png" alt="img"></p>
+<h4 id="额外的尝试---kafka基于linkerd关闭mtls">额外的尝试 - Kafka基于Linkerd（关闭mTLS）</h4>
+<p>我们测试了所有可用的情况，所以想用Linkerd再尝试一下。为什么？因为我们可以做到。虽然我们知道Linkerd在可用的功能方面不能满足客户期望，但我们仍然想尝试一下。我们的期望值很高，但得出的数字给了我们一个沉重的教训，也提醒了我们什么是<code>认知偏见</code>。</p>
+<ul>
+<li>吞吐量<code>246MB/s</code></li>
+</ul>
+<p><img src="https://banzaicloud.com/img/blog/kafka-perf/kafka-linkerd.png" alt="img"></p>
+<h3 id="单集群结论">单集群结论</h3>
+<p>在继续多集群基准测试之前，让我们评估一下已有的数据。可以看出，在这些环境和场景中，使用没有mTLS的服务网格不会影响Kafka的性能。在到达网络、内存或CPU瓶颈前，底层磁盘的吞吐量限制了Kafka的性能。</p>
+<p>无论是使用Istio还是Kafka自己的SSL/TLS库，都会使Kafka的性能降低约20%。它也增加了一点CPU负载，并使通过网络传输的数据包数量增加了一倍。</p>
+<blockquote>
+<p>注意，在使用<code>iperf</code>进行架构测试期间，仅在网络上启用mTLS就会导致大约20%的性能损耗。</p>
+</blockquote>
+<h2 id="跨racks云区域topic复制的多集群场景">跨“racks”（云区域）topic复制的多集群场景</h2>
+<p>在这个设置中，我们模拟的内容更接近于生产环境，为了重用测试环境，我们坚持使用相同配置的AWS或Google实例，但是在不同的区域上设置了多个集群（跨云区域的topic复制）。请注意，无论我们跨单个云提供商使用这些集群，还是跨多个云或混合云来使用这些集群，流程都应该是相同的。从<a href="https://banzaicloud.com/blog/istio-multicluster-theeasy-way/">Backyards</a>和<a href="https://github.com/banzaicloud/istio-operator">Istio operator</a>的角度来看没有区别，我们支持3种不同的网络拓扑。</p>
+<p>其中一个集群比另一个集群更大，它包含两个broker和两个Zookeeper节点。而另一个集群则各有一个节点。注意，在支持mTLS的<strong>单网格多集群环境</strong>中是绝对必要的。此外我们还设置<code>min.insync.replicas</code>为3，让生产者应答所有耐用性相关的请求。</p>
+<p>网格是全自动的由 <a href="https://github.com/banzaicloud/istio-operator">Istio operator</a>提供。</p>
+<h3 id="google-gke---gke">Google GKE &lt;-&gt; GKE</h3>
+<p>在这个场景中，我们创建了一个单网格/单Kakfa集群，它跨越两个Google云区域：eu-west1和eu-west4</p>
+<ul>
+<li>吞吐量<code>211MB/s</code></li>
+</ul>
+<p><img src="https://banzaicloud.com/img/blog/kafka-perf/kafka-multi-gke.png" alt="img"></p>
+<h3 id="amazon-eks---eks">Amazon EKS &lt;-&gt; EKS</h3>
+<p>在这个场景中，我们创建了一个单网格/单Kakfa集群，它横跨两个AWS区域：eu-north1和eu-west1</p>
+<ul>
+<li>吞吐量<code>85MB/s</code></li>
+</ul>
+<p><img src="https://banzaicloud.com/img/blog/kafka-perf/kafka-multi-eks.png" alt="img"></p>
+<h3 id="google-gke---eks">Google GKE &lt;-&gt; EKS</h3>
+<p>在这个场景中，我们创建了一个单一的Istio网格，它跨越多个集群和多个云，形成了一个单一的Kafka集群（Google云区域是europe-west-3， AWS的区域是eu-central-1）。正如预期的那样，结果要差得多。</p>
+<ul>
+<li>吞吐量<code>115MB/s</code></li>
+</ul>
+<p><img src="https://banzaicloud.com/img/blog/kafka-perf/kafka-multi-eks-gke.png" alt="img"></p>
+<h3 id="多集群结论">多集群结论</h3>
+<p>从基准测试来看，我们可以放心地说，在多云单网格环境中使用Kafka是值得的。人们选择在Istio上部署Kafka这种环境的原因各不相同，但像<a href="https://github.com/banzaicloud/pipeline">Pipeline</a>这样易于安装，有额外的安全收益，具有可伸缩性和耐用性，<a href="https://banzaicloud.com/blog/istio-operator-1.2/">基于本地负载均衡</a>和更多特性的工具是一个完美的选择。</p>
+<p>正如前面提到的，本系列后续的文章之一是关于基准测试/运维一个自动伸缩的混云Kafka集群，警报和缩放事件基于Prometheus的指标（我们对基于Istio指标的多个应用进行类似的自动伸缩，并通过网格部署和观察它们——阅读这篇之前的文章了解详情：<a href="https://banzaicloud.com/blog/k8s-hpa-prom-istio/">基于自定义Istio指标的Pod水平自动伸缩</a>。）</p>
+<h2 id="关于-backyardshttpsbanzaicloudcomblogistio-the-easy-way">关于 <a href="https://banzaicloud.com/blog/istio-the-easy-way/">Backyards</a></h2>
+<p>Banzai Cloud的Backyards是一个支持多云和混合云的服务网格平台，用于构建现代应用程序。基于Kubernetes，我们的<a href="https://github.com/banzaicloud/istio-operator">Istio operator</a>和<a href="https://github.com/banzaicloud/pipeline">Pipeline</a>平台支持跨实体数据中心和<strong>5</strong>个云环境的灵活性、可移植性和一致性。使用简单但功能极其强大的UI和CLI，自己体验自动金丝雀发布、流量转移、路由、安全服务通信、深度的可观察性等特性。</p>
+<h2 id="关于-pipelinehttpsgithubcombanzaicloudpipeline">关于 <a href="https://github.com/banzaicloud/pipeline">Pipeline</a></h2>
+<p>Banzai Cloud的 <a href="https://github.com/banzaicloud/pipeline">Pipeline</a>提供了一个平台，允许企业开发、部署和扩展基于容器的应用程序。它利用了最好的云组件比如Kubernetes，为开发人员和运营团队创建了一个高效、灵活的环境。强大的安全评估——多认证后端，细粒度的授权、动态安全管理、使用TLS，漏洞扫描，静态代码分析，CI/CD等特性的组件之间的自动化安全通信，<a href="https://github.com/banzaicloud/pipeline">Pipeline</a>是一个**0层（tier zero）**特性的平台，努力使所有企业实现自动化。</p>
+<h2 id="关于-banzai-cloudhttpsbanzaicloudcom">关于 <a href="https://banzaicloud.com/">Banzai Cloud</a></h2>
+<p><a href="https://banzaicloud.com/">Banzai Cloud</a> 正在改变私有云的构建方式：简化复杂应用程序的开发、部署和扩展，并将Kubernetes和云原生技术的强大功能交到各地的开发人员和企业手中。</p>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/cloud-native-api-gateway-part-1/" data-toggle="tooltip" data-placement="top" title="构建云原生微服务网关-篇一：Ambassador">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/service-mesh-meetup-guangzhou-20190811/" data-toggle="tooltip" data-placement="top" title="第六届Service Mesh Meetup广州站回顾">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/service-mesh-istio-limits-and-benefits-part-2/"><i class="fa fa-link"></i>服务网格的三个技术优势及其运维局限-第2部分</a></li>
+         
+        <li><a href="/blog/service-mesh-istio-limits-and-benefits-part-1/"><i class="fa fa-link"></i>服务网格的三个技术优势及其运维局限-第1部分</a></li>
+         
+        <li><a href="/blog/using-opentracing-with-istio-part-2/"><i class="fa fa-link"></i>洞若观火：使用OpenTracing增强Istio的调用链跟踪-篇二</a></li>
+         
+        <li><a href="/blog/using-opentracing-with-istio-part-1/"><i class="fa fa-link"></i>洞若观火：使用OpenTracing增强Istio的调用链跟踪-篇一</a></li>
+         
+        <li><a href="/blog/google-traffic-director-detail/"><i class="fa fa-link"></i>Google Traffic Director详细介绍</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

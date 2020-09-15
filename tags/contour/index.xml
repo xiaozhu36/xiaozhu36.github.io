@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>contour on ServiceMesher</title>
+    <link>https://www.servicemesher.com/tags/contour/</link>
+    <description>Recent content in contour on ServiceMesher</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh</language>
+    <lastBuildDate>Sat, 31 Aug 2019 22:16:10 +0800</lastBuildDate>
+    
+	<atom:link href="https://www.servicemesher.com/tags/contour/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Contour 学习笔记（一）：使用 Contour 接管 Kubernetes 的南北流量</title>
+      <link>https://www.servicemesher.com/blog/use-envoy-as-a-kubernetes-ingress/</link>
+      <pubDate>Sat, 31 Aug 2019 22:16:10 +0800</pubDate>
+      
+      <guid>https://www.servicemesher.com/blog/use-envoy-as-a-kubernetes-ingress/</guid>
+      <description>Contour 使用 Envoy 作为 Kubernetes 的 Ingress Controller 实现，为大家提供了一条新的 Kubernetes 外部负载均衡实现思路。本文介绍了 Contour 分布式架构的工作原理，Envoy 初始配置以及后续动态配置的下发流程，最后通过 Prometheus-Operator 抓取 Contour 的监控指标。</description>
+    </item>
+    
+  </channel>
+</rss>

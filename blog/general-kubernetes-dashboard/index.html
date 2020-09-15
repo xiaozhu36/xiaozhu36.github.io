@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>kubernetes dashboard在ssl的各种场景下的手动部署 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="Kubernetes, dashboard">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="kubernetes dashboard在ssl的各种场景下的手动部署" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/general-kubernetes-dashboard//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="本文是对 Kubernetes 的 dashboard有关ssl下各个场景的相关说明。">
+  <meta property="og:description" content="本文是对 Kubernetes 的 dashboard有关ssl下各个场景的相关说明。">
+  <meta name="twitter:description" content="本文是对 Kubernetes 的 dashboard有关ssl下各个场景的相关说明。">
+  <meta property="og:description" content="本文是对 Kubernetes 的 dashboard有关ssl下各个场景的相关说明。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="kubernetes dashboard在ssl的各种场景下的手动部署 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="kubernetes dashboard在ssl的各种场景下的手动部署 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">kubernetes dashboard在ssl的各种场景下的手动部署 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>kubernetes dashboard在ssl的各种场景下的手动部署</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2019年4月17日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://zhangguanzhang.github.io">张馆长</a>
+                            
+                            
+                            
+                            |
+                            4900字 | 阅读大约需要10分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            <a href="https://zhangguanzhang.github.io/2019/02/12/dashboard/">查看原文</a>
+                            |
+                            
+                            
+                            归档于 <a href="/categories/kubernetes">kubernetes</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/kubernetes/"><i>#kubernetes</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/dashboard/"><i>#dashboard</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <blockquote>
+<p>本文转载自<a href="https://zhangguanzhang.github.io/2019/02/12/dashboard/">zhangguanzhang的博客</a>。</p>
+</blockquote>
+<p>旨在面向新手讲解手动部署过程，本文dashboard的暴露不会用nodePort（不喜欢使用它）和apiserver的web proxy代理也就是<code>/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/</code>这种。</p>
+<p>主要讲下四种场景方式：</p>
+<ul>
+<li>纯dashboard http和https不惨合外部证书</li>
+<li>openssl 证书给dashboard当https</li>
+<li>个人向域名使用https小绿锁</li>
+<li>ingress tls 代理http[s]的dashboard
+以及最后讲解的如何定义带权限的token去利用token登陆dashboard。</li>
+</ul>
+<p>先要理解的一点就是JWT（JSON Web Tokens）思想，k8s的很多addon都是pod形式跑的，addon的pod都是要连接kube-apiserver来操作集群来减少运维的工作量和提供方便。addon都是pod，pod操作和查看集群信息需要鉴权。</p>
+<p>为此k8s使用了RBAC的思想（RBAC思想不是k8s独有的），资源对象和对声明的资源对象的操作权限组合最终落实到<code>ServiceAccount</code>上，而每个名为<code>name</code>的sa会关联着一个名为<code>name-token-xxxxx</code>的secret。</p>
+<p>可以通过kubectl describe命令或者api看这个secret实际上就是个token和一个ca.crt。下列命令列出缺省sa default的token和整个集群的ca.crt（jsonpath打印的时候敏感信息是base64编码需要自己解码）:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get secret -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{range .items[?(@.metadata.annotations.kubernetes\.io/service-account\.name==&#34;default&#34;)].data}{&#34;token: &#34;}{.token}{&#34;\n\n&#34;}{&#34;ca.crt: &#34;}{.ca\.crt}{&#34;\n&#34;}{end}&#39;</span>
+token: ZXlKaGJHY2lPaUpGVXpVeE1pSXNJbXR................
+
+ca.crt: LS0tLS1CRUdJTiBDRVJUS..........................
+</code></pre></div><p>每个pod都会被kubelet挂载pod声明的ServiceAccount关联的secret的里的ca.crt和token到容器里路径<code>/var/run/secrets/kubernetes.io/serviceaccount</code>。</p>
+<p>部署的yaml的话不推荐直接使用官方的yaml，我们需要看场景修改或者删减一些东西，这里先放下官方的yaml链接，后面以文件讲解。同时也推荐把本文看完了后再开始部署。</p>
+<p><code>https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml</code></p>
+<p>全文我基本都是用的<code>hostNetwork</code>和<code>nodeName</code>固定在一台上，如果对k8s的几种svc和<code>hostNetwork</code>以及<code>hostPort</code>以及<code>Ingress</code>熟悉的话可以自己决定暴露方式。
+这里我是使用的下面这种方式暴露出去，也就意味着我们不需要svc可以删掉官方yaml里最后那段<code>Dashboard Service</code>，访问的话用node的ip带上端口访问即可，改成大概下面这样：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">...
+    <span style="color:#66d9ef">spec</span>:
+      <span style="color:#66d9ef">hostNetwork</span>: <span style="color:#66d9ef">true</span>
+      <span style="color:#66d9ef">dnsPolicy</span>: ClusterFirstWithHostNet
+      <span style="color:#66d9ef">containers</span>:
+      - <span style="color:#66d9ef">name</span>: kubernetes-dashboard
+        <span style="color:#66d9ef">image</span>: registry.cn-hangzhou.aliyuncs.com/google_containers/kubernetes-dashboard-amd64:v1<span style="color:#ae81ff">.10.1</span>
+        ...
+        ...
+      <span style="color:#66d9ef">nodeName</span>: k8s-m1
+      <span style="color:#66d9ef">volumes</span>:
+...
+</code></pre></div><h2 id="纯dashboard">纯dashboard</h2>
+<p>分为两种: http和开https，其中开https又分为使用自带的cert和openssl生成的。</p>
+<h3 id="默认自带的https">默认自带的https</h3>
+<p>首先说说自带的https，镜像默认的<code>entrypoint</code>是这样：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">...
+            <span style="color:#66d9ef">&#34;Entrypoint&#34;: </span>[
+                <span style="color:#e6db74">&#34;/dashboard&#34;</span>,
+                <span style="color:#e6db74">&#34;--insecure-bind-address=0.0.0.0&#34;</span>,
+                <span style="color:#e6db74">&#34;--bind-address=0.0.0.0&#34;</span>
+            ],
+...
+</code></pre></div><p>默认定义的容器启动参数为下面这样：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">...
+        <span style="color:#66d9ef">args</span>:
+          - --auto-generate-certificates
+...
+</code></pre></div><p>这里我宿主机的8443被占用了，我修改了下dashboard的端口，后面同理：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">...
+        <span style="color:#66d9ef">ports</span>:
+        - <span style="color:#66d9ef">containerPort</span>: <span style="color:#ae81ff">5443</span>
+          <span style="color:#66d9ef">protocol</span>: TCP
+        <span style="color:#66d9ef">command</span>:
+          - /dashboard
+          - --bind-address=<span style="color:#ae81ff">0.0.0.0</span>
+        <span style="color:#66d9ef">args</span>:
+          - --auto-generate-certificates
+          - --port=<span style="color:#ae81ff">5443</span>
+...
+...
+        <span style="color:#66d9ef">livenessProbe</span>:
+          <span style="color:#66d9ef">httpGet</span>:
+            <span style="color:#66d9ef">scheme</span>: HTTPS
+            <span style="color:#66d9ef">path</span>: /
+            <span style="color:#66d9ef">port</span>: <span style="color:#ae81ff">5443</span>
+...
+</code></pre></div><p><code>--auto-generate-certificates</code>从字面意思看是dashboard自己生成https的证书，但是实际上如下面的图这个证书chrome浏览器是不认的其他浏览器不清楚，chrome打开后在网页上是没有无视警告继续的选项，可以自行去试试看，网上也没找到添加例外只找到了全局关闭非权威SSL警告。不推荐这种（或者说这种完全行不通？）</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/general-kubernetes-dashboard/005BYqpggy1g22j058fljj30l30grjsz.jpg" alt="browser-cannot-continue"></p>
+<h3 id="使用http">使用http</h3>
+<p>使用http我们要小心有几个坑！
+使用http我们只要使用选项<code>--insecure-port</code>修改成下面即可端口不一定需要和我一样，pod的健康检查记得把``HTTPS<code>改成</code>HTTP`：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">        <span style="color:#66d9ef">ports</span>:
+        - <span style="color:#66d9ef">containerPort</span>: <span style="color:#ae81ff">5443</span>
+          <span style="color:#66d9ef">protocol</span>: TCP
+        <span style="color:#66d9ef">command</span>:
+          - /dashboard
+          - --insecure-bind-address=<span style="color:#ae81ff">0.0.0.0</span>
+        <span style="color:#66d9ef">args</span>:
+          - --insecure-port=<span style="color:#ae81ff">5443</span>
+...
+        <span style="color:#66d9ef">livenessProbe</span>:
+          <span style="color:#66d9ef">httpGet</span>:
+            <span style="color:#66d9ef">scheme</span>: HTTP
+            <span style="color:#66d9ef">path</span>: /
+            <span style="color:#66d9ef">port</span>: <span style="color:#ae81ff">5443</span>
+
+</code></pre></div><p>默认http是不需要登陆的，所有人进去都是可以的，我们可以注意到dashboard默认带了一个sa以及一个Role：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#75715e"># ------------------- Dashboard Role &amp; Role Binding ------------------- #</span>
+<span style="color:#66d9ef">kind</span>: Role
+<span style="color:#66d9ef">apiVersion</span>: rbac.authorization.k8s.io/v1
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: kubernetes-dashboard-minimal
+  <span style="color:#66d9ef">namespace</span>: kube-system
+<span style="color:#66d9ef">rules</span>:
+  <span style="color:#75715e"># Allow Dashboard to create &#39;kubernetes-dashboard-key-holder&#39; secret.</span>
+- <span style="color:#66d9ef">apiGroups</span>: [<span style="color:#e6db74">&#34;&#34;</span>]
+  <span style="color:#66d9ef">resources</span>: [<span style="color:#e6db74">&#34;secrets&#34;</span>]
+  <span style="color:#66d9ef">verbs</span>: [<span style="color:#e6db74">&#34;create&#34;</span>]
+  <span style="color:#75715e"># Allow Dashboard to create &#39;kubernetes-dashboard-settings&#39; config map.</span>
+- <span style="color:#66d9ef">apiGroups</span>: [<span style="color:#e6db74">&#34;&#34;</span>]
+  <span style="color:#66d9ef">resources</span>: [<span style="color:#e6db74">&#34;configmaps&#34;</span>]
+  <span style="color:#66d9ef">verbs</span>: [<span style="color:#e6db74">&#34;create&#34;</span>]
+  <span style="color:#75715e"># Allow Dashboard to get, update and delete Dashboard exclusive secrets.</span>
+- <span style="color:#66d9ef">apiGroups</span>: [<span style="color:#e6db74">&#34;&#34;</span>]
+  <span style="color:#66d9ef">resources</span>: [<span style="color:#e6db74">&#34;secrets&#34;</span>]
+  <span style="color:#66d9ef">resourceNames</span>: [<span style="color:#e6db74">&#34;kubernetes-dashboard-key-holder&#34;</span>, <span style="color:#e6db74">&#34;kubernetes-dashboard-certs&#34;</span>]
+  <span style="color:#66d9ef">verbs</span>: [<span style="color:#e6db74">&#34;get&#34;</span>, <span style="color:#e6db74">&#34;update&#34;</span>, <span style="color:#e6db74">&#34;delete&#34;</span>]
+  <span style="color:#75715e"># Allow Dashboard to get and update &#39;kubernetes-dashboard-settings&#39; config map.</span>
+- <span style="color:#66d9ef">apiGroups</span>: [<span style="color:#e6db74">&#34;&#34;</span>]
+  <span style="color:#66d9ef">resources</span>: [<span style="color:#e6db74">&#34;configmaps&#34;</span>]
+  <span style="color:#66d9ef">resourceNames</span>: [<span style="color:#e6db74">&#34;kubernetes-dashboard-settings&#34;</span>]
+  <span style="color:#66d9ef">verbs</span>: [<span style="color:#e6db74">&#34;get&#34;</span>, <span style="color:#e6db74">&#34;update&#34;</span>]
+  <span style="color:#75715e"># Allow Dashboard to get metrics from heapster.</span>
+- <span style="color:#66d9ef">apiGroups</span>: [<span style="color:#e6db74">&#34;&#34;</span>]
+  <span style="color:#66d9ef">resources</span>: [<span style="color:#e6db74">&#34;services&#34;</span>]
+  <span style="color:#66d9ef">resourceNames</span>: [<span style="color:#e6db74">&#34;heapster&#34;</span>]
+  <span style="color:#66d9ef">verbs</span>: [<span style="color:#e6db74">&#34;proxy&#34;</span>]
+- <span style="color:#66d9ef">apiGroups</span>: [<span style="color:#e6db74">&#34;&#34;</span>]
+  <span style="color:#66d9ef">resources</span>: [<span style="color:#e6db74">&#34;services/proxy&#34;</span>]
+  <span style="color:#66d9ef">resourceNames</span>: [<span style="color:#e6db74">&#34;heapster&#34;</span>, <span style="color:#e6db74">&#34;http:heapster:&#34;</span>, <span style="color:#e6db74">&#34;https:heapster:&#34;</span>]
+  <span style="color:#66d9ef">verbs</span>: [<span style="color:#e6db74">&#34;get&#34;</span>]
+---
+<span style="color:#66d9ef">apiVersion</span>: rbac.authorization.k8s.io/v1
+<span style="color:#66d9ef">kind</span>: RoleBinding
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: kubernetes-dashboard-minimal
+  <span style="color:#66d9ef">namespace</span>: kube-system
+<span style="color:#66d9ef">roleRef</span>:
+  <span style="color:#66d9ef">apiGroup</span>: rbac.authorization.k8s.io
+  <span style="color:#66d9ef">kind</span>: Role
+  <span style="color:#66d9ef">name</span>: kubernetes-dashboard-minimal
+<span style="color:#66d9ef">subjects</span>:
+- <span style="color:#66d9ef">kind</span>: ServiceAccount
+  <span style="color:#66d9ef">name</span>: kubernetes-dashboard
+  <span style="color:#66d9ef">namespace</span>: kube-system
+</code></pre></div><p>这样绕过登陆的话所有人都是上面的权限了，所以我们得使用选项<code>--enable-insecure-login</code>开启登陆界面，最终的args为下面：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">...
+        <span style="color:#66d9ef">args</span>:
+          - --insecure-port=<span style="color:#ae81ff">5443</span>
+          - --enable-insecure-login=<span style="color:#66d9ef">true</span>
+...
+</code></pre></div><p>这样下进去是强制让登录了，但是token的话（后面说这个token如何创建和获取）是无法登陆的，找到issue说通过kubectl proxy出去的http和直接暴露的http将无法登陆（但是实际上我测了下百度浏览器可以登录）。</p>
+<ul>
+<li><a href="https://github.com/kubernetes/dashboard/issues/3216">https://github.com/kubernetes/dashboard/issues/3216</a></li>
+<li><a href="https://github.com/kubernetes/dashboard/issues/2735">https://github.com/kubernetes/dashboard/issues/2735</a></li>
+</ul>
+<p>但是也不是意味着完全不能用这种方法，可以sa kubernetes-dashboard绑定到集群角色cluster-admin然后外面套层nginx的auth到它，然后配置iptables或者网络设备ACL让dashboard只收到来源ip是nginx。</p>
+<h2 id="openssl生成证书给dashboard当https证书">openssl生成证书给dashboard当https证书</h2>
+<p>如果我们使用openssl生成证书给dashboard使用的话，浏览器会有跳过继续前往页面的选项，能够在内网没域名下使用，我们内网给研发搭建dashboard目前就是这样使用的。具体就是openssl命令生成证书并根据证书生成tls类型的secret：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">mkdir certs
+openssl req -nodes -newkey rsa:2048 -keyout certs/dashboard.key -out certs/dashboard.csr -subj <span style="color:#e6db74">&#34;/C=/ST=/L=/O=/OU=/CN=kubernetes-dashboard&#34;</span>
+openssl x509 -req -sha256 -days <span style="color:#ae81ff">10000</span> -in certs/dashboard.csr -signkey certs/dashboard.key -out certs/dashboard.crt
+kubectl create secret generic kubernetes-dashboard-certs --from-file<span style="color:#f92672">=</span>certs -n kube-system
+</code></pre></div><p>这里生成secret后我们先分析下官方的yaml，我们可以用命令帮助<code>--help</code>查看到dashboard的默认cert-dir是<code>/certs</code>：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ docker run --rm -ti --entrypoint /dashboard registry.cn-hangzhou.aliyuncs.com/google_containers/kubernetes-dashboard-amd64:v1.10.1 --help | grep cert-dir
+      --default-cert-dir string          Directory path containing <span style="color:#e6db74">&#39;--tls-cert-file&#39;</span> and <span style="color:#e6db74">&#39;--tls-key-file&#39;</span> files. Used also when auto-generating certificates flag is set. <span style="color:#f92672">(</span>default <span style="color:#e6db74">&#34;/certs&#34;</span><span style="color:#f92672">)</span>
+</code></pre></div><p>而且可以注意到他有个挂载：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">...
+        <span style="color:#66d9ef">volumeMounts</span>:
+        - <span style="color:#66d9ef">name</span>: kubernetes-dashboard-certs
+          <span style="color:#66d9ef">mountPath</span>: /certs
+...
+...
+      <span style="color:#66d9ef">volumes</span>:
+      - <span style="color:#66d9ef">name</span>: kubernetes-dashboard-certs
+        <span style="color:#66d9ef">secret</span>:
+          <span style="color:#66d9ef">secretName</span>: kubernetes-dashboard-certs
+...
+</code></pre></div><p>上面挂载的secret也是来源于官方yaml里的secret，也就说默认情况下这个secret是给选项<code>--auto-generate-certificates</code>使用的：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: v1
+<span style="color:#66d9ef">kind</span>: Secret
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">labels</span>:
+    <span style="color:#66d9ef">k8s-app</span>: kubernetes-dashboard
+  <span style="color:#66d9ef">name</span>: kubernetes-dashboard-certs
+  <span style="color:#66d9ef">namespace</span>: kube-system
+<span style="color:#66d9ef">type</span>: Opaque
+</code></pre></div><p>所以我们使用openssl部署dashboard的步骤是先上面openssl生成证书然后导入生成secret，然后yaml里删掉<code>Dashboard Secret</code>然后修改dashboard的运行选项：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">...
+        <span style="color:#66d9ef">command</span>:
+          - /dashboard
+          - --bind-address=<span style="color:#ae81ff">0.0.0.0</span>
+        <span style="color:#66d9ef">args</span>:
+          - --auto-generate-certificates
+          - --port=<span style="color:#ae81ff">5443</span>
+...
+</code></pre></div><p>上面为啥我开了自动生成证书的选项呢，这个选项开启时不会覆盖我们的挂载的certs文件的同时它还是全局https的开关- -坑了我好久。</p>
+<h2 id="个人向域名使用https小绿锁有单点故障风险">个人向域名使用https小绿锁(有单点故障风险)</h2>
+<p>这里是通过域名+https访问，证书的话可以买的也可以免费签署的SSL证书都行。
+我使用的是<code>acme.sh + token</code>使用<code>Let’s Encrypt</code>签署免费的SSL证书，也是我个人用的。另外acme申请证书的时候不一定非得通配符域名
+安装acme.sh脚本：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl  -s https://get.acme.sh | sh
+<span style="color:#75715e"># 设置别名方便使用命令</span>
+alias acme.sh<span style="color:#f92672">=</span>~/.acme.sh/acme.sh
+</code></pre></div><p>DNS API ，阿里云需要设置 RAM 策略对应为 AliyunDNSFullAccess，然后在控制台获取API的token，腾讯的话确保域名解析是dnspod，其他的域名提供商请查看 <a href="https://github.com/Neilpang/acme.sh/wiki/dnsapi">https://github.com/Neilpang/acme.sh/wiki/dnsapi</a> 。
+例如阿里的话去阿里云上生成token然后下面执行：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">export Ali_Key<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;yourkey&#34;</span>
+export Ali_Secret<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;yoursecret&#34;</span>
+<span style="color:#75715e"># 申请证书</span>
+acme.sh --issue --dns dns_ali -d *.k8s.youdomain.com
+</code></pre></div><p>域名在腾讯云的话确保nameserver设置的是dnspod（好像默认就是这个），我们去dnspod的官网上使用登陆腾讯云的账号（例如我是qq登陆）后在开发者api里开启dnspod的api token。
+注意token在创建的时候只显示一次，记得截图发给自己的时候别点错地方关了，不然得再创建个。</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/general-kubernetes-dashboard/005BYqpgly1g22j058335j30js0c0t9g.jpg" alt="tx-dns-setting"></p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/general-kubernetes-dashboard/005BYqpggy1g22j0563f6j31060gcq33.jpg" alt="dnspod-getToken"></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">export DP_Id<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;1234&#34;</span>
+export DP_Key<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;sADDsdasdgdsfsdfsdfasfdsfasfasfds&#34;</span>
+acme.sh --issue --dns dns_dp -d *.zhangguanzhang.com
+</code></pre></div><p>运行后会看到文件路径：</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/general-kubernetes-dashboard/005BYqpgly1g22j0598m4j31hc0n3wfi.jpg" alt="scriptOutput"></p>
+<p>前面证书生成以后， 接下来需要把证书 copy 到真正需要用它的地方。
+注意， 默认生成的证书都放在安装目录下: <code>~/.acme.sh/</code>， 请不要直接使用此目录下的文件， 例如: 不要直接让 nginx/apache 的配置文件使用这下面的文件. 这里面的文件都是内部使用， 而且目录结构可能会变化。
+正确的使用方法是使用<code>--installcert</code>命令，并指定目标位置， 然后证书文件会被copy到相应的位置。
+COPY 证书，安装到 <code>~/cert</code> 目录中，cert 证书使用的是 fullchain cert， keyfile和fullchain的证书名字随意，自己记住就行了。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">mkdir -p ~/cert
+acme.sh  --installcert  -d  *.zhangguanzhang.com   <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>        --key-file           ~/cert/zhangguanzhang.com.key <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>        --fullchain-file     ~/cert/zhangguanzhang.com.crt
+</code></pre></div><p>然后从证书创建tls类型的secret：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl -n kube-system create secret tls kubernetes-dashboard-certs <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --key ~/cert/zhangguanzhang.com.key <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --cert ~/cert/zhangguanzhang.com.crt
+</code></pre></div><p>删掉官方yaml文件里的<code>Dashboard Secret</code>，我们发现tls的secret是下面俩文件名：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl -n kube-system get secrets kubernetes-dashboard-certs -o yaml
+apiVersion: v1
+data:
+  tls.crt: ....
+  tls.key: ....
+kind: Secret
+metadata:
+  name: kubernetes-dashboard-certs
+  namespace: kube-system
+type: kubernetes.io/tls
+</code></pre></div><p>我们修改运行参数关闭insecure和指定使用证书文件，这里用5443是因为我公网ip没备案，如果ip备案了可以5443改成443（记得yaml其他地方端口也修改下）：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">...
+        <span style="color:#66d9ef">command</span>:
+          - /dashboard
+        <span style="color:#66d9ef">args</span>:
+          - --auto-generate-certificates
+          - --bind-address=<span style="color:#ae81ff">0.0.0.0</span>
+          - --port=<span style="color:#ae81ff">5443</span>
+          - --tls-cert-file=tls.crt
+          - --tls-key-file=tls.key
+...
+</code></pre></div><p>创建dashboard后在云上的域名控制台设置解析过来，通过https的域名访问。</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/general-kubernetes-dashboard/005BYqpgly1g22j05at9mj31560mf40n.jpg" alt="results"></p>
+<h2 id="ingress-controller使用域名证书代理dashboard">Ingress Controller使用域名证书代理dashboard</h2>
+<p>上面直接dashboard使用域名证书会有单点故障，所以实际应用我们可以用高可用的ingress nginx（详见之前的文章）来代理集群内部的dashboard
+这里我使用的是<code>Ingress nginx</code>。
+如果没域名的话可以使用openssl生成证书:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">openssl req -x509 -nodes -days <span style="color:#ae81ff">10000</span> -newkey rsa:2048 -keyout tls.key -out tls.crt -subj <span style="color:#e6db74">&#34;/CN=dashboard.example.com/O=dashboard.example.com&#34;</span>
+</code></pre></div><p>从证书创建tls类型的secret：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl -n kube-system create secret tls dashboard-tls <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --key ~/cert/zhangguanzhang.com.key <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --cert ~/cert/zhangguanzhang.com.crt
+</code></pre></div><p>官方yaml的deploy数量改多个后直接使用创建即可，然后创建下面ingress：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: extensions/v1beta1
+<span style="color:#66d9ef">kind</span>: Ingress
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: dashboard-ingress
+  <span style="color:#66d9ef">namespace</span>: kube-system
+  <span style="color:#66d9ef">annotations</span>:
+    <span style="color:#66d9ef">nginx.ingress.kubernetes.io/ssl-redirect</span>: <span style="color:#e6db74">&#34;true&#34;</span>
+    <span style="color:#66d9ef">nginx.ingress.kubernetes.io/rewrite-target</span>: /
+    <span style="color:#75715e">#nginx.ingress.kubernetes.io/secure-backends: &#34;true&#34;  该注释在0.18.0中被弃用，并在0.20.0发布后被删除，使用下面</span>
+    <span style="color:#66d9ef">nginx.ingress.kubernetes.io/backend-protocol</span>: <span style="color:#e6db74">&#34;HTTPS&#34;</span>
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">tls</span>:
+  - <span style="color:#66d9ef">hosts</span>:
+    - dashboard.example.com
+    <span style="color:#66d9ef">secretName</span>: dashboard-tls
+  <span style="color:#66d9ef">rules</span>:
+  - <span style="color:#66d9ef">host</span>: dashboard.example.com
+    <span style="color:#66d9ef">http</span>:
+      <span style="color:#66d9ef">paths</span>:
+      - <span style="color:#66d9ef">backend</span>:
+          <span style="color:#66d9ef">serviceName</span>: kubernetes-dashboard
+          <span style="color:#66d9ef">servicePort</span>: <span style="color:#ae81ff">443</span>
+</code></pre></div><p>如果ingress是tls的，dashboard是http的可以去掉上面三个annotations（这种情况我未测试，有兴趣可以自己试试）。</p>
+<h2 id="token">token</h2>
+<p>dashboard登陆的话可以选择kubeconfig和token，kubeconfig一般是集群外使用的，例如管理组件之间想和apiserver tls下通信都得使用kubeconfig，里面实际上就是ca签署的客户端证书+各自CN和O签署的证书。而token里的ca.crt也是客户端证书和kubeconfig里<code>client-certificate-data</code>的是一样的，RBAC落实在它那个token字段。
+很多addon可以看到他们的<code>--help</code>选项看到也支持kubeconfig的，他们的默认逻辑是没有用kubeconfig选项下起来的时候会去查看secret路径<code>/var/run/secrets/kubernetes.io/serviceaccount</code>获取token（也就是在pod里运行的请求逻辑），当然也并不意味着token一定在集群内用可以把secret的token获取到后制作成kubeconfig。
+dashboard登陆的token如果使用管理员的话可以用rbac绑定集群管理员角色，这也是最常见的使用方法，像kubectl拥有集群管理员那样。如果对RBAC熟悉可以单独给不用部门生成不同权限的RBAC取token给人员登陆。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: v1
+<span style="color:#66d9ef">kind</span>: ServiceAccount
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: dashboard     <span style="color:#75715e"># sa名字随意</span>
+  <span style="color:#66d9ef">namespace</span>: kube-system
+  <span style="color:#66d9ef">labels</span>:
+    <span style="color:#66d9ef">k8s-app</span>: kubernetes-dashboard
+---
+<span style="color:#66d9ef">apiVersion</span>: rbac.authorization.k8s.io/v1
+<span style="color:#66d9ef">kind</span>: ClusterRoleBinding
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: dashboard
+  <span style="color:#66d9ef">namespace</span>: <span style="color:#e6db74">&#34;&#34;</span>
+<span style="color:#66d9ef">roleRef</span>:
+  <span style="color:#66d9ef">apiGroup</span>: rbac.authorization.k8s.io
+  <span style="color:#66d9ef">kind</span>: ClusterRole     <span style="color:#75715e"># 权限来源于集群角色</span>
+  <span style="color:#66d9ef">name</span>: cluster-admin   <span style="color:#75715e"># 这个是集群管理员角色名</span>
+<span style="color:#66d9ef">subjects</span>:
+  - <span style="color:#66d9ef">kind</span>: ServiceAccount
+    <span style="color:#66d9ef">name</span>: dashboard    <span style="color:#75715e"># 和上面名字一样</span>
+    <span style="color:#66d9ef">namespace</span>: kube-system
+</code></pre></div><p>取它token用于登陆dashboard，你在dashboard web上操作集群的时候实际上是拿着你登陆的token的去以api调用kube-apiserver。</p>
+<p>使用下面命令取上面创建的sa的token：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl -n kube-system get secret -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{range .items[?(@.metadata.annotations.kubernetes\.io/service-account\.name==&#34;dashboard&#34;)].data}{.token}{end}&#39;</span> | base64 -d
+xxxxxxxxxxxxxx
+</code></pre></div><p>最后<code>Let’s Encrypt</code>的证书是一次3个月，可以看脚本官方文档去定时获取新的证书然后导入 <a href="https://github.com/Neilpang/acme.sh/wiki/%E8%AF%B4%E6%98%8E">https://github.com/Neilpang/acme.sh/wiki/%E8%AF%B4%E6%98%8E</a> certmanager和acme.sh一样的原理去调用api签署域名证书，有兴趣可以去试试</p>
+<h2 id="参考">参考:</h2>
+<ul>
+<li><a href="https://github.com/kubernetes/ingress-nginx/tree/master/docs/examples/tls-termination">TLS termination - github.com</a></li>
+<li><a href="https://github.com/Neilpang/acme.sh/wiki/dnsapi">acme.sh wiki - github.com</a></li>
+<li><a href="https://github.com/kubernetes/dashboard/wiki/Certificate-management#public-trusted-certificate-authority">certmanager trusted github.com</a></li>
+</ul>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/kubernetes-ingress-controller-deployment-and-ha/" data-toggle="tooltip" data-placement="top" title="Kubernetes Ingress Controller的使用介绍及高可用落地">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/istio-monitoring-explained/" data-toggle="tooltip" data-placement="top" title="Istio 监控详解">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/kubernetes-ingress-controller-deployment-and-ha/"><i class="fa fa-link"></i>Kubernetes Ingress Controller的使用介绍及高可用落地</a></li>
+         
+        <li><a href="/blog/evaluation-of-serverless-frameworks-for-kbe/"><i class="fa fa-link"></i>Kubernetes（K8s）的无服务器框架的评估</a></li>
+         
+        <li><a href="/blog/prometheus-monitor-k8s-1/"><i class="fa fa-link"></i>Prometheus监控Kubernetes系列1——监控框架</a></li>
+         
+        <li><a href="/blog/prometheus-monitor-k8s-2/"><i class="fa fa-link"></i>Prometheus监控Kubernetes系列2——监控部署</a></li>
+         
+        <li><a href="/blog/prometheus-monitor-k8s-3/"><i class="fa fa-link"></i>Prometheus监控Kubernetes系列3——业务指标采集</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

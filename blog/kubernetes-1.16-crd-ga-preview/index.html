@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>全面进化：Kubernetes CRD 1.16 GA前瞻 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="kubernetes, CRD">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="全面进化：Kubernetes CRD 1.16 GA前瞻" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/kubernetes-1.16-crd-ga-preview//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="本文以社区CRD维护者的角度前瞻1.16CRD的GA进化主要的革新与应对。">
+  <meta property="og:description" content="本文以社区CRD维护者的角度前瞻1.16CRD的GA进化主要的革新与应对。">
+  <meta name="twitter:description" content="本文以社区CRD维护者的角度前瞻1.16CRD的GA进化主要的革新与应对。">
+  <meta property="og:description" content="本文以社区CRD维护者的角度前瞻1.16CRD的GA进化主要的革新与应对。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="全面进化：Kubernetes CRD 1.16 GA前瞻 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="全面进化：Kubernetes CRD 1.16 GA前瞻 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">全面进化：Kubernetes CRD 1.16 GA前瞻 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>全面进化：Kubernetes CRD 1.16 GA前瞻</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2019年8月29日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://github.com/yue9944882">Min Kim</a>
+                            
+                            
+                            
+                            |
+                            3500字 | 阅读大约需要7分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            
+                            归档于 <a href="/categories/kubernetes">kubernetes</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/crd/"><i>#CRD</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/kubernetes/"><i>#kubernetes</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <blockquote>
+<p>作者: Min Kim(yue9944882)，Kubernetes社区CRD维护者，蚂蚁金服高级研发工程师。Kubernetes 1.16扩展性GA Sprint迭代组成员，主要负责CRD OpenAPI聚合发布相关特性。</p>
+</blockquote>
+<p>随着近段时间以CRD（CustomResourceDefinition）的形式扩展Kubernetes火爆起来，在开源社区涌现了许许多多用CRD作为平台构建应用的成功开源项目。整个社区对CRD的积极拥抱其实是远在维护者们的期望之外的。然而经过5个release的洗礼，CRD从最开始的实验性项目渐渐变得清晰了起来，社区对CRD模型提出的许许多多建议或者挑战，将在本次1.16的版本得到完整的解决和回应。CRD的GA计划从1.14版本开始斩露萌芽到Kubenretes 1.16全力冲刺的研发周期中，主要过程是来自谷歌和红帽的工程师在执行，还有少数的社区志愿者。</p>
+<p>通过本篇文章，作者将通过梳理CRD的GA进化中的主要革新点，同时结合CRD面临的问题/缺陷进而推导出其中的联系/因果，在最后还会对CRD未来面临的问题和挑战进行分析。希望读者可以通过本篇文章对CRD的正负面有个立体的认识，也借此抛砖引玉提出如何在复杂场景下强化使用CRD的未来议题。</p>
+<h2 id="ga版本crd主要带来的革新">GA版本CRD主要带来的革新</h2>
+<h3 id="总览">总览</h3>
+<p>大的方向上，一言蔽之CRD模型的进化之路是支持所承载的用户资源（CR）__可持续演进发展__之路，其中又主要分为两个路线：</p>
+<ul>
+<li>从“无结构化”进化到“强结构化”</li>
+<li>从“无版本化”进化到“多版本化”</li>
+</ul>
+<p>在结构化的CRD中，为了在简单的CRD的Yaml中定义出一套结构化的模型，我们首先借助了OpenAPI语法力量来描述模型的结构，并在此基础上再推动CRD全面向已经成熟的内建原生API模型多版本机制（包括Defaulting，Validating，多版本Round-Tripping）靠拢。最直观来看，在GA的模型定义层面上，最大的变化是删除了CRD的Spec中顶层的模型描述相关定义，以此推动用户全面使用多版本的CRD，这也是与Kubernetes原生模型实现同步的第一步，同时GA版本带来的其他特性大多是为了给用户更好的使用多版本CRD提供配套的基础设施。</p>
+<h3 id="crd-defaultingpruning-支持">CRD Defaulting/Pruning 支持</h3>
+<p>在CRD的GA计划中，把Defaulting/Pruning结对放在同一个条目中是因为这两者孪生对应对模型字段的增加和删除两种变更。深入一步讲，Defaulting/Pruning的意义是为了让用户对CRD的模型变更加平滑：</p>
+<ul>
+<li><strong>Defaulting</strong>：为CRD添加一个新字段的时候，由于数据面（即Etcd存储）中存量的数据并没有该字段，会使得从APIServer中读取到的对象该字段初始值为Go语言中的“零值”。除非在用户改动Controller的处理逻辑在其中添加对应“零值”的处理分支，这往往会导致一个正在运行的控制面Controller出现问题。Defaulting的支持允许你在CRD定义“如果该字段从数据面读出时不存在，默认设为何值”，这对于模型的新字段变更是非常有帮助的。</li>
+<li><strong>Pruning</strong>：用户在为CRD删除一个字段的时候，由于数据面中存量的数据已经存在了该字段，会使得从APIServer读出的实际对象仍然拥有该值。这和用户希望变更CRD的模型删除某个字段的意图是相悖的。那么设置Pruning可以帮助你在字段删除后保持存储数据面和API层面的一致。顺带一提的是，对于原生内置的Kubernetes模型，APIServer在从Etcd数据面读取数据后反序列化成对象时，使用的是“非严格”的Json/Yaml序列化器，所以可以天然将模型中不认识的字段过滤掉。</li>
+</ul>
+<h3 id="crd-webhook-conversion-支持">CRD Webhook Conversion 支持</h3>
+<p>除非你可以迫使用户在版本间进行迁移，多版本的CRD往往被要求可以同时服务多个版本的模型。比如在同一个集群中，一个用户1可能正在使用v1beta1版本的模型运行他的应用操作资源A，而另一个用户2也同时正在使用最新v1的模型运行他的应用操作资源A，如果v1模型比v1beta1模型新增/迁移了一个字段，那么用户1的写操作自然不会存在该字段，而用户2在通过写操作为该字段赋值时，很有可能会被用户1的写操作将该字段再次抹除。这个典型的问题场景，我们在社区叫做Multi-Version Round-Tripping。解决这个问题也是整个Kubernetes社区SIG API-Machinery工作组的核心问题之一。那么如果保证这两个用户对这多版本的模型进行的读写都成功呢？Kubernetes的解法是在资源真正落入数据面之前进行版本之间的转化（Conversion），并确认统一其中一个版本为数据面存储使用的版本。对于原生的Kubernetes资源，转化的实现是一系列Go语言的函数，那么对CRD而言，我们解决多版本转化的办法是通过为该资源植入一个Conversion Webhook，这个Conversion Webhook的功能只有一个，就是告诉Kubernetes集群如何将这个CRD承载的多个版本的模型之间进行转化。</p>
+<h3 id="进一步的crd-openapi-schema集成">进一步的CRD OpenAPI Schema集成</h3>
+<p>目前OpenAPI的标准规范主要涵盖v2和v3两个版本，v2标准只能用来描述非常简单模型定义远不能满足Kubernetes的模型，而v3标准远过于复杂适配成本极高，并且和v2标准不完全向后兼容。事实上目前行业内几乎没有对OpenAPIv3的标准的完整适配，这也是OpenAPIv3最大的痛点。又由于在Go语言生态中没有理想的OpenAPIv3标准库，所以目前CRD对OpenAPI语法的适配其实走到了一个非常尴尬的阶段，他完整的适配了OpenAPIv2标准，又只取了OpenAPIv3标准中大概不到30%的语法支持，这也是CRD在未来后GA迭代周期中主要需要解决的问题之一。本次CRD的GA发布中，加强了对OpenAPIv3语法的支持，包括anyOf,oneOf,allOf以及nullable关键字的适配。这些关键字的支持将帮助用户表达出更复杂的模型层次结构。</p>
+<h3 id="crd子资源支持正式毕业">CRD子资源支持正式毕业</h3>
+<p>子资源相对来讲是是目前CRD的比较稳定的功能之一，尽管在1.16版本中宣布毕业，但是其实之前的版本的子资源以及趋于稳定，通过支持Status子资源，用户结合资源的Generation资源在自定义的控制器Controller中有效判断出定义（Spec）的变更和状态（Status）的变更。如果用户需要使用更加自定义的子资源比如类似pod/logs，pod/exec，社区推荐使用APIServer Aggregation的方式进行扩展，详请参考近期从孵化器毕业的 <a href="https://github.com/kubernetes-sigs/apiserver-builder-alpha">kubernetes-sigs/apiserver-builder-alpha</a> 项目。</p>
+<h2 id="更加复杂场景下的crd使用">更加复杂场景下的CRD使用</h2>
+<h3 id="如何通过crd部署数据密集型资源">如何通过CRD部署“数据密集型”资源？</h3>
+<p>众所周知，CRD的后端目前存储是Etcd，Etcd有可靠的可用性和读写性能，但是目前在数据容量上尚不能满足大型企业对存储大量数据的支持，目前主要解法有两种：</p>
+<ul>
+<li>单独编译（Stand-alone）并且部署提供CRD服务的 <a href="https://github.com/kubernetes/apiextensions-apiserver">apiextension-apiserver</a>，再以AA（APIServer Aggregation的方式）接入集群，通过这样可以将CRD的存储隔离到一个独立的Etcd集群，从而隔绝对”Kubernetes主APIServer“的影响。</li>
+<li>通过使用Rancher研发的Etcd-on-SQL适配库<a href="https://github.com/ibuildthecloud/kine">KINE</a>将自定义资源直接转移到SQL存储上。目前KINE已经具体高可用部署以及适配Etcd Watch/Txn接口的能力，并且已在K3S的集成测试得到了完整验证也通过CNCF一致性测试。目前在Rancher正在考虑将KINE捐赠给Kubernetes社区发展有望成为行业标准。对Kubernetes适配MySQL感兴趣的开发者可以考虑通过<a href="https://github.com/kubernetes-sigs/apiserver-builder-alpha#examples">官方提供的Example</a>进行PoC演练。</li>
+</ul>
+<h3 id="如何通过crd生成其他语言的客户端">如何通过CRD生成其他语言的客户端？</h3>
+<p>CRD的GA演进中重要的一环是OpenAPI发布能力的强化，通过对集群访问<code>/openapi/v2</code>或者<code>/openapi/v3（研发中）</code>的API可以完整下载到包括用户CRD的完整OpenAPI文档。通过结合使用OpenAPI代码生成器 <a href="https://github.com/OpenAPITools/openapi-generator">OpenAPITools/openapi-generator</a>，我们可以定制地为自己的CRD生成各种语言各式各样的客户端SDK，值得一提的是官方的异构语言SDK都是通过OpenAPI文档生成得到的。对于生成Java客户端感兴趣的朋友可以参考<a href="https://github.com/kubernetes-client/java/blob/master/docs/generate-model-from-third-party-resources.md">这篇文档</a>，进行PoC实验。</p>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/journey-from-containerization-to-orchestration-and-beyond/" data-toggle="tooltip" data-placement="top" title="容器化到容器编排之旅">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/use-envoy-as-a-kubernetes-ingress/" data-toggle="tooltip" data-placement="top" title="Contour 学习笔记（一）：使用 Contour 接管 Kubernetes 的南北流量">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/kubernetes-crd-quick-start/"><i class="fa fa-link"></i>如何从零开始编写一个Kubernetes CRD</a></li>
+         
+        <li><a href="/blog/kubernetes-operator-in-python/"><i class="fa fa-link"></i>实现Kubernetes Operator的新方式：Python</a></li>
+         
+        <li><a href="/blog/prow-quick-start-guide/"><i class="fa fa-link"></i>Prow 快速入门向导</a></li>
+         
+        <li><a href="/blog/prometheus-monitor-k8s-1/"><i class="fa fa-link"></i>Prometheus监控Kubernetes系列1——监控框架</a></li>
+         
+        <li><a href="/blog/prometheus-monitor-k8s-2/"><i class="fa fa-link"></i>Prometheus监控Kubernetes系列2——监控部署</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

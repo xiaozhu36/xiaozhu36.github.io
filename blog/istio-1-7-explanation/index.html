@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Istio 1.7 发布——进击的追风少年 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="istio">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="Istio 1.7 发布——进击的追风少年" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/istio-1-7-explanation//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="从用户角度出发，深度解读 Istio 1.7 版本。">
+  <meta property="og:description" content="从用户角度出发，深度解读 Istio 1.7 版本。">
+  <meta name="twitter:description" content="从用户角度出发，深度解读 Istio 1.7 版本。">
+  <meta property="og:description" content="从用户角度出发，深度解读 Istio 1.7 版本。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="Istio 1.7 发布——进击的追风少年 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="Istio 1.7 发布——进击的追风少年 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">Istio 1.7 发布——进击的追风少年 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>Istio 1.7 发布——进击的追风少年</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2020年8月25日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://github.com/malphi">马若飞</a>
+                            
+                            
+                            
+                            | 审校者
+                            
+                            <a href="https://github.com/rootsongjc"><i>宋净超</i></a>
+                            
+                            
+                            |
+                            3500字 | 阅读大约需要7分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            
+                            归档于 <a href="/categories/istio">istio</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/istio/"><i>#istio</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <h2 id="引言">引言</h2>
+<p>2020 年 8 月 21 日，Istio 发布了 1.7 版本。除了介绍新版本的主要更新内容外，本文会重点分析 Istio 团队在产品更新策略上的激进态度和举措。是稳扎稳打做好向后兼容，带给用户所承诺的易用性；还是快刀斩乱麻，做进击的追风少年，且听笔者慢慢道来。</p>
+<h2 id="如约而至istio-170-发布">如约而至——Istio 1.7.0 发布</h2>
+<p>就在几天前，Istio 发布了 1.7 版本，和 1.6 版本的发布时间正好间隔三个月，完美的实现了季度发布的诺言。本次发布的口号是 “伟大的 Istio 社区（Istio’s great community）”，因为有来自 40 多个公司的 200 多个开发者做出了贡献。Istio 官方是这样描述的：</p>
+<blockquote>
+<p>正是因为有如此令人惊羡（amazing）的社区，才让 Istio 能够在每个季度有如此多的改进。</p>
+</blockquote>
+<p>Istio 团队已经从上个月倒卖商标的麻烦中走了出来，看上去是想通过强调 <code>Istio's great community</code> 这个理念来抚平社区开发者受伤的心灵？笔者认为，作为开发者和用户不必太在意 Google 的商业行为，至少现阶段 Istio 还在以开源的身份持续演进，还能为我所用，这就足够了。</p>
+<p>1.7 版本中重要的更新主要有以下四个方面。</p>
+<h3 id="安全增强">安全增强</h3>
+<ul>
+<li>确认了使用安全发现服务（SDS）作为证书分发的优势，并把它作为一个重要的安全最佳实践。现在这一特性也被使用在出口网关上。</li>
+<li>信任域验证除了支持 HTTP，现在也可以验证 TCP 流量了，并且还支持在 MeshConfig 中进行配置，提供了更多灵活性。</li>
+<li>可以使用 <a href="https://en.wikipedia.org/wiki/Elliptic-curve_cryptography">ECC</a> 进行 CA 通信，提高了安全性和效率。</li>
+<li>网关默认使用非根（non-root）用户部署，这主要是基于一条最佳实践：不要让运行的进程有多于它所需的权限，这会导致不必要的混淆。</li>
+</ul>
+<h3 id="提升易用性">提升易用性</h3>
+<p>在易用性方面主要的改进依然是对 <code>istioctl</code> 命令行工具的增强：</p>
+<ul>
+<li>analysis 支持
+<ul>
+<li>对可能不安全的 <code>DestinationRule</code> 配置发出警告</li>
+<li>对使用废弃的 Mixer 资源发出警告</li>
+</ul>
+</li>
+<li>可以使用 <code>ISTIOCONFIG</code> 设置自定义配置</li>
+<li>使用助记符来标识端口号</li>
+<li>添加了 <code>istioctl x uninstall</code> 来方便卸载 Istio</li>
+</ul>
+<h3 id="生产运维改进">生产运维改进</h3>
+<p>在运维方面也有些许改进，例如：</p>
+<ul>
+<li>可以支持让 Sidecar 启动后才启动你的应用容器。如果你的应用需要在启动时通过 Sidecar 代理来访问资源，这项修改可以让部署变的更稳定（避免因为 Sidecar 没启动而应用访问不到资源的情况）。</li>
+<li>Istio Operator 作为最佳安装方式。Operator 在之前的版本就已经提供了，看上去 Istio 想主推 Operator 以替代其他的安装形式。但笔者必须要吐槽一下官方发布文档对这一条的描述：</li>
+</ul>
+<blockquote>
+<p>The <a href="https://istio.io/latest/docs/setup/install/operator/">Istio Operator</a> is a great way to install Istio, as it automates a fair amount of toil. Canary control plane deployments are also important; they allow ultra-safe upgrades of Istio. Unfortunately, you couldn’t use them together - <a href="https://istio.io/latest/docs/setup/upgrade/#canary-upgrades">until now</a>.</p>
+</blockquote>
+<p>吹了一大堆，其实翻译成人话就是：Operator 目前还不支持金丝雀更新。真是佩服这段文案编写者拐弯抹角的能力。</p>
+<ul>
+<li>提供了 istio-agent 的指标，可以观察它的运行情况</li>
+<li>Prometheus 指标收集方面的改进</li>
+</ul>
+<h3 id="vm-安全性">VM 安全性</h3>
+<p>持续对虚拟机相关功能的开发是本年度的重点，这是 Istio 多次强调的。这是因为目前客户应用部署环境的复杂性和混合性，VM 依然是一种主要的部署选择。和一些托管的竞品（比如 AWS APP Mesh ）相比，Istio 缺失了这方面的能力，使得这些客户不得不观望而无法落地。对 VM 的支持就成为了重中之重，这也是商业上的考量。</p>
+<p>然而本次更新没有太多的重量级功能发布，只是做了小的改进，且还在 alpha 阶段。比如为 VM 也增加了安全特性，支持证书自动轮转；<code>istioctl</code> 现在可以验证 VM 的代理状态；增加了 RPM 安装包等。</p>
+<h2 id="温柔一刀升级的伤痛">温柔一刀——升级的伤痛</h2>
+<p>客观的讲，以上官方的发布文档大部分内容都不痛不痒，对使用层面的用户影响不大。而真正和用户息息相关是安装和升级的变化。Istio 团队并没有在发布首页强调这一点，这引起了笔者的强烈不适并严重怀疑 Istio 有刻意规避问题的嫌疑。我们先来看笔者认为最重要的一条变更：</p>
+<h3 id="过分严格的平台版本限制">过分严格的平台版本限制</h3>
+<blockquote>
+<p>Require Kubernetes 1.16+</p>
+<p>Kubernetes 1.16+ is now required for installation.</p>
+</blockquote>
+<p>这是 Istio 官方第一次在新版本的 Release Note 中明确的说明了 Kubernetes 的版本限制问题。尽管以前老版本的 Istio 也会对平台版本有要求，但通常是这样的口吻：</p>
+<blockquote>
+<p>Istio 1.5 has been tested with these Kubernetes releases: 1.14, 1.15, 1.16.</p>
+</blockquote>
+<p>这种描述隐含的意思就是：我们在这几个版本测试过兼容性，但我们并没有说 Istio 不兼容其他版本，可能、也许、大概是兼容的，我们只是没有测试过而已。而这一次是描述是 “required”，请仔细体会这两种说法的区别。</p>
+<p>为了验证 1.7 真实的兼容性（ required 只是骇人听闻？），笔者做了一次安装测试，测试环境为 Docker 桌面版内置的 Kubernetes，版本 v1.15.5。</p>
+<p>首先，使用预检命令验证集群环境是否合法（新版本已经取消了 <code>istioctl verify-install</code> 命令）</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ bin/istioctl x precheck
+Error: <span style="color:#ae81ff">1</span> error occurred:
+ * The Kubernetes API version: v1.15.5 is lower than the minimum version: 1.16
+</code></pre></div><p>果然，预检没有通过，出现了版本过低的错误。笔者忽略预检结果，尝试强行安装，想看看预检是否也只是吓唬人而已：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ bin/istioctl install
+This will install the default Istio profile into the cluster. Proceed? <span style="color:#f92672">(</span>y/N<span style="color:#f92672">)</span> y
+The Kubernetes version v1.15.5 is not supported by Istio 1.7.0. The minimum supported Kubernetes version is 1.16.
+Proceeding with the installation, but you might experience problems. See https://istio.io/latest/docs/setup/platform-setup/ <span style="color:#66d9ef">for</span> a list of supported versions.
+✘ Istio core encountered an error: failed to wait <span style="color:#66d9ef">for</span> resource: failed to verify CRD creation: the server could not find the requested resource
+</code></pre></div><p>验证结果被现实啪啪打脸。除了对版本限制的说明，Istio 还非常严谨的告知安装过程会继续，但你可能会遇到各种问题。果然，在 Istio core 的安装步骤中就报了错，安装过程被卡住无法继续进行。看来这一次 Istio 的 required 是来真的了。</p>
+<p>为什么说这个强制性的版本限制会对用户造成最大的困扰？其根本原因就是当前绝大部分企业和用户所使用的 Kubernetes 根本没有达到 1.16+ 版本，大部分都是基于 1.14、1.12，甚至更低。目前两大云厂商的 Kubernetes 服务（AWS EKS 和 GCloud GKE）也都是兼容 1.14+，这也能从一个侧面说明有一大批老用户很可能都使用的是 1.14 版本。然而 Istio 并没有遵循这一规则，这等于直接将很大一部分用户踢出了场外，Istio 1.7 不带你们玩了。</p>
+<p>另一个潜在的问题是为想要升级的用户带来了极大的困惑。举一个例子：某企业的运维团队正在打算将 1.14 版本的 Kubernetes 升级到 1.16，而架构团队正打算将安装在其上的 Istio 1.2 升级到 1.7。这个团队所面临的问题是，要升级到 Istio 1.7 必须先升级 Kubernetes 到 1.16；但是一旦升级了 1.16，原本的 1.2 版本很可能有兼容问题，因为 Istio 1.2 宣称只在 Kubernetes 1.12~1.14 测试过。Istio 1.7 过分严格的的平台版本限制给了这些用户致命一刀，升级之路充满荆棘。他们只能退而求其次选择老版本进行升级。</p>
+<p>从 1.5 版本开始，Istio 一方面不断的强调易用性和用户体验，一方面又武断的放弃向下兼容，将大量用户拒之门外。其自相矛盾的行为令人匪夷所思。</p>
+<h3 id="资源版本号的变更">资源版本号的变更</h3>
+<p>这一问题出现在 Change Note 安装部分的一条，很可能成为升级用户新的痛点。</p>
+<blockquote>
+<p>Upgraded the CRD and Webhook versions to v1. (<a href="https://github.com/istio/istio/issues/18771">Issue #18771</a>),(<a href="https://github.com/istio/istio/issues/18838">Issue #18838</a>)</p>
+</blockquote>
+<p>从 Issue 可以看出，因为 Kubernetes 在 1.16 中将 webhook 的 API 版本改为 v1，并会在 1.19 版本中删除老的 v1beta 版本。这一激进行为导致 Istio 不得不在自己的 1.8 版本之前完成对应的迁移。笔者在 Istio 官方 Slack 中也验证了这一问题：</p>
+<blockquote>
+<p>Yes this is a hard requirement. Most specifically CRDs, and other apis use APIs that were promoted to v1 in 1.16 are being used.</p>
+</blockquote>
+<p>Istio 开发团队也在 Issue 中抱怨对方太激进（aggressive），留给他们的开发周期太短（pretty tight window），有很多工作要做（probably a lot of work），一副巧妇难为无米之炊的委屈样。笔者不由得感叹：本是同门师兄弟，相煎太急！</p>
+<p>而对于用户而言，意味着你不得不将自己的 mesh 配置文件的版本号进行更新，如果集群比较庞大，很可能有不少的工作量（主要是测试、验证方面）。你很可能还需要通过金丝雀升级的方式进行，因为无论是先升级 Istio，还是先修改配置，都可能出现兼容问题（说好的易用性和用户体验呢？）。</p>
+<h3 id="短暂的-lts">短暂的 LTS</h3>
+<p>在 Istio 的<a href="https://istio.io/latest/news/support/">版本支持公告页面</a>，你可以发现以前的老版本都逐渐的停止了维护，特别是具有里程碑意义的 1.5 版本，在发布 6 个月后即停止维护，几乎成为了 Istio 史上最短命的版本。Istio 在<a href="https://istio.io/latest/about/release-cadence/">构建和发布节奏页面</a>中这样定义 LTS（long term support）：</p>
+<blockquote>
+<p>Support is provided until 3 months after the next LTS</p>
+</blockquote>
+<p>即上一个版本会在新版本发布后的 3 个月就停止维护（包括更新、修复 bug 等），算上它自己的发布日期，也只有半年时间。我们再来对比一下 Ubuntu 对 LTS 的定义，下面是 Ubuntu 20.04 LTS 的一段说明：</p>
+<blockquote>
+<p>下载专为桌面 PC 和笔记本精心打造的 Ubuntu 长期支持 (LTS) 版本。LTS 意为 “长期支持”，一般为 5 年。LTS 版本将提供免费安全和维护更新至 2025 年 4 月。</p>
+</blockquote>
+<p>5 年对 3 个月。对于操作系统来说，因为处在整个软件架构的最底层，理应保证长期稳定的维护。Service Mesh 比不了操作系统，但好歹也是基础设施，也应该对上层建筑提供更多稳定性。这个所谓的长期是不是有点过于短暂？追风少年你是要赶着去投胎吗？Istio 对 LTS 的定义让我开始怀疑人生。</p>
+<h2 id="路在何方稳定是永恒的童话">路在何方——稳定是永恒的童话？</h2>
+<p>Service Mesh 领域的权威人士 Christian Posta 在公开采访中表示：Istio 1.7 将会是真正意义上的稳定、可用于生产环境的版本。笔者对此不敢苟同。本次更新表现平平，并无亮点，反倒是对 Kubernetes 的版本限制会导致用户在安装、升级环节增加成本和不确定性，是一次用户体验上的倒退。Istio 1.0 版本就宣称是生成环境可用（Production ready），恐怕这一次也依然会变成川建国金句的翻版：Make Istio production ready again!</p>
+<p>经过了 3 年多的迭代，Istio 依然像个毛头小子，随性而为。稳定和可靠，在这里成了骗人的童话故事。笔者曾分析 Istio 1.8 将会是第一个稳定版本，希望下一次不要让我们失望。</p>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/thoughts-to-envoy-from-adn-perspective/" data-toggle="tooltip" data-placement="top" title="应用交付老兵眼中的 Envoy, 云原生时代下的思考">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/20200818-google-cloud-mesh/" data-toggle="tooltip" data-placement="top" title="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/istio-1.6-explain/"><i class="fa fa-link"></i>迈向极简主义 - Istio 1.6 发布</a></li>
+         
+        <li><a href="/blog/service-mesh-webinar-1/"><i class="fa fa-link"></i>Service Mesh Webinar #1</a></li>
+         
+        <li><a href="/blog/sidecar-injection-iptables-and-traffic-routing/"><i class="fa fa-link"></i>Istio 中的 Sidecar 注入及透明流量劫持过程详解</a></li>
+         
+        <li><a href="/blog/istio-1-5-explanation/"><i class="fa fa-link"></i>拥抱变化 —— Istio 1.5 新特性解读</a></li>
+         
+        <li><a href="/blog/istio-debug-with-envoy-log/"><i class="fa fa-link"></i>istio 数据面日志调试</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

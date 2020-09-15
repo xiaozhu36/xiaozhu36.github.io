@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>使用托管服务网格实现应用在多集群中的 GitOps 全自动化渐进式发布 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="gitops, service mesh, kubernetes">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="使用托管服务网格实现应用在多集群中的 GitOps 全自动化渐进式发布" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/202003-gitops-progressive-delivery-with-asm//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="本文是基于阿里云托管服务网格 ASM 完成应用在多集群环境中全自动化渐进式发布的 GitOps 实践。">
+  <meta property="og:description" content="本文是基于阿里云托管服务网格 ASM 完成应用在多集群环境中全自动化渐进式发布的 GitOps 实践。">
+  <meta name="twitter:description" content="本文是基于阿里云托管服务网格 ASM 完成应用在多集群环境中全自动化渐进式发布的 GitOps 实践。">
+  <meta property="og:description" content="本文是基于阿里云托管服务网格 ASM 完成应用在多集群环境中全自动化渐进式发布的 GitOps 实践。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="使用托管服务网格实现应用在多集群中的 GitOps 全自动化渐进式发布 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="使用托管服务网格实现应用在多集群中的 GitOps 全自动化渐进式发布 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">使用托管服务网格实现应用在多集群中的 GitOps 全自动化渐进式发布 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>使用托管服务网格实现应用在多集群中的 GitOps 全自动化渐进式发布</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2020年3月19日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://yq.aliyun.com/users/vfumpmmfgchia/article">郝树伟</a>
+                            
+                            
+                            
+                            | 审校者
+                            
+                            <a href="https://jimmysong.io"><i>宋净超</i></a>
+                            
+                            
+                            |
+                            2600字 | 阅读大约需要5分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            
+                            归档于 <a href="/categories/gitops">gitops</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/gitops/"><i>#gitops</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/service-mesh/"><i>#service mesh</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <h2 id="简介">简介</h2>
+<p>本文是基于阿里云托管服务网格 ASM 完成应用在多集群环境中全自动化渐进式发布的 GitOps 实践。</p>
+<h3 id="asm">ASM</h3>
+<p>阿里云服务网格（Alibaba Cloud Service Mesh，简称 <a href="https://www.aliyun.com/product/servicemesh">ASM</a>）提供了一个全托管式的服务网格平台，兼容于社区 Istio 开源服务网格，用于简化服务的治理，包括服务调用之间的流量路由与拆分管理、服务间通信的认证安全以及网格可观测性能力，从而极大地减轻开发与运维的工作负担。ASM的架构示意图如下:</p>
+<p><img src="https://yqfile.alicdn.com/e08227881a1b2819f9c176d8e7c199d78f245b04.png" alt="asm_arch.png"></p>
+<p>ASM 定位于混合云、多云、多集群、非容器应用迁移等核心场景中，构建托管式统一的服务网格能力，能够为阿里云用户提供以下功能：</p>
+<ul>
+<li>一致的管理方式
+以一致的方式来管理运行于 ACK 托管 Kubernetes 集群、专有 Kubernetes 集群、ServerlessKubernetes 集群、混合云或多云场景下的接入集群上的应用服务，从而提供一致的可观测性和流量控制</li>
+<li>统一的流量管理
+支持容器或者虚拟机混合环境下统一的流量管理</li>
+<li>控制平面核心组件托管化
+托管控制平面的核心组件，最大限度地降低用户资源开销和运维成本</li>
+</ul>
+<h3 id="argocd">ArgoCD</h3>
+<p><a href="https://argoproj.github.io/argo-cd/">ArgoCD</a> 是一个用于持续交付的Kubernetes配置管理工具。Argo CD 遵循 GitOps 模式，监听当前运行中应用的状态并与 Git Repository 中声明的状态进行比对，并自动将更新部署到环境中。 ArgoCD 的架构示意图如下：
+<img src="https://yqfile.alicdn.com/610344e9ff3b67245bb35f07a1547deb98b2d6da.png" alt="argocd-arch.png"></p>
+<h3 id="flagger">Flagger</h3>
+<p><a href="https://flagger.app/intro/">Flagger</a> 是一个用于全自动化渐进式完成应用发布的 Kubernetes Operator，它通过分析 Prometheus 收集到的监控指标并通过 Istio 或 App Mesh 等流量管理技术或工具完成应用的渐进式发布。架构示意图如下：
+<img src="https://yqfile.alicdn.com/9c2933f3a6818226c378fd21ba9122e969f5b64e.png" alt="flagger-arch.png"></p>
+<h2 id="创建-asm-实例">创建 ASM 实例</h2>
+<p>参考 ASM <a href="https://help.aliyun.com/document_detail/152154.html">帮助文档</a>创建 ASM 实例并添加 <code>mesh01</code> 和 <code>mesh02</code> 2个 ACK 集群：
+<img src="https://yqfile.alicdn.com/89b4926bd184d938d40d7a9fc1ddb18215f0714c.png" alt="asm-instance.png"></p>
+<p>部署入口网关服务到 <code>mesh01</code> 集群：
+<img src="https://yqfile.alicdn.com/0dddd0661311d160e33b417d40a19fdd24c54c71.png" alt="ingressgateway.png">
+<img src="https://yqfile.alicdn.com/ddd36304f5a59367bace71320e9d5db15869ccb3.png" alt="ingressgateway.png"></p>
+<p>在控制平面创建一个命名空间 <code>test</code> :
+<img src="https://yqfile.alicdn.com/1969c9f19f9d6127e47d20a8d621f58fbe2d91b3.png" alt="asm-controllpanel.png"></p>
+<p>在控制平面创建一个 <code>Gateway</code> ：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">apiVersion</span>: <span style="color:#a6e22e">networking</span>.<span style="color:#a6e22e">istio</span>.<span style="color:#a6e22e">io</span><span style="color:#f92672">/</span><span style="color:#a6e22e">v1alpha3</span>
+<span style="color:#a6e22e">kind</span>: <span style="color:#a6e22e">Gateway</span>
+<span style="color:#a6e22e">metadata</span>:
+  <span style="color:#a6e22e">name</span>: <span style="color:#a6e22e">public</span><span style="color:#f92672">-</span><span style="color:#a6e22e">gateway</span>
+  <span style="color:#a6e22e">namespace</span>: <span style="color:#a6e22e">istio</span><span style="color:#f92672">-</span><span style="color:#a6e22e">system</span>
+<span style="color:#a6e22e">spec</span>:
+  <span style="color:#a6e22e">selector</span>:
+    <span style="color:#a6e22e">istio</span>: <span style="color:#a6e22e">ingressgateway</span>
+  <span style="color:#a6e22e">servers</span>:
+    <span style="color:#f92672">-</span> <span style="color:#a6e22e">port</span>:
+        <span style="color:#a6e22e">number</span>: <span style="color:#ae81ff">80</span>
+        <span style="color:#a6e22e">name</span>: <span style="color:#a6e22e">http</span>
+        <span style="color:#a6e22e">protocol</span>: <span style="color:#a6e22e">HTTP</span>
+      <span style="color:#a6e22e">hosts</span>:
+        <span style="color:#f92672">-</span> <span style="color:#e6db74">&#34;*&#34;</span>
+</code></pre></div><p><img src="https://yqfile.alicdn.com/1d2b0083748c43e5bfc2bad2d0fb7e30d0fa59b7.png" alt="asm-gateway.png">
+<img src="https://yqfile.alicdn.com/e5e3c5ab0bebb80dd982ae1e03f3738f073e857b.png" alt="asm-gateway.png"></p>
+<h2 id="部署-flagger">部署 Flagger</h2>
+<p>分别在 <code>mesh1</code> 和 <code>mesh2</code> 2个ACK集群上按照以下步骤部署 Flagger 及其它相关组件：</p>
+<h3 id="部署-prometheus">部署 Prometheus</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl apply -k github.com/haoshuwei/argocd-samples/flagger/prometheus/
+</code></pre></div><h3 id="部署flagger">部署Flagger</h3>
+<p>使用 ASM 实例的 kubeconfig 创建 <code>secret</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n istio-system create secret generic istio-kubeconfig --from-file kubeconfig
+$ kubectl -n istio-system label secret istio-kubeconfig  istio/multiCluster<span style="color:#f92672">=</span>true
+</code></pre></div><p>helm 安装 Flagger：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm repo add flagger https://flagger.app
+$ helm repo update
+$ kubectl apply -f https://raw.githubusercontent.com/weaveworks/flagger/master/artifacts/flagger/crd.yaml
+$ helm upgrade -i flagger flagger/flagger --namespace<span style="color:#f92672">=</span>istio-system --set crd.create<span style="color:#f92672">=</span>false --set meshProvider<span style="color:#f92672">=</span>istio --set metricsServer<span style="color:#f92672">=</span>http://prometheus:9090 --set istio.kubeconfig.secretName<span style="color:#f92672">=</span>istio-kubeconfig --set istio.kubeconfig.key<span style="color:#f92672">=</span>kubeconfig
+</code></pre></div><h3 id="部署-grafana">部署 Grafana</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm upgrade -i flagger-grafana flagger/grafana --namespace<span style="color:#f92672">=</span>istio-system --set url<span style="color:#f92672">=</span>http://prometheus:9090
+</code></pre></div><p>我们可以在 ASM 实例的控制面板上创建 Grafana 服务的虚拟服务来供外部访问：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">apiVersion</span>: <span style="color:#a6e22e">networking</span>.<span style="color:#a6e22e">istio</span>.<span style="color:#a6e22e">io</span><span style="color:#f92672">/</span><span style="color:#a6e22e">v1alpha3</span>
+<span style="color:#a6e22e">kind</span>: <span style="color:#a6e22e">VirtualService</span>
+<span style="color:#a6e22e">metadata</span>:
+  <span style="color:#a6e22e">name</span>: <span style="color:#a6e22e">grafana</span>
+  <span style="color:#a6e22e">namespace</span>: <span style="color:#a6e22e">istio</span><span style="color:#f92672">-</span><span style="color:#a6e22e">system</span>
+<span style="color:#a6e22e">spec</span>:
+  <span style="color:#a6e22e">hosts</span>:
+    <span style="color:#f92672">-</span> <span style="color:#e6db74">&#34;grafana.istio.example.com&#34;</span>
+  <span style="color:#a6e22e">gateways</span>:
+    <span style="color:#f92672">-</span> <span style="color:#a6e22e">public</span><span style="color:#f92672">-</span><span style="color:#a6e22e">gateway</span>.<span style="color:#a6e22e">istio</span><span style="color:#f92672">-</span><span style="color:#a6e22e">system</span>.<span style="color:#a6e22e">svc</span>.<span style="color:#a6e22e">cluster</span>.<span style="color:#a6e22e">local</span>
+  <span style="color:#a6e22e">http</span>:
+    <span style="color:#f92672">-</span> <span style="color:#a6e22e">route</span>:
+        <span style="color:#f92672">-</span> <span style="color:#a6e22e">destination</span>:
+            <span style="color:#a6e22e">host</span>: <span style="color:#a6e22e">flagger</span><span style="color:#f92672">-</span><span style="color:#a6e22e">grafana</span>
+</code></pre></div><p><img src="https://yqfile.alicdn.com/9f20280b9b2e52ac39fb986ba27e6cc33413ff4f.png" alt="grafana-gateway.png"></p>
+<p>访问服务：
+<img src="https://yqfile.alicdn.com/9f20280b9b2e52ac39fb986ba27e6cc33413ff4f.png" alt="grafana-view.png"></p>
+<p>创建命名空间并添加标签</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl create ns test
+$ kubectl label namespace test istio-injection<span style="color:#f92672">=</span>enabled
+</code></pre></div><h2 id="部署-argocd">部署 ArgoCD</h2>
+<p>我们可以选择任意一个 ACK 集群部署 ArgoCD
+部署 ArgoCD Server：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl create namespace argocd
+$ kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+</code></pre></div><p>部署 ArgoCD CLI：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ VERSION<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>curl --silent <span style="color:#e6db74">&#34;https://api.github.com/repos/argoproj/argo-cd/releases/latest&#34;</span> | grep <span style="color:#e6db74">&#39;&#34;tag_name&#34;&#39;</span> | sed -E <span style="color:#e6db74">&#39;s/.*&#34;([^&#34;]+)&#34;.*/\1/&#39;</span><span style="color:#66d9ef">)</span>
+$ curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/download/$VERSION/argocd-linux-amd64
+$ chmod +x /usr/local/bin/argocd
+</code></pre></div><p>获取和修改登录密码：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get pods -n argocd -l app.kubernetes.io/name<span style="color:#f92672">=</span>argocd-server -o name | cut -d<span style="color:#e6db74">&#39;/&#39;</span> -f <span style="color:#ae81ff">2</span>
+$ argocd login ip:port
+$ argocd account update-password
+</code></pre></div><p>访问服务：
+<img src="https://yqfile.alicdn.com/06493366508a39b43c4a11f8777edaf94a238b17.png" alt="argocd-view.png"></p>
+<h2 id="gitops-流程完成应用全自动化渐进式发布">GitOps 流程完成应用全自动化渐进式发布</h2>
+<h3 id="argocd-添加集群并部署应用">ArgoCD 添加集群并部署应用</h3>
+<p>在这个示例中，我们将会把示例应用 <code>podinfo</code> 部署到 <code>mesh02</code> 集群，把 <code>loadtester</code> 测试应用部署到 <code>mesh01</code> 集群，统一部署在 <code>test</code> 命名空间下。
+添加 Git Repository <a href="https://github.com/haoshuwei/gitops-demo.git">https://github.com/haoshuwei/gitops-demo.git</a>到 ArgoCD：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ argocd repo add https://github.com/haoshuwei/argocd-samples.git--name argocd-samples
+repository <span style="color:#e6db74">&#39;https://github.com/haoshuwei/argocd-samples.git&#39;</span> added
+$ argocd repo list
+TYPE  NAME         REPO                                          INSECURE  LFS    CREDS  STATUS      MESSAGE
+git   argocd-samples  https://github.com/haoshuwei/argocd-samples.git  false     false  false  Successful
+</code></pre></div><p>使用 kubeconfig添加 <code>mesh01</code> 和 <code>mesh02</code> 2个集群到 ArgoCD：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ argocd cluster add mesh01 --kubeconfig<span style="color:#f92672">=</span>mesh01
+INFO<span style="color:#f92672">[</span>0000<span style="color:#f92672">]</span> ServiceAccount <span style="color:#e6db74">&#34;argocd-manager&#34;</span> created in namespace <span style="color:#e6db74">&#34;kube-system&#34;</span>
+INFO<span style="color:#f92672">[</span>0000<span style="color:#f92672">]</span> ClusterRole <span style="color:#e6db74">&#34;argocd-manager-role&#34;</span> created
+INFO<span style="color:#f92672">[</span>0000<span style="color:#f92672">]</span> ClusterRoleBinding <span style="color:#e6db74">&#34;argocd-manager-role-binding&#34;</span> created
+$ argocd cluster add mesh02 --kubeconfig<span style="color:#f92672">=</span>mesh02
+INFO<span style="color:#f92672">[</span>0000<span style="color:#f92672">]</span> ServiceAccount <span style="color:#e6db74">&#34;argocd-manager&#34;</span> created in namespace <span style="color:#e6db74">&#34;kube-system&#34;</span>
+INFO<span style="color:#f92672">[</span>0000<span style="color:#f92672">]</span> ClusterRole <span style="color:#e6db74">&#34;argocd-manager-role&#34;</span> created
+INFO<span style="color:#f92672">[</span>0000<span style="color:#f92672">]</span> ClusterRoleBinding <span style="color:#e6db74">&#34;argocd-manager-role-binding&#34;</span> created
+$ argocd cluster list |grep mesh
+https://xx.xx.xxx.xx:6443       mesh02   1.16+    Successful
+https://xx.xxx.xxx.xx:6443      mesh01   1.16+    Successful
+</code></pre></div><p>部署应用 <code>podinfo</code> 到 <code>mesh02</code> 集群：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ argocd app create --project default --name podinfo --repo https://github.com/haoshuwei/argocd-samples.git --path flagger/podinfo --dest-server https://xx.xx.xxx.xx:6443 --dest-namespace test --revision latest --sync-policy automated
+</code></pre></div><p>以上命令行做的事情是创建一个应用 <code>podinfo</code>，这个应用的 Git Repository 源是 <code>https://github.com/haoshuwei/gitops-demo.git</code> 项目 <code>flagger/podinfo</code> 子目录下的文件，分支为 <code>latest</code>，应用部署到 <code>https://xx.xx.xxx.xx:6443</code> 集群的 <code>test</code> 命名空间下，应用的同步策略是 <code>automated</code>。</p>
+<p><code>flagger/podinfo</code>  子目录下包括4个编排文件 <code>deployment.yaml</code> <code>hpa.yaml</code> <code>kustomization.yaml</code> 和 <code>canary.yaml</code>，其中 <code>canary.yaml</code> 文件就是我们这个示例中完成应用全自动化渐进式金丝雀发布的核心编排文件，内容如下:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">apiVersion</span>: <span style="color:#a6e22e">flagger</span>.<span style="color:#a6e22e">app</span><span style="color:#f92672">/</span><span style="color:#a6e22e">v1beta1</span>
+<span style="color:#a6e22e">kind</span>: <span style="color:#a6e22e">Canary</span>
+<span style="color:#a6e22e">metadata</span>:
+  <span style="color:#a6e22e">name</span>: <span style="color:#a6e22e">podinfo</span>
+  <span style="color:#a6e22e">namespace</span>: <span style="color:#a6e22e">test</span>
+<span style="color:#a6e22e">spec</span>:
+  <span style="color:#a6e22e">targetRef</span>:
+    <span style="color:#a6e22e">apiVersion</span>: <span style="color:#a6e22e">apps</span><span style="color:#f92672">/</span><span style="color:#a6e22e">v1</span>
+    <span style="color:#a6e22e">kind</span>: <span style="color:#a6e22e">Deployment</span>
+    <span style="color:#a6e22e">name</span>: <span style="color:#a6e22e">podinfo</span>
+  <span style="color:#a6e22e">progressDeadlineSeconds</span>: <span style="color:#ae81ff">60</span>
+  <span style="color:#a6e22e">autoscalerRef</span>:
+    <span style="color:#a6e22e">apiVersion</span>: <span style="color:#a6e22e">autoscaling</span><span style="color:#f92672">/</span><span style="color:#a6e22e">v2beta1</span>
+    <span style="color:#a6e22e">kind</span>: <span style="color:#a6e22e">HorizontalPodAutoscaler</span>
+    <span style="color:#a6e22e">name</span>: <span style="color:#a6e22e">podinfo</span>
+  <span style="color:#a6e22e">service</span>:
+    <span style="color:#a6e22e">port</span>: <span style="color:#ae81ff">9898</span>
+    <span style="color:#a6e22e">gateways</span>:
+    <span style="color:#f92672">-</span> <span style="color:#a6e22e">public</span><span style="color:#f92672">-</span><span style="color:#a6e22e">gateway</span>.<span style="color:#a6e22e">istio</span><span style="color:#f92672">-</span><span style="color:#a6e22e">system</span>.<span style="color:#a6e22e">svc</span>.<span style="color:#a6e22e">cluster</span>.<span style="color:#a6e22e">local</span>
+    <span style="color:#a6e22e">hosts</span>:
+    <span style="color:#f92672">-</span> <span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">istio</span>.<span style="color:#a6e22e">example</span>.<span style="color:#a6e22e">com</span>
+    <span style="color:#a6e22e">trafficPolicy</span>:
+      <span style="color:#a6e22e">tls</span>:
+        <span style="color:#960050;background-color:#1e0010">#</span> <span style="color:#a6e22e">use</span> <span style="color:#a6e22e">ISTIO_MUTUAL</span> <span style="color:#a6e22e">when</span> <span style="color:#a6e22e">mTLS</span> <span style="color:#a6e22e">is</span> <span style="color:#a6e22e">enabled</span>
+        <span style="color:#a6e22e">mode</span>: <span style="color:#a6e22e">DISABLE</span>
+  <span style="color:#a6e22e">analysis</span>:
+    <span style="color:#a6e22e">interval</span>: <span style="color:#ae81ff">30</span><span style="color:#a6e22e">s</span>
+    <span style="color:#a6e22e">threshold</span>: <span style="color:#ae81ff">10</span>
+    <span style="color:#a6e22e">maxWeight</span>: <span style="color:#ae81ff">50</span>
+    <span style="color:#a6e22e">stepWeight</span>: <span style="color:#ae81ff">5</span>
+    <span style="color:#a6e22e">metrics</span>:
+    <span style="color:#f92672">-</span> <span style="color:#a6e22e">name</span>: <span style="color:#a6e22e">request</span><span style="color:#f92672">-</span><span style="color:#a6e22e">success</span><span style="color:#f92672">-</span><span style="color:#a6e22e">rate</span>
+      <span style="color:#a6e22e">threshold</span>: <span style="color:#ae81ff">99</span>
+      <span style="color:#a6e22e">interval</span>: <span style="color:#ae81ff">30</span><span style="color:#a6e22e">s</span>
+    <span style="color:#f92672">-</span> <span style="color:#a6e22e">name</span>: <span style="color:#a6e22e">request</span><span style="color:#f92672">-</span><span style="color:#a6e22e">duration</span>
+      <span style="color:#a6e22e">threshold</span>: <span style="color:#ae81ff">500</span>
+      <span style="color:#a6e22e">interval</span>: <span style="color:#ae81ff">30</span><span style="color:#a6e22e">s</span>
+    <span style="color:#a6e22e">webhooks</span>:
+      <span style="color:#f92672">-</span> <span style="color:#a6e22e">name</span>: <span style="color:#a6e22e">load</span><span style="color:#f92672">-</span><span style="color:#a6e22e">test</span>
+        <span style="color:#a6e22e">url</span>: <span style="color:#a6e22e">http</span>:<span style="color:#75715e">//loadtester.test/
+</span><span style="color:#75715e"></span>        <span style="color:#a6e22e">timeout</span>: <span style="color:#ae81ff">5</span><span style="color:#a6e22e">s</span>
+        <span style="color:#a6e22e">metadata</span>:
+          <span style="color:#a6e22e">cmd</span>: <span style="color:#e6db74">&#34;hey -z 1m -q 10 -c 2 http://podinfo-canary.test:9898/&#34;</span>
+</code></pre></div><p><code>canary.yaml</code> 文件中定义了以下几个关键部分</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">spec</span>:
+  <span style="color:#a6e22e">targetRef</span>:
+    <span style="color:#a6e22e">apiVersion</span>: <span style="color:#a6e22e">apps</span><span style="color:#f92672">/</span><span style="color:#a6e22e">v1</span>
+    <span style="color:#a6e22e">kind</span>: <span style="color:#a6e22e">Deployment</span>
+    <span style="color:#a6e22e">name</span>: <span style="color:#a6e22e">podinfo</span>
+  <span style="color:#a6e22e">progressDeadlineSeconds</span>: <span style="color:#ae81ff">60</span>
+  <span style="color:#a6e22e">autoscalerRef</span>:
+    <span style="color:#a6e22e">apiVersion</span>: <span style="color:#a6e22e">autoscaling</span><span style="color:#f92672">/</span><span style="color:#a6e22e">v2beta1</span>
+    <span style="color:#a6e22e">kind</span>: <span style="color:#a6e22e">HorizontalPodAutoscaler</span>
+    <span style="color:#a6e22e">name</span>: <span style="color:#a6e22e">podinfo</span>
+</code></pre></div><p>以上字段表示这个 <code>canary</code> 资源会监听和引用名为 <code>podinfo</code> 的 Deployments 资源和 HorizontalPodAutoscaler 资源。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">service</span>:
+    <span style="color:#a6e22e">port</span>: <span style="color:#ae81ff">9898</span>
+    <span style="color:#a6e22e">gateways</span>:
+    <span style="color:#f92672">-</span> <span style="color:#a6e22e">public</span><span style="color:#f92672">-</span><span style="color:#a6e22e">gateway</span>.<span style="color:#a6e22e">istio</span><span style="color:#f92672">-</span><span style="color:#a6e22e">system</span>.<span style="color:#a6e22e">svc</span>.<span style="color:#a6e22e">cluster</span>.<span style="color:#a6e22e">local</span>
+    <span style="color:#a6e22e">hosts</span>:
+    <span style="color:#f92672">-</span> <span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">istio</span>.<span style="color:#a6e22e">example</span>.<span style="color:#a6e22e">com</span>
+    <span style="color:#a6e22e">trafficPolicy</span>:
+      <span style="color:#a6e22e">tls</span>:
+        <span style="color:#960050;background-color:#1e0010">#</span> <span style="color:#a6e22e">use</span> <span style="color:#a6e22e">ISTIO_MUTUAL</span> <span style="color:#a6e22e">when</span> <span style="color:#a6e22e">mTLS</span> <span style="color:#a6e22e">is</span> <span style="color:#a6e22e">enabled</span>
+        <span style="color:#a6e22e">mode</span>: <span style="color:#a6e22e">DISABLE</span>
+</code></pre></div><p>以上字段表示 <code>canary</code> 资源会在 ASM 控制面板自动为 <code>podinfo</code> 应用创建虚拟服务，名字也是 <code>podinfo</code>。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">analysis</span>:
+    <span style="color:#a6e22e">interval</span>: <span style="color:#ae81ff">30</span><span style="color:#a6e22e">s</span>
+    <span style="color:#a6e22e">threshold</span>: <span style="color:#ae81ff">5</span>
+    <span style="color:#a6e22e">maxWeight</span>: <span style="color:#ae81ff">50</span>
+    <span style="color:#a6e22e">stepWeight</span>: <span style="color:#ae81ff">5</span>
+    <span style="color:#a6e22e">metrics</span>:
+    <span style="color:#f92672">-</span> <span style="color:#a6e22e">name</span>: <span style="color:#a6e22e">request</span><span style="color:#f92672">-</span><span style="color:#a6e22e">success</span><span style="color:#f92672">-</span><span style="color:#a6e22e">rate</span>
+      <span style="color:#a6e22e">threshold</span>: <span style="color:#ae81ff">99</span>
+      <span style="color:#a6e22e">interval</span>: <span style="color:#ae81ff">30</span><span style="color:#a6e22e">s</span>
+    <span style="color:#f92672">-</span> <span style="color:#a6e22e">name</span>: <span style="color:#a6e22e">request</span><span style="color:#f92672">-</span><span style="color:#a6e22e">duration</span>
+      <span style="color:#a6e22e">threshold</span>: <span style="color:#ae81ff">500</span>
+      <span style="color:#a6e22e">interval</span>: <span style="color:#ae81ff">30</span><span style="color:#a6e22e">s</span>
+    <span style="color:#a6e22e">webhooks</span>:
+      <span style="color:#f92672">-</span> <span style="color:#a6e22e">name</span>: <span style="color:#a6e22e">load</span><span style="color:#f92672">-</span><span style="color:#a6e22e">test</span>
+        <span style="color:#a6e22e">url</span>: <span style="color:#a6e22e">http</span>:<span style="color:#75715e">//loadtester.test/
+</span><span style="color:#75715e"></span>        <span style="color:#a6e22e">timeout</span>: <span style="color:#ae81ff">5</span><span style="color:#a6e22e">s</span>
+        <span style="color:#a6e22e">metadata</span>:
+          <span style="color:#a6e22e">cmd</span>: <span style="color:#e6db74">&#34;hey -z 1m -q 10 -c 2 http://podinfo-canary.test:9898/&#34;</span>
+</code></pre></div><p>以上字段表示我们在发布新版本 <code>podinfo</code> 应用时，要先对新版本应用做一些测试和分析，
+<code>interval: 30s</code>， 每隔30s测试一次
+<code>threshold: 5</code>， 失败次数超过5次则认为失败
+<code>maxWeight: 50</code>， 流量权重最大可以切换到50
+<code>stepWeight: 5</code>， 每次增加权重为5
+<code>metrics</code>中定义了2种指标，
+<code>request-success-rate</code> 请求成功率不能小于<code>99</code>
+<code>request-duration</code> RT均值不能大于500ms
+用来生成测试任务的则定义在 <code>webhooks</code> 字段。</p>
+<p>部署测试应用 <code>loadtester</code> 到 <code>mesh01</code> 集群：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ argocd app create --project default --name loadtester --repo https://github.com/haoshuwei/argocd-samples.git --path flagger/charts/loadtester --dest-server https://xx.xxx.xxx.xx:6443 --dest-namespace test --revision latest --sync-policy automated
+</code></pre></div><p>以上应用创建完成后，由于我们设置的 sync 策略为自动部署，所以应用会自动部署到 <code>mesh01</code> 和 <code>mesh02</code> 集群中，我们可以在 ArgoCD 页面上查看应用详细信息：
+<img src="https://yqfile.alicdn.com/a4c916441a3779914a0dd69d6c39b0b8bcfde8fd.png" alt="argocd-app.png">
+<code>podinfo</code> 详情：
+<img src="https://yqfile.alicdn.com/97cffc3ada7134d52a75a4990793af48edd595b6.png" alt="podinfo.png">
+<code>loadtester</code> 详情：
+<img src="https://yqfile.alicdn.com/8ee93c4f48f64d1255b0ec814188bb4e61ed8d07.png" alt="loadtester.png"></p>
+<p>在 ASM 的控制面板我们可以查看 Flagger 动态创建的虚拟服务和目标规则：
+<img src="https://yqfile.alicdn.com/3a8203ab88ad42779c33e756d9613e71ed728123.png" alt="podinfo-vs.png">
+<img src="https://yqfile.alicdn.com/1294a3feae25092c4866ab90aa018a388f30e06b.png" alt="podinfo-rules.png"></p>
+<p>访问服务：
+<img src="https://yqfile.alicdn.com/69d040c6b8239335179afabeb41f217cf32a1e0d.png" alt="podinfo-view.png"></p>
+<h3 id="gitops-自动发布应用">GitOps 自动发布应用</h3>
+<p>新建分支修改应用容器镜像版本提交，并创建指向 <code>latest</code> 分支的 PullRequest：
+<img src="https://yqfile.alicdn.com/5a3e93f0a5fc087d2170f5a8ca4bb2c9b0de642e.png" alt="github-pr.png"></p>
+<p>管理员审批并 merge pr 后，<code>latest</code> 分支有新代码进入，ArgoCD 会自动把更新同步集群环境中，flagger 检测到 <code>podinfo</code> 应用有新版本变更，则开始自动化渐进式地发布新版本应用，通过以下命令可以查看应用发布进度：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ watch kubectl get canaries --all-namespaces
+Every 2.0s: kubectl get canaries --all-namespaces                                                                                                        
+
+NAMESPACE   NAME      STATUS        WEIGHT   LASTTRANSITIONTIME
+test        podinfo   Progressing   <span style="color:#ae81ff">10</span>       2020-03-17T11:04:01Z
+</code></pre></div><p>访问应用可以看到有流量切换到新版本上：
+<img src="https://yqfile.alicdn.com/522509052f52edfde30e7b5e0bd37e79433170ea.png" alt="podinfo.png"></p>
+<p>同时我们也可以在 Grafana 面板中查看到新版本测试指标情况：
+<img src="https://yqfile.alicdn.com/004d753b108c43a9ef4c413edd547bab50de2228.png" alt="grafana.png"></p>
+<p>整个发布过程的 messages 输出如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">&#34;msg&#34;:&#34;New revision detected! Scaling up podinfo.test&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Starting canary analysis for podinfo.test&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Advance podinfo.test canary weight 5&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Advance podinfo.test canary weight 10&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Advance podinfo.test canary weight 15&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Advance podinfo.test canary weight 20&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Advance podinfo.test canary weight 25&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Advance podinfo.test canary weight 30&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Advance podinfo.test canary weight 35&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Advance podinfo.test canary weight 40&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Advance podinfo.test canary weight 45&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Advance podinfo.test canary weight 50&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Copying podinfo.test template spec to podinfo-primary.test&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Halt advancement podinfo-primary.test waiting for rollout to finish: 3 of 4 updated replicas are available&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Routing all traffic to primary&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Promotion completed! Scaling down podinfo.test&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+</code></pre></div><p>应用发布完毕后，所有流量切换到新版本上：
+<img src="https://yqfile.alicdn.com/64d5f4969d531a730ba8a6c043c223bff13ceadb.png" alt="podinfo.png"></p>
+<p>若新版本应用测试指标不达标，则应用自动回滚到初始稳定状态：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">&#34;msg&#34;:&#34;New revision detected! Scaling up podinfo.test&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Starting canary analysis for podinfo.test&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Advance podinfo.test canary weight 10&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Halt advancement no values found for istio metric request-success-rate probably podinfo.test is not receiving traffic&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Halt advancement no values found for istio metric request-duration probably podinfo.test is not receiving traffic&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Halt advancement no values found for istio metric request-duration probably podinfo.test is not receiving traffic&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Halt advancement no values found for istio metric request-duration probably podinfo.test is not receiving traffic&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Halt advancement no values found for istio metric request-duration probably podinfo.test is not receiving traffic&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Synced test/podinfo&#34;
+&#34;msg&#34;:&#34;Rolling back podinfo.test failed checks threshold reached 5&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+&#34;msg&#34;:&#34;Canary failed! Scaling down podinfo.test&#34;,&#34;canary&#34;:&#34;podinfo.test&#34;
+</code></pre></div><h2 id="作者介绍">作者介绍</h2>
+<p>郝树伟</p>
+<p>Kubernetes &amp; Kubernetes SIGs member</p>
+<p>阿里云容器服务团队研发工程师，热衷于 Kubernetes 与云原生相关技术。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://help.aliyun.com/document_detail/149550.html">ASM 帮助文档</a></li>
+<li><a href="https://argoproj.github.io/argo-cd/">ArgoCD 官方文档</a></li>
+<li><a href="https://docs.flagger.app/">Flagger 官方文档</a></li>
+<li><a href="https://medium.com/google-cloud/automated-canary-deployments-with-flagger-and-istio-ac747827f9d1">使用 flagger 自动化完成应用金丝雀发布</a></li>
+</ul>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/202003-k8s-scheduling-framework/" data-toggle="tooltip" data-placement="top" title="浅谈 Kubernetes Scheduling-Framework 插件的实现">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/202004-istio-envoy-wasm/" data-toggle="tooltip" data-placement="top" title="Istio1.5 &amp; Envoy 数据面 WASM 实践">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/202003-k8s-scheduling-framework/"><i class="fa fa-link"></i>浅谈 Kubernetes Scheduling-Framework 插件的实现</a></li>
+         
+        <li><a href="/blog/deep-dive-into-cilium-multi-cluster/"><i class="fa fa-link"></i>深入了解Cilium多集群</a></li>
+         
+        <li><a href="/blog/hands-on-canary-deployments-with-istio-and-kubernetes/"><i class="fa fa-link"></i>教程|使用Istio实现一个Service Mesh以简化微服务间的通信模式</a></li>
+         
+        <li><a href="/blog/deepin-service-mesh-tech-details/"><i class="fa fa-link"></i>深入解读Service Mesh背后的技术细节</a></li>
+         
+        <li><a href="/blog/k8s-cloud-native-service-mesh-meetup/"><i class="fa fa-link"></i>第八届 Service Mesh Meetup 特别场：Kubernetes &amp; Cloud Native X Service Mesh Meetup</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Istio安全设置笔记 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="service mesh, istio, 安全, 服务网格">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="Istio安全设置笔记" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/istio-security-notes-by-fleeto//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="Istio 为网格中的微服务提供了较为完善的安全加固功能，在不影响代码的前提下，可以从多个角度提供安全支撑，官方文档做了较为详细的介绍，但是也比较破碎，这里尝试做个简介兼索引，实现过程还是要根据官方文档进行。">
+  <meta property="og:description" content="Istio 为网格中的微服务提供了较为完善的安全加固功能，在不影响代码的前提下，可以从多个角度提供安全支撑，官方文档做了较为详细的介绍，但是也比较破碎，这里尝试做个简介兼索引，实现过程还是要根据官方文档进行。">
+  <meta name="twitter:description" content="Istio 为网格中的微服务提供了较为完善的安全加固功能，在不影响代码的前提下，可以从多个角度提供安全支撑，官方文档做了较为详细的介绍，但是也比较破碎，这里尝试做个简介兼索引，实现过程还是要根据官方文档进行。">
+  <meta property="og:description" content="Istio 为网格中的微服务提供了较为完善的安全加固功能，在不影响代码的前提下，可以从多个角度提供安全支撑，官方文档做了较为详细的介绍，但是也比较破碎，这里尝试做个简介兼索引，实现过程还是要根据官方文档进行。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="Istio安全设置笔记 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="Istio安全设置笔记 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">Istio安全设置笔记 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>Istio安全设置笔记</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2018年6月11日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://blog.fleeto.us/post/istio-security-notes/">崔秀龙</a>
+                            
+                            
+                            
+                            |
+                            1800字 | 阅读大约需要4分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            <a href="https://blog.fleeto.us/post/istio-security-notes/">查看原文</a>
+                            |
+                            
+                            
+                            归档于 <a href="/categories/istio">istio</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/istio/"><i>#istio</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/security/"><i>#security</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <blockquote>
+<p>本文转载自 <a href="https://blog.fleeto.us/post/istio-security-notes/">伪架构师</a>。</p>
+</blockquote>
+<p><a href="https://istio.io/">Istio</a> 为网格中的微服务提供了较为完善的安全加固功能，在不影响代码的前提下，可以从多个角度提供安全支撑，<a href="https://istio.io/docs/tasks/security/">官方文档</a>做了较为详细的介绍，但是也比较破碎，这里尝试做个简介兼索引，实现过程还是要根据官方文档进行。</p>
+<p>Istio 的安全功能主要分为三个部分的实现：</p>
+<ol>
+<li>双向 TLS 支持。</li>
+<li>基于黑白名单的访问控制。</li>
+<li>基于角色的访问控制。</li>
+<li>JWT 认证支持。</li>
+</ol>
+<p>首先回顾一下 Istio 网格中的服务通信过程：</p>
+<ol>
+<li>利用自动或者手工注入，把 Envoy Proxy 注入到每个服务 Pod 中，用 Sidecar 的方式运行。</li>
+<li>Pod 初始化过程里，使用 iptables 劫持所在 Pod 的<strong>出入</strong>流量。</li>
+<li>服务间的通信，从原来的直接通信，转换为现在的 Envoy 之间通信，Envoy 在这里同时作为客户端和服务端负载均衡组件。</li>
+<li>Envoy 的工作过程中，可能会和 Mixer、Pilot 以及 Citadel 等组件发生互动。</li>
+</ol>
+<h2 id="双向-tls-支持">双向 TLS 支持</h2>
+<p>双向 TLS 支持主要针对的是通信方面，把明文传输的服务通信，通过转换为 Envoy 之间的加密通信。这一安全设置较为基础，可以在全局、Namespace 或者单个服务的范围内生效。</p>
+<p>这一功能主要通过两个 Istio CRD 对象来完成：</p>
+<h3 id="policy">Policy</h3>
+<p>例如 <a href="https://istio.io/docs/tasks/security/authn-policy/">Basic Authentication Policy</a> 中的一个样例，用于给单个服务设置 mtls：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: <span style="color:#e6db74">&#34;authentication.istio.io/v1alpha1&#34;</span>
+<span style="color:#66d9ef">kind</span>: <span style="color:#e6db74">&#34;Policy&#34;</span>
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: <span style="color:#e6db74">&#34;example-2&#34;</span>
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">targets</span>:
+  - <span style="color:#66d9ef">name</span>: httpbin
+  <span style="color:#66d9ef">peers</span>:
+  - <span style="color:#66d9ef">mtls</span>:
+</code></pre></div><p>其中 <code>target</code> 是可选项，如果去掉的话，作用域将扩展到整个 Namespace。</p>
+<h3 id="destinationrule">DestinationRule</h3>
+<p>同样的一个例子里面的目标规则如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: <span style="color:#e6db74">&#34;networking.istio.io/v1alpha3&#34;</span>
+<span style="color:#66d9ef">kind</span>: <span style="color:#e6db74">&#34;DestinationRule&#34;</span>
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: <span style="color:#e6db74">&#34;example-2&#34;</span>
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">host</span>: httpbin.bar.svc.cluster.local
+  <span style="color:#66d9ef">trafficPolicy</span>:
+    <span style="color:#66d9ef">tls</span>:
+      <span style="color:#66d9ef">mode</span>: DISABLE
+    <span style="color:#66d9ef">portLevelSettings</span>:
+    - <span style="color:#66d9ef">port</span>:
+        <span style="color:#66d9ef">number</span>: <span style="color:#ae81ff">1234</span>
+      <span style="color:#66d9ef">tls</span>:
+        <span style="color:#66d9ef">mode</span>: ISTIO_MUTUAL
+</code></pre></div><p>这个也很容易理解，这一规则用于指派对该地址的访问方式：</p>
+<ul>
+<li><code>tls.mode = DISABLE</code>，这个服务缺省是不开启 tls 支持的，如果取值 <code>ISTIO_MUTUAL</code>，则代表这个地址（服务）的所有端口都开启 TLS。</li>
+<li><code>port...ISTIO_MUTUAL</code>，只针对这一个端口启用 mTLS 支持。</li>
+</ul>
+<p>创建 Policy 之后，Citadel 会生成证书文件，并传递给 Envoy，我们可以在 Envoy 容器（kube-proxy）的 <code>/etc/certs/</code> 目录中看到这几个 <code>*.pem</code> 文件。如果使用 <code>openssl x509 -text -noout</code> 查看 <code>cert-chain.pem</code> 的证书内容，会看到 spiffe 编码的 ServiceAccount 内容来作为 SAN：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"> <span style="color:#66d9ef">X509v3 Subject Alternative Name</span>:
+            URI:spiffe://cluster.local/ns/default/sa/default
+</code></pre></div><p>规则生效之后，原有的服务间调用是没有差异的，但是如果在网格之外，就必须 https，结合上面谈到的证书来访问目标服务才能完成访问。</p>
+<blockquote>
+<p>另外这里也提供了<a href="https://istio.io/docs/tasks/security/plugin-ca-cert/">外部 CA 的支持</a>，可以使用已有的证书体系来替换网格内的自签发体系。</p>
+</blockquote>
+<h2 id="基于黑白名单的访问控制">基于黑白名单的访问控制</h2>
+<h3 id="黑名单">黑名单</h3>
+<p>下面的例子来自<a href="https://raw.githubusercontent.com/istio/istio/release-0.8/samples/bookinfo/kube/mixer-rule-deny-label.yaml">官方</a>，禁止 Reviews 的 v3 版本访问 Ratings 服务。</p>
+<p>首先使用 <code>denier</code> 适配器定义一个拒绝响应</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: <span style="color:#e6db74">&#34;config.istio.io/v1alpha2&#34;</span>
+<span style="color:#66d9ef">kind</span>: denier
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: denyreviewsv3handler
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">status</span>:
+    <span style="color:#66d9ef">code</span>: <span style="color:#ae81ff">7</span>
+    <span style="color:#66d9ef">message</span>: Not allowed
+</code></pre></div><p>这里不需要额外属性输入，因此采用了 <code>checknothing</code> 模板：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: <span style="color:#e6db74">&#34;config.istio.io/v1alpha2&#34;</span>
+<span style="color:#66d9ef">kind</span>: checknothing
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: denyreviewsv3request
+<span style="color:#66d9ef">spec</span>:
+</code></pre></div><p>最后使用 <code>rule</code> 对象把这两者联系起来，并配合一个表达式来使之生效：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: <span style="color:#e6db74">&#34;config.istio.io/v1alpha2&#34;</span>
+<span style="color:#66d9ef">kind</span>: rule
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: denyreviewsv3
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">match</span>: destination.labels[<span style="color:#e6db74">&#34;app&#34;</span>] == <span style="color:#e6db74">&#34;ratings&#34;</span> <span style="color:#75715e">&amp;&amp;</span> source.labels[<span style="color:#e6db74">&#34;app&#34;</span>]==<span style="color:#e6db74">&#34;reviews&#34;</span> <span style="color:#75715e">&amp;&amp;</span> source.labels[<span style="color:#e6db74">&#34;version&#34;</span>] == <span style="color:#e6db74">&#34;v3&#34;</span>
+  <span style="color:#66d9ef">actions</span>:
+  - <span style="color:#66d9ef">handler</span>: denyreviewsv3handler.denier
+    <span style="color:#66d9ef">instances</span>: [ denyreviewsv3request.checknothing ]
+</code></pre></div><h3 id="白名单">白名单</h3>
+<p>官方案例设置了一个允许 <code>v2</code> 和 <code>v3</code> 版本访问 <code>ratings</code> 服务的白名单。</p>
+<p>白名单适配器要使用的是 <code>listchecker</code>，提供了一个允许访问的数组。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: config.istio.io/v1alpha2
+<span style="color:#66d9ef">kind</span>: listchecker
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: whitelist
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#75715e"># providerUrl: 可以从外部 URL 获取列表内容</span>
+  <span style="color:#66d9ef">overrides</span>: [<span style="color:#e6db74">&#34;v1&#34;</span>, <span style="color:#e6db74">&#34;v2&#34;</span>]  <span style="color:#75715e"># 静态列表</span>
+  <span style="color:#66d9ef">blacklist</span>: <span style="color:#66d9ef">false</span>
+</code></pre></div><p>需要使用一个模板将 Pod 标签转换为 <code>listchecker</code> 的版本列表。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: config.istio.io/v1alpha2
+<span style="color:#66d9ef">kind</span>: listentry
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: appversion
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">value</span>: source.labels[<span style="color:#e6db74">&#34;version&#34;</span>]
+</code></pre></div><p>最后使用 Rule 进行连接：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: config.istio.io/v1alpha2
+<span style="color:#66d9ef">kind</span>: rule
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: checkversion
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">match</span>: destination.labels[<span style="color:#e6db74">&#34;app&#34;</span>] == <span style="color:#e6db74">&#34;ratings&#34;</span>
+  <span style="color:#66d9ef">actions</span>:
+  - <span style="color:#66d9ef">handler</span>: whitelist.listchecker
+    <span style="color:#66d9ef">instances</span>:
+    - appversion.listentry
+</code></pre></div><blockquote>
+<p>注意：如果开启了 mTLS，可以使用 <code>source.user == &quot;cluster.local/ns/default/sa/bookinfo-productpage&quot;</code> 的形式来匹配 ServiceAccount。</p>
+</blockquote>
+<h2 id="rbac">RBAC</h2>
+<blockquote>
+<p>Helm 安装时，需要设置 <code>global.rbacEnabled: true</code>。</p>
+</blockquote>
+<p>RBAC 提供较细粒度的访问控制。另外其中所使用的 <code>ServiceRole</code> 和 <code>ServiceRoleBinding</code> 也更直观、更加易于管理。</p>
+<p>例如来自<a href="https://istio.io/docs/tasks/security/role-based-access-control/">官方 Task</a> 的 <code>ServiceRole</code> 定义，这个角色允许对指定服务进行只读访问：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: <span style="color:#e6db74">&#34;config.istio.io/v1alpha2&#34;</span>
+<span style="color:#66d9ef">kind</span>: ServiceRole
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: productpage-viewer
+  <span style="color:#66d9ef">namespace</span>: default
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">rules</span>:
+  - <span style="color:#66d9ef">services</span>: [<span style="color:#e6db74">&#34;productpage.default.svc.cluster.local&#34;</span>]
+    <span style="color:#66d9ef">methods</span>: [<span style="color:#e6db74">&#34;GET&#34;</span>]
+</code></pre></div><p>如果在 Namespace 级别进行设置，则可以这样：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">...
+  <span style="color:#66d9ef">rules</span>:
+  - <span style="color:#66d9ef">services</span>: [<span style="color:#e6db74">&#34;*&#34;</span>]
+    <span style="color:#66d9ef">methods</span>: [<span style="color:#e6db74">&#34;GET&#34;</span>]
+    <span style="color:#66d9ef">constraints</span>:
+    - <span style="color:#66d9ef">key</span>: <span style="color:#e6db74">&#34;app&#34;</span>
+      <span style="color:#66d9ef">values</span>: [<span style="color:#e6db74">&#34;productpage&#34;</span>]
+...
+</code></pre></div><p>和 Kubernetes 的 Rolebinding 类似，把用户和角色绑定起来，才能最后生效。</p>
+<p>例如：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">  - <span style="color:#66d9ef">user</span>: alice@yahoo.com
+</code></pre></div><p>或者</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">  - <span style="color:#66d9ef">properties</span>:
+      <span style="color:#66d9ef">service</span>: <span style="color:#e6db74">&#34;reviews&#34;</span>
+      <span style="color:#66d9ef">namespace</span>: <span style="color:#e6db74">&#34;abc&#34;</span>
+</code></pre></div><blockquote>
+<p><code>subject</code> 的内容，同样属于 Adapter 模型的实现范围，因此其可选项目仍然是由 Template 的输入产生的。具体样例可以参考 <a href="https://github.com/istio/istio/blob/release-0.8/samples/bookinfo/kube/istio-rbac-enable.yaml">bookinfo 的 rbac 样板</a></p>
+</blockquote>
+<h2 id="jwt-认证">JWT 认证</h2>
+<p>没有外部认证的需求，因此就先不理了 lol。</p>
+<h2 id="参考链接">参考链接</h2>
+<ul>
+<li>安全任务：https://istio.io/docs/tasks/security</li>
+<li>Istio RBAC 参考：https://istio.io/docs/reference/config/istio.rbac.v1alpha1/</li>
+<li>Istio Adapters 参考：https://istio.io/docs/reference/config/policy-and-telemetry/adapters/</li>
+<li>Bookinfo 示例：https://github.com/istio/istio/blob/release-0.8/samples/bookinfo/kube/</li>
+</ul>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/istio-routing-using-opentracing-baggage-distributed-context-propagation/" data-toggle="tooltip" data-placement="top" title="在Istio中使用OpenTracing Baggage进行传播和路由">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/istio-mixer-cache-part3-main/" data-toggle="tooltip" data-placement="top" title="Istio Mixer Cache工作原理与源码分析part3—主流程">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/service-mesh-security-addressing-attack-vectors-with-istio/"><i class="fa fa-link"></i>Service Mesh安全：用Istio应对攻击</a></li>
+         
+        <li><a href="/blog/istio-service-mesh-tutorial/"><i class="fa fa-link"></i>Istio Service Mesh教程</a></li>
+         
+        <li><a href="/blog/istio-routing-using-opentracing-baggage-distributed-context-propagation/"><i class="fa fa-link"></i>在Istio中使用OpenTracing Baggage进行传播和路由</a></li>
+         
+        <li><a href="/blog/tracing-grpc-with-istio/"><i class="fa fa-link"></i>在Istio中跟踪gRPC</a></li>
+         
+        <li><a href="/blog/istio-mixer-cache-part2-principle/"><i class="fa fa-link"></i>Istio Mixer Cache工作原理与源码分析part2－工作原理</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Istio Mixer Cache工作原理与源码分析part4－签名 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="service mesh, istio, 源码解析">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="Istio Mixer Cache工作原理与源码分析part4－签名" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/istio-mixer-cache-part4-signature//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="接前文，继续分析Mixer Check Cache的源码，这次的重点是签名算法，也就是Referenced::Signature()方法。">
+  <meta property="og:description" content="接前文，继续分析Mixer Check Cache的源码，这次的重点是签名算法，也就是Referenced::Signature()方法。">
+  <meta name="twitter:description" content="接前文，继续分析Mixer Check Cache的源码，这次的重点是签名算法，也就是Referenced::Signature()方法。">
+  <meta property="og:description" content="接前文，继续分析Mixer Check Cache的源码，这次的重点是签名算法，也就是Referenced::Signature()方法。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="Istio Mixer Cache工作原理与源码分析part4－签名 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="Istio Mixer Cache工作原理与源码分析part4－签名 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">Istio Mixer Cache工作原理与源码分析part4－签名 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>Istio Mixer Cache工作原理与源码分析part4－签名</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2018年6月11日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://skyao.io">敖小剑</a>
+                            
+                            
+                            
+                            |
+                            1800字 | 阅读大约需要4分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            <a href="https://skyao.io/post/201806-istio-mixer-cache-signature/">查看原文</a>
+                            |
+                            
+                            
+                            归档于 <a href="/categories/istio-mixer-cache">istio mixer cache</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/istio/"><i>#istio</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/source-code/"><i>#source code</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <blockquote>
+<p>本文转载自<a href="https://skyao.io/post/201806-istio-mixer-cache-signature/">敖小剑的博客</a></p>
+</blockquote>
+<p>接前文，继续分析Mixer Check Cache的源码，这次的重点是签名算法，也就是Referenced::Signature()方法。</p>
+<p>前情回顾：</p>
+<ol>
+<li>Referenced保存的是mixer adapter使用的引用属性的一个组合，也就是前面例子中的 <code>“a,b,c”或者“a,b,c不存在”</code></li>
+<li>Referenced中有两个数据结构： <code>std::vector&lt;AttributeRef&gt; absence_keys_</code> 和 <code>std::vector&lt;AttributeRef&gt; exact_keys_</code>，exact_keys_保存的是一定要出现的属性， absence_keys_中保存的是没有出现的属性</li>
+</ol>
+<h2 id="基本流程">基本流程</h2>
+<p>我们来看详细源代码，具体在文件<code>src/istio/mixerclient/referenced.cc</code>中，代码的基本流程非常清晰：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++"><span style="color:#66d9ef">bool</span> Referenced<span style="color:#f92672">::</span>Signature(<span style="color:#66d9ef">const</span> Attributes <span style="color:#f92672">&amp;</span>attributes,
+                           <span style="color:#66d9ef">const</span> std<span style="color:#f92672">::</span>string <span style="color:#f92672">&amp;</span>extra_key,
+                           std<span style="color:#f92672">::</span>string <span style="color:#f92672">*</span>signature) <span style="color:#66d9ef">const</span> {
+  <span style="color:#75715e">// 第一步，先检查输入是否匹配保存的引用属性
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// 必须同时满足absent key和exact key的要求
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>CheckAbsentKeys(attributes) <span style="color:#f92672">||</span> <span style="color:#f92672">!</span>CheckExactKeys(attributes)) {
+    <span style="color:#66d9ef">return</span> false;
+  }
+
+  <span style="color:#75715e">// 发现匹配之后，才开始计算签名
+</span><span style="color:#75715e"></span>  CalculateSignature(attributes, extra_key, signature);
+  <span style="color:#66d9ef">return</span> true;
+}
+</code></pre></div><blockquote>
+<p>切记：请更新到 <code>istio/proxy</code> 仓库的最新代码，在master分支上才能看到这个版本。</p>
+<p>这里的代码在此之前是存在性能问题的，我为此提交了一个改进方案，由于0.8版本发布前锁了master分支，因此这个fix的代码是在0.8版本发布之后才进的master分支。</p>
+<p>详情请见：<a href="https://github.com/istio/proxy/issues/1531">https://github.com/istio/proxy/issues/1531</a></p>
+</blockquote>
+<h2 id="引用属性匹配">引用属性匹配</h2>
+<p>先检查absent key，这里要求请求中的属性，不能出现 absence<em>keys</em> 保存的属性，否则就是不匹配：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++"><span style="color:#66d9ef">bool</span> Referenced<span style="color:#f92672">::</span>CheckAbsentKeys(<span style="color:#66d9ef">const</span> Attributes <span style="color:#f92672">&amp;</span>attributes) <span style="color:#66d9ef">const</span> {
+  <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">auto</span> <span style="color:#f92672">&amp;</span>attributes_map <span style="color:#f92672">=</span> attributes.attributes();
+  <span style="color:#66d9ef">for</span> (std<span style="color:#f92672">::</span>size_t i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> absence_keys_.size(); <span style="color:#f92672">++</span>i) {
+    <span style="color:#75715e">// 检查每个absence_key
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">auto</span> <span style="color:#f92672">&amp;</span>key <span style="color:#f92672">=</span> absence_keys_[i];
+    <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">auto</span> it <span style="color:#f92672">=</span> attributes_map.find(key.name);
+    <span style="color:#66d9ef">if</span> (it <span style="color:#f92672">==</span> attributes_map.end()) {
+      <span style="color:#75715e">// 如果在输入的属性中没有找到，就继续下一个
+</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">continue</span>;
+    }
+
+    <span style="color:#75715e">// 如果找到了，则直接返回不匹配
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> false;
+    <span style="color:#75715e">// 实际代码中还有特别的 StringMap 类型的属性需要额外处理，简单起见我们忽略它
+</span><span style="color:#75715e"></span>  }
+  <span style="color:#75715e">// 只有absence_key都没有在输入的属性中出现，才表示匹配
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">return</span> true;
+}
+</code></pre></div><p>再检查exact keys，这里要求exact keys中保存的每一个属性，必须在请求中出现，否则就是不匹配：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++"><span style="color:#66d9ef">bool</span> Referenced<span style="color:#f92672">::</span>CheckExactKeys(<span style="color:#66d9ef">const</span> Attributes <span style="color:#f92672">&amp;</span>attributes) <span style="color:#66d9ef">const</span> {
+  <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">auto</span> <span style="color:#f92672">&amp;</span>attributes_map <span style="color:#f92672">=</span> attributes.attributes();
+  <span style="color:#66d9ef">for</span> (std<span style="color:#f92672">::</span>size_t i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> exact_keys_.size(); <span style="color:#f92672">++</span>i) {
+    <span style="color:#75715e">// 检查每个exact_key
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">auto</span> <span style="color:#f92672">&amp;</span>key <span style="color:#f92672">=</span> exact_keys_[i];
+    <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">auto</span> it <span style="color:#f92672">=</span> attributes_map.find(key.name);
+    <span style="color:#75715e">// 如果没有在请求中出现就返回不匹配
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (it <span style="color:#f92672">==</span> attributes_map.end()) {
+      <span style="color:#66d9ef">return</span> false;
+    }
+	<span style="color:#75715e">// 实际代码中还有特别的 StringMap 类型的属性需要额外处理，简单起见我们忽略它
+</span><span style="color:#75715e"></span>    }
+  }
+  <span style="color:#75715e">// 只有exact_key都在输入的属性中出现，才表示匹配
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">return</span> true;
+}
+</code></pre></div><p>简单说，引用属性匹配的要求就是：exact key都必须出现，absence key都不能出现。</p>
+<table>
+<thead>
+<tr>
+<th>输入</th>
+<th>exact=“a,b,c”,absent=“”</th>
+<th>exact=“a,b”,absent=“c”</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>“a=1,b=2,c=3,e=4,f=5”</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr>
+<td>“a=1,b=2,e=4,f=5”</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<h2 id="计算签名">计算签名</h2>
+<p>在exact key和absent key检查通过之后，就意味着请求中的属性满足当前Referenced的匹配要求。</p>
+<p>下一步就可以进行签名计算了，CalculateSignature()方法的参数中attributes是输入的所有属性，extra_key这个参数目前没有使用，忽略即可：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++"><span style="color:#66d9ef">void</span> Referenced<span style="color:#f92672">::</span>CalculateSignature(<span style="color:#66d9ef">const</span> Attributes <span style="color:#f92672">&amp;</span>attributes,
+                                    <span style="color:#66d9ef">const</span> std<span style="color:#f92672">::</span>string <span style="color:#f92672">&amp;</span>extra_key,
+                                    std<span style="color:#f92672">::</span>string <span style="color:#f92672">*</span>signature) <span style="color:#66d9ef">const</span> {
+  <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">auto</span> <span style="color:#f92672">&amp;</span>attributes_map <span style="color:#f92672">=</span> attributes.attributes();
+
+  utils<span style="color:#f92672">::</span>MD5 hasher;
+  <span style="color:#75715e">// 游历exact_keys_ 中的每个属性
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">for</span> (std<span style="color:#f92672">::</span>size_t i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> exact_keys_.size(); <span style="color:#f92672">++</span>i) {
+    <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">auto</span> <span style="color:#f92672">&amp;</span>key <span style="color:#f92672">=</span> exact_keys_[i];
+    <span style="color:#75715e">// 在输入的属性中通过属性名找到包含值的属性
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">auto</span> it <span style="color:#f92672">=</span> attributes_map.find(key.name);
+
+    hasher.Update(it<span style="color:#f92672">-&gt;</span>first);
+    hasher.Update(kDelimiter, kDelimiterLength);
+
+    <span style="color:#75715e">// 根据属性值的不同类型，调用hasher.Update()方法进行计算
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">const</span> Attributes_AttributeValue <span style="color:#f92672">&amp;</span>value <span style="color:#f92672">=</span> it<span style="color:#f92672">-&gt;</span>second;
+    <span style="color:#66d9ef">switch</span> (value.value_case()) {
+      <span style="color:#66d9ef">case</span> Attributes_AttributeValue<span style="color:#f92672">::</span>kStringValue:
+        hasher.Update(value.string_value());
+        <span style="color:#66d9ef">break</span>;
+      ......<span style="color:#75715e">// 忽略其他类型的处理代码
+</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">case</span> Attributes_AttributeValue<span style="color:#f92672">::</span>VALUE_NOT_SET:
+        <span style="color:#66d9ef">break</span>;
+    }
+    hasher.Update(kDelimiter, kDelimiterLength);
+  }
+  hasher.Update(extra_key);
+
+  <span style="color:#75715e">// 完成签名计算的最后一步，得到签名
+</span><span style="color:#75715e"></span>  <span style="color:#f92672">*</span>signature <span style="color:#f92672">=</span> hasher.Digest();
+}
+</code></pre></div><p>即CalculateSignature()方法会将exact<em>keys</em> 指定的请求属性进行签名，注意只对 exact<em>keys</em> 的属性进行签名，absent key反正没有出现自然无需也无法对它们进行计算。</p>
+<p>形象起见，以我们前面介绍基础概念和工作原理时的例子做讲解，假设 referenced_map 保存的引用属性组合为 <code>{“k1”: “a,b,c”, “k2”: “a,b,c不存在” }</code> ，</p>
+<table>
+<thead>
+<tr>
+<th>请求</th>
+<th>和请求匹配的引用属性</th>
+<th>进行签名计算的实际属性值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>“a=1,b=2,c=3,e=4,f=5”</td>
+<td>exact=“a,b,c”, absent=“”</td>
+<td>a=1,b=2,c=3</td>
+</tr>
+<tr>
+<td>“a=1,b=2,e=4,f=5”</td>
+<td>exact=“a,b”, absent=“c”</td>
+<td>a=1,b=2</td>
+</tr>
+</tbody>
+</table>
+<h2 id="总结">总结</h2>
+<p>签名算法的关键在于需要先匹配exact key和absent key，然后再计算。和主流程代码一样，只要理解了引用属性和absent key的概念，就容易理解了。</p>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/istio-mixer-cache-part3-main/" data-toggle="tooltip" data-placement="top" title="Istio Mixer Cache工作原理与源码分析part3—主流程">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/twistlock-makes-istios-security-layer-more-robust-easier-to-monitor/" data-toggle="tooltip" data-placement="top" title="Twistlock使Istio的安全层更强大，更易于监控">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/istio-mixer-cache-part3-main/"><i class="fa fa-link"></i>Istio Mixer Cache工作原理与源码分析part3—主流程</a></li>
+         
+        <li><a href="/blog/istio-mixer-cache-part2-principle/"><i class="fa fa-link"></i>Istio Mixer Cache工作原理与源码分析part2－工作原理</a></li>
+         
+        <li><a href="/blog/istio-mixer-cache-part1-concepts/"><i class="fa fa-link"></i>Istio Mixer Cache工作原理与源码分析part1－基本概念</a></li>
+         
+        <li><a href="/blog/istio-security-notes-by-fleeto/"><i class="fa fa-link"></i>Istio安全设置笔记</a></li>
+         
+        <li><a href="/blog/istio-routing-using-opentracing-baggage-distributed-context-propagation/"><i class="fa fa-link"></i>在Istio中使用OpenTracing Baggage进行传播和路由</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

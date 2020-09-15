@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>linkerd on ServiceMesher</title>
+    <link>https://www.servicemesher.com/categories/linkerd/</link>
+    <description>Recent content in linkerd on ServiceMesher</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh</language>
+    <lastBuildDate>Fri, 01 Nov 2019 18:36:27 +0800</lastBuildDate>
+    
+	<atom:link href="https://www.servicemesher.com/categories/linkerd/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>linkerd2 proxy tap 学习笔记</title>
+      <link>https://www.servicemesher.com/blog/linkerd2-proxy-tap-analysis/</link>
+      <pubDate>Fri, 01 Nov 2019 18:36:27 +0800</pubDate>
+      
+      <guid>https://www.servicemesher.com/blog/linkerd2-proxy-tap-analysis/</guid>
+      <description>在本文章中，能粗略了解到 linker2 的代理服务 proxy 组件中关于 tap 的交互原理。</description>
+    </item>
+    
+    <item>
+      <title>linkerd2 proxy destination 学习笔记</title>
+      <link>https://www.servicemesher.com/blog/linkerd2-proxy-destination-analysis/</link>
+      <pubDate>Tue, 29 Oct 2019 16:38:27 +0800</pubDate>
+      
+      <guid>https://www.servicemesher.com/blog/linkerd2-proxy-destination-analysis/</guid>
+      <description>在本文章中，能粗略了解到 linker2 的代理服务 proxy 组件中关于 destination 的交互原理。</description>
+    </item>
+    
+    <item>
+      <title>Istio和Linkerd的CPU基准测试</title>
+      <link>https://www.servicemesher.com/blog/benchmarking-istio-and-linkerd-cpu/</link>
+      <pubDate>Mon, 06 May 2019 21:50:05 +0800</pubDate>
+      
+      <guid>https://www.servicemesher.com/blog/benchmarking-istio-and-linkerd-cpu/</guid>
+      <description>本文对Istio和Linkerd的CPU使用情况做了基准测试和比较。</description>
+    </item>
+    
+    <item>
+      <title>Linkerd 2.0 GA版本发布</title>
+      <link>https://www.servicemesher.com/blog/linkerd-2-0-in-general-availability/</link>
+      <pubDate>Wed, 19 Sep 2018 10:18:54 +0800</pubDate>
+      
+      <guid>https://www.servicemesher.com/blog/linkerd-2-0-in-general-availability/</guid>
+      <description>Linkerd 2.0版本为Linkerd带来了性能、资源消耗和易用性方面的显着改进。它还将项目从集群范围的service mesh转换为可组合的service sidecar，旨在为开发人员和服务所有者提供在云原生环境中成功所需的关键工具。</description>
+    </item>
+    
+    <item>
+      <title>WePay如何使用Linkerd作为服务网格代理</title>
+      <link>https://www.servicemesher.com/blog/using-linkerd-as-a-service-mesh-proxy-at-wepay/</link>
+      <pubDate>Tue, 19 Jun 2018 11:42:58 +0800</pubDate>
+      
+      <guid>https://www.servicemesher.com/blog/using-linkerd-as-a-service-mesh-proxy-at-wepay/</guid>
+      <description>本文是WePay（一家做支付平台和风控产品的公司）使用Linkerd作为服务网格的代理的分享文章。</description>
+    </item>
+    
+  </channel>
+</rss>

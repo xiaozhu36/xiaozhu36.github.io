@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Wasm on ServiceMesher</title>
+    <link>https://www.servicemesher.com/tags/wasm/</link>
+    <description>Recent content in Wasm on ServiceMesher</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh</language>
+    <lastBuildDate>Sat, 07 Mar 2020 15:14:43 +0800</lastBuildDate>
+    
+	<atom:link href="https://www.servicemesher.com/tags/wasm/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>重新定义代理的扩展性：WebAssembly在Envoy与Istio中的应用</title>
+      <link>https://www.servicemesher.com/blog/redefining-extensibility-in-proxies/</link>
+      <pubDate>Sat, 07 Mar 2020 15:14:43 +0800</pubDate>
+      
+      <guid>https://www.servicemesher.com/blog/redefining-extensibility-in-proxies/</guid>
+      <description>编者按 istio1.5架构发生了重大升级，用于扩展代理服务器的新接口允许将Istio可扩展性从控制平面移至Sidecar代理本身，本文探讨采用Istio采用Wasm技术的背景和未来生态发展的考虑</description>
+    </item>
+    
+  </channel>
+</rss>

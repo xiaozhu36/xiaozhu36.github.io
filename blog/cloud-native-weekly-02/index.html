@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>云原生生态周报（Cloud Native Weekly）第2期 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="service mesh, 服务网格, 云原生, cloud native">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="云原生生态周报（Cloud Native Weekly）第2期" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/cloud-native-weekly-02//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="这是 Cloud Native 周报第2期。">
+  <meta property="og:description" content="这是 Cloud Native 周报第2期。">
+  <meta name="twitter:description" content="这是 Cloud Native 周报第2期。">
+  <meta property="og:description" content="这是 Cloud Native 周报第2期。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="云原生生态周报（Cloud Native Weekly）第2期 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="云原生生态周报（Cloud Native Weekly）第2期 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">云原生生态周报（Cloud Native Weekly）第2期 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>云原生生态周报（Cloud Native Weekly）第2期</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2019年4月23日
+                            </i>
+                            |
+                            
+                            作者 <a href="/">云原生编辑部</a>
+                            
+                            
+                            
+                            |
+                            3300字 | 阅读大约需要7分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            
+                            归档于 <a href="/categories/cloud-native-weekly">cloud native weekly</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/cloud-native/"><i>#cloud native</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/cloud-native-weekly-02/006tNc79ly1g2cdd5x4mfj31uo0m8di3.jpg" alt=""></p>
+<p>本周报由阿里巴巴容器平台联合蚂蚁金服共同发布</p>
+<p>本周作者：傅伟，敖小剑，张磊，临石，南异，心贵，王夕宁，长虑</p>
+<p>责任编辑：木环</p>
+<h2 id="业界要闻">业界要闻</h2>
+<ol>
+<li><a href="https://www.tuicool.com/articles/Jfaeqy2">Kubernetes External Secrets</a>  近日，世界上最大的域名托管公司 Godaddy公司，正式宣布并详细解读了其开源的K8s外部 Secrets 管理项目： <a href="https://github.com/godaddy/kubernetes-external-secrets">Kubernetes External Secrets</a>，简称KES。这个项目定义了ExternalSecrets API，让开发者可以在K8s内部以和使用内部Secret相似的方式使用外部系统提供的Secrets，大大简化了开发者为了让应用获取外部Secrets所需要的工作量。从安全的角度，这个方案降低了使用外部Secret时候的攻击面（外部Secret是通过一个K8s API暴露的，而不是之前的每个应用自己实现），也降低了应用在适配外部Secret时候的难度。另外，<a href="https://github.com/AliyunContainerService/ack-kms-plugin">Kubernetes KMS plugin开源插件</a> ，采用信封加密的方式与密钥管理能力结合，对进行K8s secret的存储加密。建议安全相关技术人员重点关注。</li>
+<li><a href="https://mp.weixin.qq.com/s/y2V3PwOK5qbdmjFsuNTGkg">CNCF 官方宣布</a>为中国开发者提供免费的云原生技术公开课。这些课程将专注于云原生技术堆栈，包括技术深度探索与动手实验课程，旨在帮助和指导中国开发人员在生产环境中使用云原生技术，并了解其用例和优势。此前，著名社区Stackoverflow发布了2019年开发者调研报告，报告有近九万人参与，Top 3 最受热爱开发平台是分别是Linux（83.1%）、Docker（77.8%）和Kubernetes（76.8%）。</li>
+</ol>
+<h2 id="上游重要进展">上游重要进展</h2>
+<p>Kubernetes 项目</p>
+<ol>
+<li>[重要性能优化] 2X performance improvement on both required and preferred PodAffinity. (<a href="https://github.com/kubernetes/kubernetes/pull/76243">#76243</a>, <a href="https://github.com/Huang-Wei">@Huang-Wei</a>) 这是一个重要的性能优化。这个提交将 PodAffinity 调度的效率实现了两倍的提高。<strong>要知道，PodAffinity/Anti-affinity 调度规则是目前 K8s 默认调度器最大的性能瓶颈点，这次修复很值得关注。</strong></li>
+<li>[重要安全增强] <a href="https://github.com/kubernetes/enhancements/pull/944">KEP: Node-Scoped DaemonSet</a>: K8s 项目现在提供一种叫 Node-Scoped DaemonSet。这种 DaemonSet 的独特之处，在于它拥有、并且只能拥有自己所在的节点 kubelet 相同的权限，并且遵循同 kubelet 相同的鉴权流程。**这种设计，避免了以往 DaemonSet 权限泛滥的问题（比如：我们现在就可以让 DaemonSet 只能访问到属于该 Node 的 API 资源）。**这个特性发布后， DaemonSet 一直以来都 是K8s 集群里最优先被黑客们关照的尴尬局面有望从根本上得到缓解。</li>
+<li>[重要功能补丁] <a href="https://github.com/kubernetes/enhancements/pull/953">KEP: Add kubelet support lxcfs</a>: 一直以来，容器里面通过 /proc 文件系统查看 CPU、内存等信息不准确都是一个让人头疼的问题，而挂载 lxcfs 则是这个问题的最常见解决办法。<strong>现在， K8s 上游正在提议将 lxcfs 作为默认支持</strong>，如果得以合并的话，那对于开发者和运维人员来说，都是个喜闻乐见的事情。<strong>不过，lxcfs 本身是一个需要额外安装的软件，很可能会成为这个阻碍设计的 blocker。</strong></li>
+</ol>
+<p>Knative 项目</p>
+<ol>
+<li>[Serving v1beta1 API proposal(https://docs.google.com/presentation/d/10wuLMFXyol731WKuO5x7lalWrH0A6YVHa4exIERQaQ8/edit#slide=id.p)<strong>Knative serving API准备升级到 v1beta1 版本</strong>，其目标之一是使用标准的PodSpec，以便更方便的从 K8s Deployment 迁移过来。 这个版本和v1alpha1对比主要变更有：去掉了runLatest，缺省默认就是runLatest；Release模式可以通过配置traffic实现，可以指定各个版本的流量比例；取消Manual模式；提供revision生成名字的控制；停用Serving内置的Build。</li>
+<li><a href="https://github.com/knative/eventing/issues/918">Triggers don&rsquo;t use Istio VirtualServices</a>：Knative Eventing 原有的实现，依赖于 Istio 的 VirtualService 来重写 Host Header，使得接下来 Broker 可以通过 Host  Header 来识别此 Event 是发给哪个Trigger 的。而最新的做法，则是通过  URL 来进行区分（比如： <a href="http://foo-broker-filter-1da3a.default.svc.cluster.local/my-trigger">http://foo-broker-filter-1da3a.default.svc.cluster.local/my-trigger</a> 代表此事件是发送给 my-trigger 的)，<strong>从而解除了 Trigger 对Istio  VirtualService 的依赖</strong></li>
+<li><a href="https://github.com/knative/eventing/issues/294">Remove Istio as a dependency</a>：除了上述解耦之外，Knative Eventing Channel 和 Bus 的绑定目前也是通过 istio 的 VirtualService 实现的。在这个新的实现方案中，Provisioners 直接把  Bus 的 主机名写到 channel 的状态当中，就不再需要 Istio VirtualService 来充当 Proxy 了。<strong>这些提交，都在透出这样一个事实：Knative 正在逐步减少对 Istio 的各种依赖，这对于一个真正、适用于更广泛场景的 Serverless 基础设施来说，是非常重要的。</strong></li>
+</ol>
+<p>Istio 项目</p>
+<ol>
+<li>[重要安全增强]最近在Envoy代理中发现了两个安全漏洞（CVE 2019-9900和CVE 2019-9901）。这些漏洞现在已经在Envoy版本1.9.1中修补，并且相应地嵌入在Istio 1.1.2和Istio 1.0.7中的Envoy版本中。由于Envoy是Istio不可分割的一部分，因此建议用户立即更新Istio以降低这些漏洞带来的安全风险。</li>
+<li>[性能提升] Istio 1.1中的新增强功能可以提高应用程序性能和服务管理效率，从而实现扩展，Pilot CPU使用率降低了90％, 内存使用率降低50％。业界已有尝试在Kubernetes中使用Pilot实现服务的流量管理，对应用服务提供多版本管理、灵活的流量治理策略，以支持多种灰度发布场景。可以参考<a href="https://yq.aliyun.com/articles/667297?source_type=cnvol_422_wenzhang">通过Istio管理应用的灰度发布</a></li>
+</ol>
+<p>containerd 项目</p>
+<ol>
+<li><a href="https://github.com/containerd/containerd/issues/3198">runc v2 shim </a><a href="https://github.com/containerd/containerd/issues/3198">支持</a><a href="https://github.com/containerd/containerd/issues/3198"> cgroup </a><a href="https://github.com/containerd/containerd/issues/3198">设置</a>：containerd 目前支持多个容器使用<a href="https://github.com/containerd/containerd/pull/3004">同一个</a><a href="https://github.com/containerd/containerd/pull/3004"> containerd-shim </a><a href="https://github.com/containerd/containerd/pull/3004">来管理</a> - 一个 Pod 就可以使用一个 containerd-shim 来管理一组容器，减少 containerd-shim 对系统资源的开销。但是目前新的 shim v2 没有提供配置 Cgroup 接口，这个功能会在 1.3 Release 中解决。有了这个能力之后，上层应用就可以将 containerd-shim 资源控制也纳入 Pod 资源管理体系中，严格控制系统服务占用的资源大小。</li>
+<li><a href="https://github.com/containerd/containerd/issues/3210">containerd 插件 ID 管理</a>：containerd 允许开发者将自定义的组件注册到服务里，提供了可插拔的能力。但是当前 containerd 插件的管理是假设 ID 是唯一，这会导致相同 ID 的插件加载结果不可预测。当前该问题还在讨论中，计划在 1.3 Release 中解决。</li>
+</ol>
+<h2 id="本周云原生最佳实践">本周云原生最佳实践</h2>
+<p>传统富容器运维模式如何云原生化？</p>
+<ol>
+<li>在很多企业当中长期以来都在使用富容器模式，即：在业务容器里安装systemd、 sshd、监控进程等系统进程，模拟一个虚拟机的行为。这种运维方式固然方便业务迁入，但是也跟云原生理念中的“不可变基础设施”产生了本质冲突。比如：容器里的内容被操作人员频繁变化给升级、发布带来了众多运维隐患；富容器模式导致开发人员其实并不了解容器概念，在容器里随机位置写日志甚至用户数据等高风险的行为屡见不鲜。</li>
+<li><strong>来自阿里巴巴“全站云化”的实践</strong>：</li>
+</ol>
+<ul>
+<li>将富容器容器运行时替换为支持 CRI 体系的标准容器运行时比如 containerd 等。目前阿里已经将 PouchContainer 全面升级为 containerd 发行版。</li>
+<li>把富容器里面的耦合在一起进程、服务进行拆分，变成一个 Pod 里的多个容器，下面是“全站云化”采用的拆分方法：   (1)  业务容器：运行业务主进程，允许 exec 方式进入；(2)  运维 Sidecar 容器：日志收集、debugger、运维辅助进程等 ；(3)  业务辅助容器：Service Mesh 的 agent</li>
+</ul>
+<h2 id="开源项目推荐">开源项目推荐</h2>
+<ol>
+<li>本周我们向您推荐<a href="https://spiffe.io/">SPIFFE项目</a>。SPIFFE，从运维人员的第一感觉而言，是解决证书下发问题的。以往的安全体系更注重自然人的身份认证，而在SPIFFE里面所有的运行实体都有身份。一个案例就是K8s上的每个pod都配置相应的身份，对于多云和混合云的安全角度讲，SPIFFE的好处在于不被供应商的安全认证体系绑定，可以达到跨云/跨域的身份认证，从而确保安全。下面是我们搜集的一些关于SPIFFE的不错的公开资料，有兴趣可以去了解：
+<ul>
+<li>项目的主要发起人Evan的<a href="https://v.qq.com/x/page/t07113umnwq.html">演讲</a></li>
+<li>SPIRE是SPIFFE的实现，和Service Mesh结合详见<a href="https://segmentfault.com/a/1190000018432444">这篇文章</a></li>
+<li><a href="https://www.aqniu.com/learn/39145.html">SPIRE</a><a href="https://www.aqniu.com/learn/39145.html">的零信任安全机制</a></li>
+</ul>
+</li>
+</ol>
+<h2 id="本周阅读推荐">本周阅读推荐</h2>
+<ol>
+<li><a href="http://www.servicemesher.com/blog/knative-whittling-down-the-code/">Knative：精简代码之道</a>，作者 Brian McClain | 译者 孙海洲。这篇文章用循序渐进的例子对“什么是 Knative”做出了很好的回答。如果你现在对 Knative 的认识还停留在三张分别叫做Build， Serving 和 Eventing的插图的话，那可能阅读一下这篇文章会让你对它们的理解更加形象。</li>
+<li><a href="https://yq.aliyun.com/articles/695315?source_type=cnvol_422_wenzhang">Spark in action on Kubernetes - 存储篇</a>，by Alibaba 莫源。存储永远是大数据计算的核心之一，随着新计算场景的不断涌现和硬件技术的飞速发展，存储的适配关系到大规模计算的成本、性能、稳定性等核心竞争要素。本文继上面分析K8s中的Spark Operator之后，从硬件限制、计算成本和存储成本几个角度，讨论了云原生时代来临后存储如何解决<strong>成本低、存得多、读写快</strong>这几个挑战，详细介绍了阿里云上相关产品在不同场景下的表现，并总结了不同场景下适用的存储解决方案以及选择的原因。如果你是K8s和大数据方面的开发者和使用者，这是一篇你不应该错过的博客，可以快速的帮你梳理当前技术下存储的场景和典型解决方案。</li>
+</ol>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/eight-things-leads-to-developing-catastrophic-cloud-native-microservices-system/" data-toggle="tooltip" data-placement="top" title="导致云原生微服务系统开发灾难性的8件事">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/benchmarking-istio-and-linkerd-cpu/" data-toggle="tooltip" data-placement="top" title="Istio和Linkerd的CPU基准测试">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/cloud-native-weekly-01/"><i class="fa fa-link"></i>云原生生态周报（Cloud Native Weekly）第1期</a></li>
+         
+        <li><a href="/blog/cncf-annual-report-2018-review/"><i class="fa fa-link"></i>CNCF年度报告解读（2018年）</a></li>
+         
+        <li><a href="/blog/myth-cloud-native-portability/"><i class="fa fa-link"></i>云原生可移植性的神话</a></li>
+         
+        <li><a href="/blog/supergloo-a-service-mesh-orchestrator/"><i class="fa fa-link"></i>SuperGloo—服务网格编排平台</a></li>
+         
+        <li><a href="/blog/eight-things-leads-to-developing-catastrophic-cloud-native-microservices-system/"><i class="fa fa-link"></i>导致云原生微服务系统开发灾难性的8件事</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

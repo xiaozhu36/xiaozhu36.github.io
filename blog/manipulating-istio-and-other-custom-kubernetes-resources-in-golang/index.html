@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>使用Go语言操作Istio和其他Kubernetes CRD · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="service mesh, 服务网格">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="使用Go语言操作Istio和其他Kubernetes CRD" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/manipulating-istio-and-other-custom-kubernetes-resources-in-golang//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="主要介绍了在Golang中操作Istio和其他Kubernetes自定义资源（CRD），主要讲解了除go-client之外的另一种方法。">
+  <meta property="og:description" content="主要介绍了在Golang中操作Istio和其他Kubernetes自定义资源（CRD），主要讲解了除go-client之外的另一种方法。">
+  <meta name="twitter:description" content="主要介绍了在Golang中操作Istio和其他Kubernetes自定义资源（CRD），主要讲解了除go-client之外的另一种方法。">
+  <meta property="og:description" content="主要介绍了在Golang中操作Istio和其他Kubernetes自定义资源（CRD），主要讲解了除go-client之外的另一种方法。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="使用Go语言操作Istio和其他Kubernetes CRD logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="使用Go语言操作Istio和其他Kubernetes CRD logo" class="visible-xs visible-sm">
+                    <span class="sr-only">使用Go语言操作Istio和其他Kubernetes CRD - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>使用Go语言操作Istio和其他Kubernetes CRD</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2018年10月15日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://dwmkerr.com/manipulating-istio-and-other-custom-kubernetes-resources-in-golang/">Dave Kerr</a>
+                            
+                            
+                            | 译者 <a href="https://github.com/jianzi123">王帅俭</a>
+                            
+                            
+                            | 审校者
+                            
+                            <a href="https://jimmysong.io"><i>宋净超</i></a>
+                            
+                            
+                            |
+                            1700字 | 阅读大约需要4分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            <a href="https://dwmkerr.com/manipulating-istio-and-other-custom-kubernetes-resources-in-golang">查看原文</a>
+                            |
+                            
+                            
+                            归档于 <a href="/categories/istio">istio</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/istio/"><i>#Istio</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/kubernetes/"><i>#Kubernetes</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/golang/"><i>#golang</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <p>在本文中，我将演示如何使用Golang来操作Kubernetes Custom Resources，以Istio为例。 不需要您了解Istio，我只是用它来展示概念！</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/manipulating-istio-and-other-custom-kubernetes-resources-in-golang/006tNbRwly1fw6t0va3vij30xc0es0ve.jpg" alt=""></p>
+<p><a href="https://istio.io/">Istio</a>是一个非常受欢迎的服务网格平台，它允许工程师快速地为基于服务的应用程序添加遥测技术、先进的流量管理等功能。</p>
+<p>Istio工作原理的一个有趣的地方是，当部署到Kubernetes集群中时，许多关键配置对象被作为<a href="https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/">自定义资源</a>处理。自定义资源是一个非常强大的Kubernetes特性，它允许您创建自己的”一等“资源（就像pod、副本、部署等），然后使用<code>kubectl</code>或Kubernetes API与它们进行交互。</p>
+<p>在本文中，我将展示如何使用Golang Kubernetes client与这些自定义资源交互。</p>
+<h2 id="crd快速概述">CRD：快速概述</h2>
+<p>在为集群设置Istio时，您可能要做的一件常见的事情是指定如何路由通信。这可能相当复杂，如下所示:</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/manipulating-istio-and-other-custom-kubernetes-resources-in-golang/006tNbRwly1fw6uekpw5sj30qo0k0gne.jpg" alt=""></p>
+<p><a href="https://istio.io/docs/concepts/traffic-management/">图1：来自istio.io的Istio流量管理示例</a></p>
+<p>对于这样的系统，有一种配置方法就是使用一个ConfigMap，其中包含如何路由服务的定义。</p>
+<p>然而，Istio实际上注册了新的资源类型（自定义资源定义），来表示网关或服务之类的对象。我们可以创建/更新/删除/操作这些资源类型，就像任何其他Kubernetes对象一样。</p>
+<p>例如，我可以为上面的示例创建一个虚拟服务，如下所示:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">cat &lt;&lt; EOF | kubectl create -f -
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: networking.istio.io/v1alpha3
+<span style="color:#66d9ef">kind</span>: VirtualService
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: service2
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">hosts</span>:
+  - <span style="color:#e6db74">&#34;*&#34;</span>
+  <span style="color:#66d9ef">gateways</span>:
+  - demo1-gateway
+  <span style="color:#66d9ef">http</span>:
+  - <span style="color:#66d9ef">route</span>:
+    - <span style="color:#66d9ef">destination</span>:
+        <span style="color:#66d9ef">host</span>: service2
+        <span style="color:#66d9ef">subset</span>: v1
+      <span style="color:#66d9ef">weight</span>: <span style="color:#ae81ff">95</span>
+    - <span style="color:#66d9ef">destination</span>:
+        <span style="color:#66d9ef">host</span>: service2
+        <span style="color:#66d9ef">subset</span>: v2
+      <span style="color:#66d9ef">weight</span>: <span style="color:#ae81ff">5</span>
+EOF
+</code></pre></div><p>同样，重要的不是这个资源的具体内容，而是我可以像对待其他Kubernetes对象一样对待Istio资源:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get virtualservices.networking.istio.io
+NAME       AGE
+service2   93s
+</code></pre></div><p>或者：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl delete virtualservices.networking.istio.io/service2
+</code></pre></div><p>甚至还可以使用<code>edit</code>、<code>describe</code>、注册生命周期事件、监视更改等等操作。</p>
+<h2 id="使用go语言操作crd">使用go语言操作CRD</h2>
+<p>使用<a href="https://github.com/kubernetes/client-go">Golang Kubernetes Client</a>可以创建强定义的类型，然后就可以使用这些类型与CRD交互。红帽博客文章<a href="https://blog.openshift.com/kubernetes-deep-dive-code-generation-customresources/">Kubernetes Deep Dive: Code Generation for Custom Resources</a>就是一个例子。</p>
+<p>这是一种非常好的方法，但是如果您想快速访问一些数据，而又不想生成大量代码，那么这种方法会让您感到非常吃力。</p>
+<p>还有一种替代方法，即使用<code>DynamicClient</code>。首选的方法似乎是第一种方法，它涉及到代码生成，因此第二种方法的文档很少。然而，第二种方法其实很简单。</p>
+<p>下面这个例子介绍如何列出所有Istio VirtualService资源，而无需生成任何代码:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#f92672">import</span> (
+	<span style="color:#a6e22e">metav1</span> <span style="color:#e6db74">&#34;k8s.io/apimachinery/pkg/apis/meta/v1&#34;</span>
+	<span style="color:#e6db74">&#34;k8s.io/client-go/dynamic&#34;</span>
+)
+
+<span style="color:#75715e">//  Create a Dynamic Client to interface with CRDs.
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">dynamicClient</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">dynamic</span>.<span style="color:#a6e22e">NewForConfig</span>(<span style="color:#a6e22e">config</span>)
+
+<span style="color:#75715e">//  Create a GVR which represents an Istio Virtual Service.
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">virtualServiceGVR</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">schema</span>.<span style="color:#a6e22e">GroupVersionResource</span>{
+	<span style="color:#a6e22e">Group</span>:    <span style="color:#e6db74">&#34;networking.istio.io&#34;</span>,
+	<span style="color:#a6e22e">Version</span>:  <span style="color:#e6db74">&#34;v1alpha3&#34;</span>,
+	<span style="color:#a6e22e">Resource</span>: <span style="color:#e6db74">&#34;virtualservices&#34;</span>,
+}
+
+<span style="color:#75715e">//  List all of the Virtual Services.
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">virtualServices</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">dynamicClient</span>.<span style="color:#a6e22e">Resource</span>(<span style="color:#a6e22e">virtualServiceGVR</span>).<span style="color:#a6e22e">Namespace</span>(<span style="color:#e6db74">&#34;default&#34;</span>).<span style="color:#a6e22e">List</span>(<span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">ListOptions</span>{})
+<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">virtualService</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">virtualServices</span>.<span style="color:#a6e22e">Items</span> {
+	<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;VirtualService: %s\n&#34;</span>, <span style="color:#a6e22e">virtualService</span>.<span style="color:#a6e22e">GetName</span>())
+}
+</code></pre></div><p>为了清晰起见，这段代码省略了设置和错误处理，完整的示例在<a href="https://gist.github.com/dwmkerr/09ac0fd98595460456e17d5ef0c77667">k8s-list-virtualservices.go</a>。</p>
+<h2 id="使用go语言修改crd">使用go语言修改CRD</h2>
+<p>您可能已经注意到，代码<code>.Resource().Namespace().List()</code>与Kubernetes <code>Clientset</code>进行API调用时使用的结构非常相似。实际上，本质上是一样的。看看<a href="https://github.com/kubernetes/client-go/blob/master/dynamic/interface.go">接口</a>，你可以看到所有你想要的操作:</p>
+<ul>
+<li><code>Create</code></li>
+<li><code>Update</code></li>
+<li><code>Delete</code></li>
+<li><code>Get</code></li>
+</ul>
+<p>等等。这很好，因为您可以像我的文章&rsquo;<a href="https://www.dwmkerr.com/patching-kubernetes-resources-in-golang/">Patching Kubernetes Resources in Golang</a>&lsquo;中那样使用相同的技巧来操作这些实体，而无需创建表示它们的结构。</p>
+<p>下面是另一个简短的例子，这次展示了如何将服务的路由的权重调整到50%/50%:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#f92672">import</span> (
+	<span style="color:#a6e22e">metav1</span> <span style="color:#e6db74">&#34;k8s.io/apimachinery/pkg/apis/meta/v1&#34;</span>
+	<span style="color:#e6db74">&#34;k8s.io/client-go/dynamic&#34;</span>
+)
+
+<span style="color:#75715e">//  Create a GVR which represents an Istio Virtual Service.
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">virtualServiceGVR</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">schema</span>.<span style="color:#a6e22e">GroupVersionResource</span>{
+	<span style="color:#a6e22e">Group</span>:    <span style="color:#e6db74">&#34;networking.istio.io&#34;</span>,
+	<span style="color:#a6e22e">Version</span>:  <span style="color:#e6db74">&#34;v1alpha3&#34;</span>,
+	<span style="color:#a6e22e">Resource</span>: <span style="color:#e6db74">&#34;virtualservices&#34;</span>,
+}
+
+<span style="color:#75715e">//  Weight the two routes - 50/50.
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">patchPayload</span> <span style="color:#f92672">:=</span> make([]<span style="color:#a6e22e">PatchUInt32Value</span>, <span style="color:#ae81ff">2</span>)
+<span style="color:#a6e22e">patchPayload</span>[<span style="color:#ae81ff">0</span>].<span style="color:#a6e22e">Op</span> = <span style="color:#e6db74">&#34;replace&#34;</span>
+<span style="color:#a6e22e">patchPayload</span>[<span style="color:#ae81ff">0</span>].<span style="color:#a6e22e">Path</span> = <span style="color:#e6db74">&#34;/spec/http/0/route/0/weight&#34;</span>
+<span style="color:#a6e22e">patchPayload</span>[<span style="color:#ae81ff">0</span>].<span style="color:#a6e22e">Value</span> = <span style="color:#ae81ff">50</span>
+<span style="color:#a6e22e">patchPayload</span>[<span style="color:#ae81ff">1</span>].<span style="color:#a6e22e">Op</span> = <span style="color:#e6db74">&#34;replace&#34;</span>
+<span style="color:#a6e22e">patchPayload</span>[<span style="color:#ae81ff">1</span>].<span style="color:#a6e22e">Path</span> = <span style="color:#e6db74">&#34;/spec/http/0/route/1/weight&#34;</span>
+<span style="color:#a6e22e">patchPayload</span>[<span style="color:#ae81ff">1</span>].<span style="color:#a6e22e">Value</span> = <span style="color:#ae81ff">50</span>
+<span style="color:#a6e22e">patchBytes</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#a6e22e">patchPayload</span>)
+
+<span style="color:#75715e">//  Apply the patch to the &#39;service2&#39; service.
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">dynamicClient</span>.<span style="color:#a6e22e">Resource</span>(<span style="color:#a6e22e">virtualServiceGVR</span>).<span style="color:#a6e22e">Namespace</span>(<span style="color:#e6db74">&#34;default&#34;</span>).<span style="color:#a6e22e">Patch</span>(<span style="color:#e6db74">&#34;service2&#34;</span>, <span style="color:#a6e22e">types</span>.<span style="color:#a6e22e">JSONPatchType</span>, <span style="color:#a6e22e">patchBytes</span>)
+</code></pre></div><p>请参阅 <a href="https://gist.github.com/dwmkerr/7332888e092156ce8ce4ea551b0c321f">k8s-patch-virtualservice.go</a>中的完整示例。</p>
+<p>运行示例后，您可以使用Kubernetes CLI来验证更改:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get virtualservices.networking.istio.io/service2 -o yaml
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: networking.istio.io/v1alpha3
+<span style="color:#66d9ef">kind</span>: VirtualService
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">clusterName</span>: <span style="color:#e6db74">&#34;&#34;</span>
+  <span style="color:#66d9ef">creationTimestamp</span>: <span style="color:#e6db74">2018-10-08T09:53:16Z</span>
+  <span style="color:#66d9ef">generation</span>: <span style="color:#ae81ff">0</span>
+  <span style="color:#66d9ef">name</span>: service2
+  <span style="color:#66d9ef">namespace</span>: default
+  <span style="color:#66d9ef">resourceVersion</span>: <span style="color:#e6db74">&#34;487435&#34;</span>
+  <span style="color:#66d9ef">selfLink</span>: /apis/networking.istio.io/v1alpha3/namespaces/default/virtualservices/service2
+  <span style="color:#66d9ef">uid</span>: fac5930c-cadf<span style="color:#ae81ff">-11e8</span>-90a2-42010a94005b
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">gateways</span>:
+  - demo1-gateway
+  <span style="color:#66d9ef">hosts</span>:
+  - <span style="color:#e6db74">&#39;*&#39;</span>
+  <span style="color:#66d9ef">http</span>:
+  - <span style="color:#66d9ef">route</span>:
+    - <span style="color:#66d9ef">destination</span>:
+        <span style="color:#66d9ef">host</span>: service2
+        <span style="color:#66d9ef">subset</span>: v1
+      <span style="color:#66d9ef">weight</span>: <span style="color:#ae81ff">50</span>
+    - <span style="color:#66d9ef">destination</span>:
+        <span style="color:#66d9ef">host</span>: service2
+        <span style="color:#66d9ef">subset</span>: v2
+      <span style="color:#66d9ef">weight</span>: <span style="color:#ae81ff">50</span>
+</code></pre></div><h2 id="保持简单">保持简单！</h2>
+<p>就是这样！这个技巧使我正在做的事情变得简单了很多，但是需要做一些实验才能得到正确的结果。我希望你觉得这个方法有用，请在评论中分享你的想法与问题。</p>
+<h2 id="进一步阅读">进一步阅读</h2>
+<p>在采用这种方法时使用了以下几篇文章:</p>
+<ul>
+<li><a href="https://blog.openshift.com/kubernetes-deep-dive-code-generation-customresources/">Red Hat: Deep Dive: Code Generation for Custom Resources</a></li>
+<li><a href="https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/">Kubernetes Docs: Custom Resources</a></li>
+</ul>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/x-protocol-tcp-protocol-extension/" data-toggle="tooltip" data-placement="top" title="SOFAMesh中的多协议通用解决方案x-protocol介绍系列（3）——TCP协议扩展">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/set-sail-a-production-ready-istio-adapter/" data-toggle="tooltip" data-placement="top" title="教程|构建生产就绪的Istio Adapter">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/x-protocol-tcp-protocol-extension/"><i class="fa fa-link"></i>SOFAMesh中的多协议通用解决方案x-protocol介绍系列（3）——TCP协议扩展</a></li>
+         
+        <li><a href="/blog/going-beyond-container-orchestration/"><i class="fa fa-link"></i>容器编排无法解决微服务的所有问题，你还需要服务网格</a></li>
+         
+        <li><a href="/blog/x-protocol-rapid-decode-forward/"><i class="fa fa-link"></i>SOFAMesh中的多协议通用解决方案x-protocol介绍系列（2）——快速解码转发</a></li>
+         
+        <li><a href="/blog/api-management-and-service-mesh/"><i class="fa fa-link"></i>API管理和服务网格——为什么说服务网格无法替代API管理</a></li>
+         
+        <li><a href="/blog/istio-traffic-management-impl-intro/"><i class="fa fa-link"></i>Istio流量管理实现机制深度解析</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

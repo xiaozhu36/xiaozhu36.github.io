@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>MOSN on ServiceMesher</title>
+    <link>https://www.servicemesher.com/categories/mosn/</link>
+    <description>Recent content in MOSN on ServiceMesher</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh</language>
+    <lastBuildDate>Mon, 17 Dec 2018 11:07:07 +0800</lastBuildDate>
+    
+	<atom:link href="https://www.servicemesher.com/categories/mosn/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>蚂蚁金服开源的Service Mesh Sidecar代理SOFAMosn发布0.4.0版本</title>
+      <link>https://www.servicemesher.com/blog/sofa-mosn-0-4-0-changelog/</link>
+      <pubDate>Mon, 17 Dec 2018 11:07:07 +0800</pubDate>
+      
+      <guid>https://www.servicemesher.com/blog/sofa-mosn-0-4-0-changelog/</guid>
+      <description>本文是蚂蚁金服开源的 SOFAMosn 的0.4.0版本的发布日志。</description>
+    </item>
+    
+    <item>
+      <title>蚂蚁金服Service Mesh新型网络代理的思考与实践</title>
+      <link>https://www.servicemesher.com/blog/microservice-with-service-mesh-at-ant-financial/</link>
+      <pubDate>Tue, 04 Dec 2018 17:32:44 +0800</pubDate>
+      
+      <guid>https://www.servicemesher.com/blog/microservice-with-service-mesh-at-ant-financial/</guid>
+      <description>本文根据晓东在 GIAC 上海站的演讲内容整理，完整的分享 PPT 获取方式见文章底部。</description>
+    </item>
+    
+  </channel>
+</rss>

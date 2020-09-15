@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contour 学习笔记（一）：使用 Contour 接管 Kubernetes 的南北流量 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="contour, envoy, ingress, kubernetes">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="Contour 学习笔记（一）：使用 Contour 接管 Kubernetes 的南北流量" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/use-envoy-as-a-kubernetes-ingress//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="Contour 使用 Envoy 作为 Kubernetes 的 Ingress Controller 实现，为大家提供了一条新的 Kubernetes 外部负载均衡实现思路。本文介绍了 Contour 分布式架构的工作原理，Envoy 初始配置以及后续动态配置的下发流程，最后通过 Prometheus-Operator 抓取 Contour 的监控指标。">
+  <meta property="og:description" content="Contour 使用 Envoy 作为 Kubernetes 的 Ingress Controller 实现，为大家提供了一条新的 Kubernetes 外部负载均衡实现思路。本文介绍了 Contour 分布式架构的工作原理，Envoy 初始配置以及后续动态配置的下发流程，最后通过 Prometheus-Operator 抓取 Contour 的监控指标。">
+  <meta name="twitter:description" content="Contour 使用 Envoy 作为 Kubernetes 的 Ingress Controller 实现，为大家提供了一条新的 Kubernetes 外部负载均衡实现思路。本文介绍了 Contour 分布式架构的工作原理，Envoy 初始配置以及后续动态配置的下发流程，最后通过 Prometheus-Operator 抓取 Contour 的监控指标。">
+  <meta property="og:description" content="Contour 使用 Envoy 作为 Kubernetes 的 Ingress Controller 实现，为大家提供了一条新的 Kubernetes 外部负载均衡实现思路。本文介绍了 Contour 分布式架构的工作原理，Envoy 初始配置以及后续动态配置的下发流程，最后通过 Prometheus-Operator 抓取 Contour 的监控指标。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="Contour 学习笔记（一）：使用 Contour 接管 Kubernetes 的南北流量 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="Contour 学习笔记（一）：使用 Contour 接管 Kubernetes 的南北流量 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">Contour 学习笔记（一）：使用 Contour 接管 Kubernetes 的南北流量 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>Contour 学习笔记（一）：使用 Contour 接管 Kubernetes 的南北流量</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2019年8月31日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://www.yangcs.net">杨传胜</a>
+                            
+                            
+                            | 译者 <a href=""></a>
+                            
+                            
+                            | 审校者
+                            
+                            <a href="https://github.com/SataQiu"><i>邱世达</i></a>
+                            
+                            <a href="https://github.com/GuangmingLuo"><i>罗广明</i></a>
+                            
+                            
+                            |
+                            6600字 | 阅读大约需要14分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            
+                            归档于 <a href="/categories/envoy">envoy</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/contour/"><i>#contour</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/envoy/"><i>#envoy</i></a>
+                            
+                            <a style="text-transform:capitalize" href="/tags/kubernetes/"><i>#kubernetes</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <p><img src="https://hugo-picture.oss-cn-beijing.aliyuncs.com/blog/2019-08-31-142544.jpg" alt=""></p>
+<p>在 Kubernetes 中运行大规模以 Web 为中心的工作负载，最关键的需求之一就是在 <code>L7</code> 层实现高效流畅的入口流量管理。自从第一批 <code>Kubernetes Ingress Controller</code> 开发完成以来，<code>Envoy</code>（由 Matt Klein 和 Lyft 团队开发）已经成为云原生生态系统中的新生力量。Envoy 之所以受到支持，因为它是一个 CNCF 托管的项目，与整个容器圈和云原生架构有着天然的支持。</p>
+<p>容器公司 <a href="https://heptio.com/">Heptio</a> 开源的项目 <a href="https://github.com/heptio/contour">Contour</a> 使用 <code>Envoy</code> 作为 Kubernetes 的 Ingress Controller 实现，为大家提供了一条新的 Kubernetes 外部负载均衡实现思路。</p>
+<p>据<a href="https://blog.heptio.com/making-it-easy-to-use-envoy-as-a-kubernetes-load-balancer-dde82959f171">官方博客</a>介绍，<code>Heptio Contour</code> 可以为用户提供以下好处：</p>
+<ul>
+<li>一种简单的安装机制来快速部署和集成 Envoy。</li>
+<li>与 Kubernetes 对象模型的集成。</li>
+<li><code>Ingress</code> 配置的动态更新，而无需重启底层负载均衡器。</li>
+<li>项目成熟后，将允许使用 Envoy 一些强大的功能，如熔断器、插件式的处理器链，以及可观测性和可调试性，可以非常方便地对接监控系统。</li>
+<li>IngressRoute 之间可以级联，用来做蓝绿部署非常方便。</li>
+</ul>
+<p>下面我们就来试用一下。</p>
+<h2 id="1-安装步骤">1. 安装步骤</h2>
+<p>Contour Ingress controller 由两个组件组成：</p>
+<ul>
+<li><code>Envoy</code> : 提供高性能反向代理。</li>
+<li><code>Contour</code> : 充当 Envoy 的控制平面，为 Envoy 的路由配置提供统一的来源。</li>
+</ul>
+<p>官方文档提供了三种部署方法：</p>
+<ol>
+<li>通过 <code>DaemonSet</code> 来部署，每个节点上跑一个 Contour 实例（Contour 与 Envoy 在同一个 Pod 中）。</li>
+<li>通过 <code>Deployment</code> 来部署，总共跑两个 Contour 实例（Contour 与 Envoy 在同一个 Pod 中）。</li>
+<li>通过 <code>Deployment</code> 来部署 Contour，总共跑两个 Contour 实例；通过 <code>DaemonSet</code> 来部署 Envoy，每个节点上跑一个 Envoy 实例。</li>
+</ol>
+<p>第三种方案比较巧妙，这样可以让 Contour 和 Envoy 这两个组件解耦，可以分别按需对不同的组件进行扩展，具体的优势如下：</p>
+<ul>
+<li>Envoy 以 Daemonset 的形式运行，具有很强的扩展性，后续可通过 <code>ipvs</code> 和 <code>keepalived</code> 等工具来实现其负载均衡和高可用。</li>
+<li>Envoy 运行的网络模式是 <code>hostNetwork</code>，减少了额外的网络性能损耗。</li>
+<li>Contour 与 Envoy 之间通过双向认证的自签名证书进行通信，大大增强了安全性。</li>
+<li>升级 Contour 不需要重启 Envoy。</li>
+</ul>
+<p><img src="https://hugo-picture.oss-cn-beijing.aliyuncs.com/blog/2019-08-28-080529.jpg" alt=""></p>
+<p>我们就采用第三种方案来部署，首先克隆官方仓库，进入 manifest 清单目录：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ git clone https://github.com/heptio/contour
+$ cd contour/examples/ds-hostnet-split
+</code></pre></div><p>为了便于查看 envoy 的配置，修改 <code>03-envoy.yaml</code>，将 envoy 的 <code>admin-adress</code> 设置为 0.0.0.0，并暴露 9001 端口：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">...省略...
+<span style="color:#66d9ef">initContainers</span>:
+- <span style="color:#66d9ef">args</span>:
+  - bootstrap
+  - --admin-address=<span style="color:#ae81ff">0.0.0.0</span>
+  - /config/contour.json
+...省略...
+</code></pre></div><p>将 Envoy Service 的类型改为 <code>ClusterIP</code>：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">$ cat <span style="color:#ae81ff">02</span>-service-envoy.yaml
+<span style="color:#66d9ef">apiVersion</span>: v1
+<span style="color:#66d9ef">kind</span>: Service
+<span style="color:#66d9ef">metadata</span>:
+ <span style="color:#66d9ef">name</span>: envoy
+ <span style="color:#66d9ef">namespace</span>: heptio-contour
+ <span style="color:#66d9ef">annotations</span>:
+   <span style="color:#66d9ef">service.beta.kubernetes.io/aws-load-balancer-type</span>: nlb
+<span style="color:#66d9ef">spec</span>:
+ <span style="color:#66d9ef">externalTrafficPolicy</span>: Local
+ <span style="color:#66d9ef">ports</span>:
+ - <span style="color:#66d9ef">port</span>: <span style="color:#ae81ff">80</span>
+   <span style="color:#66d9ef">name</span>: http
+   <span style="color:#66d9ef">protocol</span>: TCP
+ - <span style="color:#66d9ef">port</span>: <span style="color:#ae81ff">443</span>
+   <span style="color:#66d9ef">name</span>: https
+   <span style="color:#66d9ef">protocol</span>: TCP
+ <span style="color:#66d9ef">selector</span>:
+   <span style="color:#66d9ef">app</span>: envoy
+ <span style="color:#66d9ef">type</span>: ClusterIP
+</code></pre></div><p>部署：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl apply -f ./
+</code></pre></div><p>查看状态：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl -n heptio-contour get pod
+NAME                       READY   STATUS      RESTARTS   AGE
+contour-767fd99989-27qjw   0/1     Running     <span style="color:#ae81ff">0</span>          21s
+contour-767fd99989-kcjxz   0/1     Running     <span style="color:#ae81ff">0</span>          21s
+contour-certgen-29nqs      0/1     Completed   <span style="color:#ae81ff">0</span>          21s
+envoy-cnzvm                0/1     Running     <span style="color:#ae81ff">0</span>          21s
+envoy-lb8mm                0/1     Running     <span style="color:#ae81ff">0</span>          21s
+envoy-qzmt4                0/1     Running     <span style="color:#ae81ff">0</span>          21s
+
+$ kubectl -n heptio-contour get job
+NAME              COMPLETIONS   DURATION   AGE
+contour-certgen   1/1           2s         4m42s
+</code></pre></div><p><code>contour-certgen</code> 是一个 Job，它会生成有效期为一年的 mTLS（双向认证）证书，并将其挂载到 Contour 和 Envoy 的容器中。如果你想自定义证书，可以参考<a href="https://github.com/heptio/contour/blob/master/docs/grpc-tls-howto.md">官方文档</a>。</p>
+<blockquote>
+<p>如果你还没有部署 Kubernetes 集群怎么办？废话，当然是用 <a href="https://www.yangcs.net/posts/sealos/">sealos</a> 啊！分分钟搞起一个高可用集群。</p>
+</blockquote>
+<h2 id="2-ingress-测试">2. Ingress 测试</h2>
+<p>安装结束后，我们就可以来测试 Ingress 了。在 <code>examples/example-workload</code> 目录下包含一个示例应用，可以直接使用：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl apply -f examples/example-workload/kuard-ingressroute.yaml
+</code></pre></div><p>查看创建好的资源：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get po,svc,ingressroute -l app<span style="color:#f92672">=</span>kuard
+NAME                         READY   STATUS    RESTARTS   AGE
+pod/kuard-67789b8754-5c4w7   1/1     Running   <span style="color:#ae81ff">0</span>          63s
+pod/kuard-67789b8754-fpdfb   1/1     Running   <span style="color:#ae81ff">0</span>          63s
+pod/kuard-67789b8754-fx9bn   1/1     Running   <span style="color:#ae81ff">0</span>          63s
+
+NAME            TYPE        CLUSTER-IP    EXTERNAL-IP   PORT<span style="color:#f92672">(</span>S<span style="color:#f92672">)</span>   AGE
+service/kuard   ClusterIP   10.97.46.79   &lt;none&gt;        80/TCP    63s
+
+NAME                                    FQDN          TLS SECRET   FIRST ROUTE   STATUS   STATUS DESCRIPTION
+ingressroute.contour.heptio.com/kuard   kuard.local                /             valid    valid IngressRoute
+</code></pre></div><p>将域名加入本地电脑的 hosts：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ echo <span style="color:#e6db74">&#34;</span>$INGRESS_HOST<span style="color:#e6db74"> kuard.local&#34;</span> &gt;&gt; /etc/hosts
+</code></pre></div><p>其中 <code>$INGRESS_HOST</code> 是任意运行 Envoy 节点的 IP。</p>
+<p>现在我们就可以在浏览器中输入域名 <code>kuard.local</code> 访问应用了：</p>
+<p><img src="https://hugo-picture.oss-cn-beijing.aliyuncs.com/blog/2019-08-27-135235.png" alt=""></p>
+<h2 id="3-contour-工作原理">3. Contour 工作原理</h2>
+<p>Contour 同时支持 <code>Ingress</code> 资源对象和 <code>IngressRoute</code> 资源对象（通过 CRD 创建），这些对象都是为进入集群的请求提供路由规则的集合。这两个对象的结构和实现方式有所不同，但它们的核心意图是相同的，都是为进入集群的请求提供路由规则。如不作特殊说明，后面当我们描述 “Ingress” 时，它将同时适用于 <code>Ingress</code> 和 <code>IngressRoute</code> 对象。</p>
+<p>通常情况下，当 Envoy 配置了 <code>CDS</code> 的 endpoint 时，它会定期轮询端点，然后将返回的 JSON 片段合并到其运行配置中。如果返回到 Envoy 的集群配置代表当前的 Ingress 对象的集合，则可以将 Contour 视为从 <code>Ingress</code> 对象到 <code>Envoy</code> 集群配置的转换器。随着 Ingress 对象的添加和删除，Envoy 会动态添加并删除相关配置，而无需不断重新加载配置。</p>
+<p>在实践中，将 Ingress 对象转换为 Envoy 配置更加微妙，需要将 Envoy 中的 xDS 配置（包括 <code>CDS</code>，<code>EDS</code> 和 <code>RDS</code>）映射到 Kubernetes 中。Contour 至少需要观察 <code>Ingress</code>、<code>Service</code> 和 <code>Endpoint</code> 这几个资源对象以构建这些服务的响应，它通过 <code>client-go</code> 的 <a href="https://www.kubernetes.org.cn/2693.html">cache/informer</a> 机制免费获得这些 <code>watchers</code>。这些 watchers 提供添加，更新和删除对象的边缘触发通知，也可以通过 <code>watch API</code> 在本地缓存缓存对象，以便后续查询。</p>
+<p>Contour 将收集到的这些对象处理为虚拟主机及其路由规则的<strong>有向非循环图</strong>（DAG），这表明 Contour 将有权构建路由规则的顶级视图，并将群集中的相应服务和TLS秘钥连接在一起。一旦构建了这个新的数据结构，我们就可以轻松实现 <code>IngressRoute</code> 对象的验证，授权和分发。该数据结构导出的 <code>png</code> 图片如下图所示：</p>
+<p><img src="https://hugo-picture.oss-cn-beijing.aliyuncs.com/images/DQTYlY.jpg" alt=""></p>
+<p>Envoy API 调用和 Kubernetes API 资源之间的映射关系如下：</p>
+<ul>
+<li>
+<p><strong>CDS</strong> : 集群发现服务。映射为 Kubernetes 中的 <code>Service</code> 以及一部分 Ingress 对象的 <code>TLS</code> 配置。</p>
+</li>
+<li>
+<p><strong>EDS</strong> : 服务发现服务。映射为 Kubernetes 中的 <code>Endpoint</code>。Envoy 使用 EDS 自动获取 <code>Cluster</code> 成员，这与 Endpoint 对象中包含的信息非常匹配。Envoy 使用 Contour 在 <code>EDS</code> 响应中返回的名称查询 <code>EDS</code>。</p>
+</li>
+<li>
+<p><strong>RDS</strong> : 路由发现服务。映射为 Kubernetes 中的 <code>Ingress</code>。提供了虚拟主机名和前缀路由信息的 RDS 与 Ingress 匹配得更好。</p>
+</li>
+</ul>
+<h2 id="4-映射关系详情">4. 映射关系详情</h2>
+<h3 id="cds">CDS</h3>
+<p><code>CDS</code> 更像是 Kubernetes 中的 <code>Service</code> 资源，因为 Service 是具体 <code>Endpoint</code>（Pods）的抽象，Envoy Cluster 是指 Envoy 连接到的一组逻辑上相似的上游主机（参考下文的 RDS）。其中 <code>TLS</code> 配置也是 CDS 的一部分，而 Kubernetes 中的 TLS 信息由 Ingress 提供，所以这部分之间的映射关系会有些复杂。</p>
+<h3 id="eds">EDS</h3>
+<p><code>EDS</code> 更像是 Kubernetes 中的 <code>Endpoint</code> 资源，这部分映射关系的实现最简单。Contour 将 Endpoint 的响应对象转换为 EDS 的 <code>{ address: [] }</code> json 配置块。</p>
+<h3 id="rds">RDS</h3>
+<p><code>RDS</code> 更像是 Kubernetes 中的 <code>Ingress</code> 资源。RDS 将前缀，路径或正则表达式之一路由到 Envoy 集群。Envoy 集群的名称可以从 Ingress 的 <code>IngressSpec</code> 的配置项中获取（比如：<code>namespace/serviceName_servicePort</code>），因为这是一个选择器，它会匹配 Service 对象被转换后返回的 CDS 对象。</p>
+<h2 id="5-contour-架构分析">5. Contour 架构分析</h2>
+<p>Contour Ingress controller 由两个组件组成：</p>
+<ul>
+<li><code>Envoy</code> : 提供高性能反向代理。</li>
+<li><code>Contour</code> : 充当 Envoy 的控制平面，为 Envoy 的路由配置提供统一的来源。</li>
+</ul>
+<p>以本文的部署方式为例，在 Envoy 的 Pod 初始化期间，Contour 作为 <code>Init</code> 容器运行，并将 bootstrap（初始化）配置写入一个 temporary volume。该 <code>Volume</code> 被传递给 Envoy 容器并告诉 Envoy 将另一个 Deployment 中的 Contour 容器视为控制平面。</p>
+<p><img src="https://hugo-picture.oss-cn-beijing.aliyuncs.com/blog/2019-08-27-143803.png" alt=""></p>
+<p>初始化完成后，Envoy 容器启动，检索 Contour 写入的 bootstrap 配置，并开始轮询 Contour 以热更新配置。如果控制平面无法访问，Envoy 将会进行优雅重试。</p>
+<p><img src="https://hugo-picture.oss-cn-beijing.aliyuncs.com/blog/2019-08-27-143825.png" alt=""></p>
+<p>Contour 相当于 Kubernetes API 的客户端。它监视 <code>Ingress</code>，<code>Service</code> 和 <code>Endpoint</code> 对象，并通过将其对象缓存转换为相关的 <code>JSON</code> 字段来充当其 Envoy 的控制平面。</p>
+<p>从 Kubernetes 到 Contour 的信息转换是通过 <code>SharedInformer</code> 框架 watching API 来完成的；而从 Contour 到 Envoy 的信息转换是通过 Envoy 定期轮询来实现的。</p>
+<h2 id="6-ingressroute-介绍">6. IngressRoute 介绍</h2>
+<p><a href="https://kubernetes.io/docs/concepts/services-networking/ingress/">Ingress</a> 对象从 Kubernetes 1.1 版本开始被引进，用来描述进入集群的请求的 HTTP 路由规则。但迄今为止 Ingress 对象还停留在 <code>beta</code> 阶段，不同的 Ingress Controller 插件为了添加 HTTP 路由的额外属性，只能通过添加大量的 <code>annotation</code> 来实现，而且每个插件的 annotation 都不一样，非常混乱。</p>
+<p><code>IngressRoute</code> CRD 的目标就是扩展 Ingress API 的功能，以便提供更丰富的用户体验以及解决原始设计中的缺点。</p>
+<p>**目前 Contour 是唯一支持 IngressRoute CRD 的 Kubernetes Ingress Controller。**下面就来看看它与 Ingress 相比的优点：</p>
+<ul>
+<li>安全地支持多团队 Kubernetes 集群，能够限制哪些命名空间可以配置虚拟主机和 TLS 凭据。</li>
+<li>允许将路径或域名的路由配置分发给另一个命名空间。</li>
+<li>接受单个路由中的多个服务，并对它们之间的流量进行负载均衡。</li>
+<li>无需通过添加 <code>annotation</code> 就可以定义服务权重和负载均衡策略。</li>
+<li>在创建时验证 IngressRoute 对象，并在创建后报告验证是否有效。</li>
+</ul>
+<h3 id="从-ingress-到-ingressroute">从 Ingress 到 IngressRoute</h3>
+<p>一个基本的 <code>Ingress</code> 对象如下所示：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#75715e"># ingress.yaml</span>
+<span style="color:#66d9ef">apiVersion</span>: extensions/v1beta1
+<span style="color:#66d9ef">kind</span>: Ingress
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: basic
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">rules</span>:
+  - <span style="color:#66d9ef">host</span>: foo-basic.bar.com
+    <span style="color:#66d9ef">http</span>:
+      <span style="color:#66d9ef">paths</span>:
+      - <span style="color:#66d9ef">backend</span>:
+          <span style="color:#66d9ef">serviceName</span>: s1
+          <span style="color:#66d9ef">servicePort</span>: <span style="color:#ae81ff">80</span>
+</code></pre></div><p>这个 Ingress 对象名为 <code>basic</code>，它将传入的 HTTP 流量路由到头文件中 <code>Host:</code> 字段值为 <code>foo-basic.bar.com</code> 且端口为 80 的 <code>s1</code> 服务。该路由规则通过 <code>IngressRoute</code> 来实现如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#75715e"># ingressroute.yaml</span>
+<span style="color:#66d9ef">apiVersion</span>: contour.heptio.com/v1beta1
+<span style="color:#66d9ef">kind</span>: IngressRoute
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: basic
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">virtualhost</span>:
+    <span style="color:#66d9ef">fqdn</span>: foo-basic.bar.com
+  <span style="color:#66d9ef">routes</span>:
+    - <span style="color:#66d9ef">match</span>: /
+      <span style="color:#66d9ef">services</span>:
+        - <span style="color:#66d9ef">name</span>: s1
+          <span style="color:#66d9ef">port</span>: <span style="color:#ae81ff">80</span>
+</code></pre></div><p>对应关系很简单，我就不再详细介绍了，更多功能配置可以参考官方仓库的文档：<a href="https://github.com/heptio/contour/blob/master/docs/ingressroute.md">IngressRoute</a>。</p>
+<h2 id="7-envoy-初始配置文件">7. Envoy 初始配置文件</h2>
+<p>Contour 会根据启动参数和 K8S API Server 中的配置信息生成 Envoy 的初始配置文件，可以使用下面的命令将 Envoy Pod 中的配置文件导出来查看其中的内容：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl -n heptio-contour exec envoy-lb8mm -- cat /config/envoy.json &gt; envoy.json
+</code></pre></div><p>打开网站 <a href="https://www.bejson.com/jsonviewernew/">https://www.bejson.com/jsonviewernew/</a>，将配置文件内容复制粘贴进去，可以看到配置文件的结构如图所示：</p>
+<p><img src="https://hugo-picture.oss-cn-beijing.aliyuncs.com/blog/2019-08-27-145403.png" alt=""></p>
+<p>其中各个配置节点的内容如下：</p>
+<h3 id="dynamic_resources">Dynamic_resources</h3>
+<p>配置动态资源,这里配置了 LDS 和 RDS 服务器。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#e6db74">&#34;dynamic_resources&#34;</span><span style="color:#960050;background-color:#1e0010">:</span> {
+  <span style="color:#f92672">&#34;lds_config&#34;</span>: {
+    <span style="color:#f92672">&#34;api_config_source&#34;</span>: {
+      <span style="color:#f92672">&#34;api_type&#34;</span>: <span style="color:#e6db74">&#34;GRPC&#34;</span>,
+      <span style="color:#f92672">&#34;grpc_services&#34;</span>: [
+        {
+          <span style="color:#f92672">&#34;envoy_grpc&#34;</span>: {
+            <span style="color:#f92672">&#34;cluster_name&#34;</span>: <span style="color:#e6db74">&#34;contour&#34;</span>
+          }
+        }
+      ]
+    }
+  },
+  <span style="color:#f92672">&#34;cds_config&#34;</span>: {
+    <span style="color:#f92672">&#34;api_config_source&#34;</span>: {
+      <span style="color:#f92672">&#34;api_type&#34;</span>: <span style="color:#e6db74">&#34;GRPC&#34;</span>,
+      <span style="color:#f92672">&#34;grpc_services&#34;</span>: [
+        {
+          <span style="color:#f92672">&#34;envoy_grpc&#34;</span>: {
+            <span style="color:#f92672">&#34;cluster_name&#34;</span>: <span style="color:#e6db74">&#34;contour&#34;</span>
+          }
+        }
+      ]
+    }
+  }
+}
+</code></pre></div><h3 id="static_resources">Static_resources</h3>
+<p>配置静态资源，包括了 <code>contour</code> 和 <code>service-stats</code> 两个 cluster，其中 contour cluster 对应前面 dynamic_resources 中的 LDS 和 RDS 配置，指明了 Envoy 用于获取动态资源的服务器地址。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#e6db74">&#34;static_resources&#34;</span><span style="color:#960050;background-color:#1e0010">:</span> {
+  <span style="color:#f92672">&#34;clusters&#34;</span>: [
+    {
+      <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;contour&#34;</span>,
+      <span style="color:#f92672">&#34;alt_stat_name&#34;</span>: <span style="color:#e6db74">&#34;heptio-contour_contour_8001&#34;</span>,
+      <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;STRICT_DNS&#34;</span>,
+      <span style="color:#f92672">&#34;connect_timeout&#34;</span>: <span style="color:#e6db74">&#34;5s&#34;</span>,
+      <span style="color:#f92672">&#34;load_assignment&#34;</span>: {
+        <span style="color:#f92672">&#34;cluster_name&#34;</span>: <span style="color:#e6db74">&#34;contour&#34;</span>,
+        <span style="color:#f92672">&#34;endpoints&#34;</span>: [
+          {
+            <span style="color:#f92672">&#34;lb_endpoints&#34;</span>: [
+              {
+                <span style="color:#f92672">&#34;endpoint&#34;</span>: {
+                  <span style="color:#f92672">&#34;address&#34;</span>: {
+                    <span style="color:#f92672">&#34;socket_address&#34;</span>: {
+                      <span style="color:#f92672">&#34;address&#34;</span>: <span style="color:#e6db74">&#34;contour&#34;</span>,
+                      <span style="color:#f92672">&#34;port_value&#34;</span>: <span style="color:#ae81ff">8001</span>
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      <span style="color:#f92672">&#34;circuit_breakers&#34;</span>: {
+        <span style="color:#f92672">&#34;thresholds&#34;</span>: [
+          {
+            <span style="color:#f92672">&#34;priority&#34;</span>: <span style="color:#e6db74">&#34;HIGH&#34;</span>,
+            <span style="color:#f92672">&#34;max_connections&#34;</span>: <span style="color:#ae81ff">100000</span>,
+            <span style="color:#f92672">&#34;max_pending_requests&#34;</span>: <span style="color:#ae81ff">100000</span>,
+            <span style="color:#f92672">&#34;max_requests&#34;</span>: <span style="color:#ae81ff">60000000</span>,
+            <span style="color:#f92672">&#34;max_retries&#34;</span>: <span style="color:#ae81ff">50</span>
+          },
+          {
+            <span style="color:#f92672">&#34;max_connections&#34;</span>: <span style="color:#ae81ff">100000</span>,
+            <span style="color:#f92672">&#34;max_pending_requests&#34;</span>: <span style="color:#ae81ff">100000</span>,
+            <span style="color:#f92672">&#34;max_requests&#34;</span>: <span style="color:#ae81ff">60000000</span>,
+            <span style="color:#f92672">&#34;max_retries&#34;</span>: <span style="color:#ae81ff">50</span>
+          }
+        ]
+      },
+      <span style="color:#f92672">&#34;tls_context&#34;</span>: {
+        <span style="color:#f92672">&#34;common_tls_context&#34;</span>: {
+          <span style="color:#f92672">&#34;tls_certificates&#34;</span>: [
+            {
+              <span style="color:#f92672">&#34;certificate_chain&#34;</span>: {
+                <span style="color:#f92672">&#34;filename&#34;</span>: <span style="color:#e6db74">&#34;/certs/tls.crt&#34;</span>
+              },
+              <span style="color:#f92672">&#34;private_key&#34;</span>: {
+                <span style="color:#f92672">&#34;filename&#34;</span>: <span style="color:#e6db74">&#34;/certs/tls.key&#34;</span>
+              }
+            }
+          ],
+          <span style="color:#f92672">&#34;validation_context&#34;</span>: {
+            <span style="color:#f92672">&#34;trusted_ca&#34;</span>: {
+              <span style="color:#f92672">&#34;filename&#34;</span>: <span style="color:#e6db74">&#34;/ca/cacert.pem&#34;</span>
+            },
+            <span style="color:#f92672">&#34;verify_subject_alt_name&#34;</span>: [
+              <span style="color:#e6db74">&#34;contour&#34;</span>
+            ]
+          }
+        }
+      },
+      <span style="color:#f92672">&#34;http2_protocol_options&#34;</span>: {}
+    },
+    {
+      <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;service-stats&#34;</span>,
+      <span style="color:#f92672">&#34;alt_stat_name&#34;</span>: <span style="color:#e6db74">&#34;heptio-contour_service-stats_9001&#34;</span>,
+      <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;LOGICAL_DNS&#34;</span>,
+      <span style="color:#f92672">&#34;connect_timeout&#34;</span>: <span style="color:#e6db74">&#34;0.250s&#34;</span>,
+      <span style="color:#f92672">&#34;load_assignment&#34;</span>: {
+        <span style="color:#f92672">&#34;cluster_name&#34;</span>: <span style="color:#e6db74">&#34;service-stats&#34;</span>,
+        <span style="color:#f92672">&#34;endpoints&#34;</span>: [
+          {
+            <span style="color:#f92672">&#34;lb_endpoints&#34;</span>: [
+              {
+                <span style="color:#f92672">&#34;endpoint&#34;</span>: {
+                  <span style="color:#f92672">&#34;address&#34;</span>: {
+                    <span style="color:#f92672">&#34;socket_address&#34;</span>: {
+                      <span style="color:#f92672">&#34;address&#34;</span>: <span style="color:#e6db74">&#34;0.0.0.0&#34;</span>,
+                      <span style="color:#f92672">&#34;port_value&#34;</span>: <span style="color:#ae81ff">9001</span>
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
+</code></pre></div><h3 id="admin">Admin</h3>
+<p>配置 Envoy 的日志路径以及管理端口。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#e6db74">&#34;admin&#34;</span><span style="color:#960050;background-color:#1e0010">:</span> {
+  <span style="color:#f92672">&#34;access_log_path&#34;</span>: <span style="color:#e6db74">&#34;/dev/null&#34;</span>,
+  <span style="color:#f92672">&#34;address&#34;</span>: {
+    <span style="color:#f92672">&#34;socket_address&#34;</span>: {
+      <span style="color:#f92672">&#34;address&#34;</span>: <span style="color:#e6db74">&#34;0.0.0.0&#34;</span>,
+      <span style="color:#f92672">&#34;port_value&#34;</span>: <span style="color:#ae81ff">9001</span>
+    }
+  }
+}
+</code></pre></div><p>结合 Envoy 的初始化配置文件和第 5 节的分析，我们可以大致看到 Contour 通过 Envoy 来实现南北流量管理的基本原理。即控制平面将 xDS server 信息通过 <code>static resource</code> 的方式配置到 Envoy 的初始化配置文件中，Envoy 启动后通过 xDS server 获取到 <code>dynamic resource</code>，包括集群中的 service 信息及路由规则。</p>
+<p>Envoy 配置初始化流程：</p>
+<p><img src="https://hugo-picture.oss-cn-beijing.aliyuncs.com/images/contour-envoy.svg" alt=""></p>
+<ol>
+<li>Envoy initContainer 根据启动参数和 K8S API Server 中的配置信息生成 Envoy 的初始配置文件 <code>envoy.json</code>，该文件告诉 Envoy 从 <code>xDS server</code> 中获取动态配置信息，并配置了 xDS server 的地址信息，即控制平面的 <code>Contour</code>。</li>
+<li>Envoy 使用配置文件 <code>envoy.json</code> 启动。</li>
+<li>Envoy 根据获取到的动态配置启动 Listener，并根据 Listener 的配置，结合 Route 和 Cluster 对进入的流量进行处理。</li>
+</ol>
+<h2 id="8-ingressroute-配置映射">8. IngressRoute 配置映射</h2>
+<p>通过上节的分析我们知道，Envoy 中实际生效的配置是由初始化配置文件中的静态配置和从 Contour 获取的动态配置一起组成的，我们可以通过 Envoy 的管理接口来获取 Envoy 的完整配置，先打开 Envoy 的管理接口：</p>
+<p><img src="https://hugo-picture.oss-cn-beijing.aliyuncs.com/blog/2019-08-28-033029.png" alt=""></p>
+<p>然后点击 <code>config_dump</code>，就能看到 Envoy 的完整配置：</p>
+<p><img src="https://hugo-picture.oss-cn-beijing.aliyuncs.com/blog/2019-08-28-033133.png" alt=""></p>
+<p>我们在第二节创建了一个 ingressroute，现在来看看它是怎么映射到 Envoy 的配置文件中的。你可以到 <code>config_dump</code> 中查找相关配置，但还有更好的办法，我们可以通过 Contour 的命令行工具直接调用 Contour 的 xDS gRPC 接口来分别查看 Envoy 的 Listener、Route、Cluster 和 Endpoint 配置。</p>
+<p>Contour 总共有两个实例，通过选举来实现高可用，被选中的实例作为 <code>leader</code> 来对外提供服务。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl -n heptio-contour get pod -l app<span style="color:#f92672">=</span>contour
+
+NAME                       READY   STATUS    RESTARTS   AGE
+contour-767fd99989-27qjw   1/1     Running   <span style="color:#ae81ff">0</span>          14h
+contour-767fd99989-kcjxz   0/1     Running   <span style="color:#ae81ff">0</span>          14h
+</code></pre></div><p>看看哪个是 leader：</p>
+<p><img src="https://hugo-picture.oss-cn-beijing.aliyuncs.com/blog/2019-08-28-%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202019-08-28%20%E4%B8%8A%E5%8D%8811.53.32.png" alt=""></p>
+<p>可以看到该实例不是 leader，我们到另一个实例中去查看 Envoy xDS 配置。</p>
+<h3 id="listener">Listener</h3>
+<p>Envoy 采用 listener 来接收并处理 <code>downstream</code> 发过来的请求，listener 的处理逻辑是插件式的，可以通过配置不同的 filter 来插入不同的处理逻辑。Listener 可以绑定到 <code>IP Socket</code> 或者 <code>Unix Domain Socket</code> 上，也可以不绑定到一个具体的端口上，而是接收从其他 listener 转发来的数据。</p>
+<p>Listener 的配置可以通过下面的命令查看：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl -n heptio-contour exec -it contour-767fd99989-27qjw -- contour cli --cafile<span style="color:#f92672">=</span>/ca/cacert.pem --cert-file<span style="color:#f92672">=</span>/certs/tls.crt --key-file<span style="color:#f92672">=</span>/certs/tls.key lds
+</code></pre></div><p><img src="https://hugo-picture.oss-cn-beijing.aliyuncs.com/blog/2019-08-28-%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202019-08-28%20%E4%B8%8B%E5%8D%8812.02.20.png" alt=""></p>
+<p>可以看到 Listener 被绑定到了 80 端口上，同时通过 RDS 配置了一个路由规则 <code>ingress_http</code>，在路由规则中再根据不同的请求目的地对请求进行处理。</p>
+<h3 id="route">Route</h3>
+<p>Route 用来配置 Envoy 的路由规则，根据 host 来对请求进行路由分发。</p>
+<p>Route 的配置可以通过下面的命令查看：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl -n heptio-contour exec -it contour-767fd99989-27qjw -- contour cli --cafile<span style="color:#f92672">=</span>/ca/cacert.pem --cert-file<span style="color:#f92672">=</span>/certs/tls.crt --key-file<span style="color:#f92672">=</span>/certs/tls.key rds
+</code></pre></div><p><img src="https://hugo-picture.oss-cn-beijing.aliyuncs.com/blog/2019-08-28-%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202019-08-28%20%E4%B8%8B%E5%8D%882.58.38.png" alt=""></p>
+<p>上面是 <code>ingress_http</code> 的路由配置，对应了两个 <code>virtual host</code>，其中一个是默认路由（图中省略），上面展示的是 kuard 的路由，对应到 Cluster <code>default/kuard/80/da39a3ee5e</code>。其中 <code>domains: &quot;kuard.local:*&quot;</code> 表示允许访问的域名为 kuard.local，端口可以是任意值。</p>
+<h3 id="cluster">Cluster</h3>
+<p>Cluster 是一个服务集群，Cluster 中包含一个到多个 endpoint，每个 endpoint 都可以提供服务，Envoy 根据负载均衡算法将请求发送到这些 endpoint 中。</p>
+<p>Cluster 的配置可以通过下面的命令查看：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl -n heptio-contour exec -it contour-767fd99989-27qjw -- contour cli --cafile<span style="color:#f92672">=</span>/ca/cacert.pem --cert-file<span style="color:#f92672">=</span>/certs/tls.crt --key-file<span style="color:#f92672">=</span>/certs/tls.key cds
+</code></pre></div><p><img src="https://hugo-picture.oss-cn-beijing.aliyuncs.com/blog/2019-08-28-%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202019-08-28%20%E4%B8%8B%E5%8D%883.10.32.png" alt=""></p>
+<p><code>cluster_name: &quot;contour&quot;</code> 表示通过 xDS 接口从 contour 控制平面动态获取 Endpoint 信息。获取到的 Endpoint 是 <code>default/kuard</code>。</p>
+<h3 id="endpoint">Endpoint</h3>
+<p>Endpoint 就对应到 Kubernetes 中的 <code>Endpoint</code> 资源，对应的即是 Pod 的 <code>IP+Port</code>。</p>
+<p>Cluster 的配置可以通过下面的命令查看：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl -n heptio-contour exec -it contour-767fd99989-27qjw -- contour cli --cafile<span style="color:#f92672">=</span>/ca/cacert.pem --cert-file<span style="color:#f92672">=</span>/certs/tls.crt --key-file<span style="color:#f92672">=</span>/certs/tls.key eds|grep <span style="color:#e6db74">&#34;default/kuard&#34;</span> -A <span style="color:#ae81ff">34</span> -B <span style="color:#ae81ff">2</span>
+</code></pre></div><p><img src="https://hugo-picture.oss-cn-beijing.aliyuncs.com/blog/2019-08-28-071943.png" alt=""></p>
+<p>验证一下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get ep -l app<span style="color:#f92672">=</span>kuard
+
+NAME    ENDPOINTS                                                     AGE
+kuard   100.118.117.18:8080,100.119.55.150:8080,100.91.147.204:8080   17h
+</code></pre></div><h2 id="9-对接监控">9. 对接监控</h2>
+<p>Contour 和 Envoy 都暴露一些监控指标可以被 <code>Prometheus</code> 抓取，官方也提供了 Prometheus 和 Grafana 的部署模板，但一般情况下我们都会有自己的监控系统，比如 <a href="https://github.com/coreos/prometheus-operator">prometheus-operator</a>，只需要将官方的 Grafana 模板导入自己的 Grafana 中就可以了，后续会探讨详细步骤。</p>
+<h3 id="envoy-metrics">Envoy Metrics</h3>
+<p>Envoy 默认通过 admin 接口暴露监控指标，为了避免暴露 admin 接口，Contour 创建了一个静态 Listener，只将访问路径为 <code>/stats</code> 的流量转发到 <code>service-stats</code> Cluster，即 admin 接口，其他所有请求一律拒绝访问。</p>
+<p><img src="https://hugo-picture.oss-cn-beijing.aliyuncs.com/blog/2019-08-28-%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202019-08-28%20%E4%B8%8B%E5%8D%884.28.00.png" alt=""></p>
+<p><img src="https://hugo-picture.oss-cn-beijing.aliyuncs.com/blog/2019-08-28-%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202019-08-28%20%E4%B8%8B%E5%8D%884.31.22.png" alt=""></p>
+<blockquote>
+<p>本文只是为了方便查看，才将 admin 接口的 IP 改为 0.0.0.0，生产环境建议不要改，默认值为 <code>127.0.0.1</code>。</p>
+</blockquote>
+<p>所以 Envoy 在 <code>8002</code> 端口暴露监控指标，路径为 <code>/stats/prometheus</code>。</p>
+<h3 id="contour-metrics">Contour Metrics</h3>
+<p>Contour 在 <code>8000</code> 端口上暴露监控指标，路径为 <code>/metrics</code>。包含以下监控指标：</p>
+<ul>
+<li><strong>contour_ingressroute_total (gauge)</strong> : IngressRoute 的总数量，包括状态为 <code>Valid / Invalid / Orphaned</code> 的 IngressRoute。</li>
+<li><strong>contour_ingressroute_orphaned_total (gauge)</strong> : 状态为 <code>Orphaned</code> 的 IngressRoute 数量。</li>
+<li><strong>contour_ingressroute_root_total (gauge)</strong> : <code>Root</code> IngressRoute 的数量（每个 vhost 只有一个 Root IngressRoute）。</li>
+<li><strong>contour_ingressroute_valid_total (gauge)</strong> : 状态为 <code>Valid</code> 的 IngressRoute 数量。</li>
+<li><strong>contour_ingressroute_invalid_total (gauge)</strong> : 状态为 <code>Invalid</code> 的 IngressRoute 数量。</li>
+<li><code>contour_ingressroute_dagrebuild_timestamp (gauge)</code> : 最近一次重建 DAG 的时间戳。</li>
+</ul>
+<p>下面就来教大家怎么将 Contour 接入 Prometheus-Operator，对 Prometheus-Operator 不熟的同学，推荐看一下张馆长的这篇文章：<a href="https://www.servicemesher.com/blog/prometheus-operator-manual/">全手动部署prometheus-operator监控Kubernetes集群遇到的坑</a>。</p>
+<h3 id="rbac-授权">RBAC 授权</h3>
+<p>为了让 Prometheus 能够 <code>list</code> 其他 namespace 中的 pod，我们需要赋予它相应的权限，首先进入 <code>kube-prometheus</code> 项目的 manifests 目录：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cd kube-prometheus/manifests
+
+$ ll *SpecificNamespace*
+<span style="color:#ae81ff">4</span> -rw-r--r-- <span style="color:#ae81ff">1</span> root root  <span style="color:#ae81ff">988</span> 8月  <span style="color:#ae81ff">27</span> 05:22 prometheus-roleBindingSpecificNamespaces.yaml
+<span style="color:#ae81ff">4</span> -rw-r--r-- <span style="color:#ae81ff">1</span> root root <span style="color:#ae81ff">1078</span> 8月  <span style="color:#ae81ff">27</span> 05:15 prometheus-roleSpecificNamespaces.yaml
+</code></pre></div><p>修改 <code>prometheus-roleSpecificNamespaces.yaml</code>，向其中添加如下的 Role：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">- <span style="color:#66d9ef">apiVersion</span>: rbac.authorization.k8s.io/v1
+  <span style="color:#66d9ef">kind</span>: Role
+  <span style="color:#66d9ef">metadata</span>:
+    <span style="color:#66d9ef">name</span>: prometheus-k8s
+    <span style="color:#66d9ef">namespace</span>: heptio-contour
+  <span style="color:#66d9ef">rules</span>:
+  - <span style="color:#66d9ef">apiGroups</span>:
+    - <span style="color:#e6db74">&#34;&#34;</span>
+    <span style="color:#66d9ef">resources</span>:
+    - services
+    - endpoints
+    - pods
+    <span style="color:#66d9ef">verbs</span>:
+    - get
+    - list
+    - watch
+</code></pre></div><p>修改 <code>prometheus-roleBindingSpecificNamespaces.yaml</code>，向其中添加如下的 RoleBinding：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">- <span style="color:#66d9ef">apiVersion</span>: rbac.authorization.k8s.io/v1
+  <span style="color:#66d9ef">kind</span>: RoleBinding
+  <span style="color:#66d9ef">metadata</span>:
+    <span style="color:#66d9ef">name</span>: prometheus-k8s
+    <span style="color:#66d9ef">namespace</span>: heptio-contour
+  <span style="color:#66d9ef">roleRef</span>:
+    <span style="color:#66d9ef">apiGroup</span>: rbac.authorization.k8s.io
+    <span style="color:#66d9ef">kind</span>: Role
+    <span style="color:#66d9ef">name</span>: prometheus-k8s
+  <span style="color:#66d9ef">subjects</span>:
+  - <span style="color:#66d9ef">kind</span>: ServiceAccount
+    <span style="color:#66d9ef">name</span>: prometheus-k8s
+    <span style="color:#66d9ef">namespace</span>: monitoring
+</code></pre></div><p>然后创建相应的 <code>Role</code> 和 <code>RoleBinding</code>：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl apply -f prometheus-roleSpecificNamespaces.yaml
+$ kubectl apply -f prometheus-roleBindingSpecificNamespaces.yaml
+</code></pre></div><h3 id="修改-contour-manifest-文件">修改 Contour manifest 文件</h3>
+<p>Prometheus 监控的对象被叫做 <code>Target</code>，Target 通过 Cluster 中的 <code>Endpoint</code> 资源来定义，每个监控对象都有一个对应的 Endpoint。而 <code>ServiceMonitor</code> 是 Target 的抽象，ServiceMonitor 通过标签来找到对应的 Endpoint，然后将相应的 Target 添加到 Prometheus 的监控列表中。</p>
+<p>默认情况下 Contour 的 Service 是没有打标签的，所以我们需要修改 yaml 文件，加上相应的标签。首先修改 Contour Deployment 的 yaml 文件：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#75715e"># 03-contour.yaml</span>
+<span style="color:#66d9ef">ports</span>:
+- <span style="color:#66d9ef">containerPort</span>: <span style="color:#ae81ff">8001</span>
+  <span style="color:#66d9ef">name</span>: xds
+  <span style="color:#66d9ef">protocol</span>: TCP
+- <span style="color:#66d9ef">containerPort</span>: <span style="color:#ae81ff">8000</span>
+  <span style="color:#66d9ef">name</span>: http-metrics <span style="color:#75715e"># 将 name 改为 http-metrics</span>
+  <span style="color:#66d9ef">protocol</span>: TCP
+</code></pre></div><p>再修改 Contour Service 的 yaml 文件：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#75715e"># 02-service-envoy.yaml</span>
+<span style="color:#66d9ef">ports</span>:
+- <span style="color:#66d9ef">port</span>: <span style="color:#ae81ff">80</span>
+  <span style="color:#66d9ef">name</span>: http
+  <span style="color:#66d9ef">protocol</span>: TCP
+- <span style="color:#66d9ef">port</span>: <span style="color:#ae81ff">443</span>
+  <span style="color:#66d9ef">name</span>: https
+  <span style="color:#66d9ef">protocol</span>: TCP
+<span style="color:#75715e"># 添加新端口</span>
+- <span style="color:#66d9ef">port</span>: <span style="color:#ae81ff">8002</span>
+  <span style="color:#66d9ef">name</span>: http-metrics
+  <span style="color:#66d9ef">protocol</span>: TCP
+</code></pre></div><p>Envoy 类似，先修改 Envoy Deployment 的 yaml 文件：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#75715e"># 03-envoy.yaml</span>
+<span style="color:#66d9ef">ports</span>:
+- <span style="color:#66d9ef">containerPort</span>: <span style="color:#ae81ff">80</span>
+  <span style="color:#66d9ef">hostPort</span>: <span style="color:#ae81ff">80</span>
+  <span style="color:#66d9ef">name</span>: http
+  <span style="color:#66d9ef">protocol</span>: TCP
+- <span style="color:#66d9ef">containerPort</span>: <span style="color:#ae81ff">443</span>
+  <span style="color:#66d9ef">hostPort</span>: <span style="color:#ae81ff">443</span>
+  <span style="color:#66d9ef">name</span>: https
+  <span style="color:#66d9ef">protocol</span>: TCP
+<span style="color:#75715e"># 添加新端口</span>
+- <span style="color:#66d9ef">containerPort</span>: <span style="color:#ae81ff">8002</span>
+  <span style="color:#66d9ef">hostPort</span>: <span style="color:#ae81ff">8002</span>
+  <span style="color:#66d9ef">name</span>: http-metrics
+  <span style="color:#66d9ef">protocol</span>: TCP
+</code></pre></div><p>再修改 Envoy Service 的 yaml 文件：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#75715e"># 02-service-envoy.yaml</span>
+<span style="color:#66d9ef">ports</span>:
+- <span style="color:#66d9ef">port</span>: <span style="color:#ae81ff">80</span>
+  <span style="color:#66d9ef">name</span>: http
+  <span style="color:#66d9ef">protocol</span>: TCP
+- <span style="color:#66d9ef">port</span>: <span style="color:#ae81ff">443</span>
+  <span style="color:#66d9ef">name</span>: https
+  <span style="color:#66d9ef">protocol</span>: TCP
+<span style="color:#75715e"># 添加新端口</span>
+- <span style="color:#66d9ef">port</span>: <span style="color:#ae81ff">8002</span>
+  <span style="color:#66d9ef">name</span>: http-metrics
+  <span style="color:#66d9ef">protocol</span>: TCP
+</code></pre></div><p>最后重新 apply 一下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># 在 contour/examples/ds-hostnet-split 目录下</span>
+$ kubectl apply -f ./
+</code></pre></div><h3 id="创建-servicemonitor">创建 ServiceMonitor</h3>
+<p>接下来就是创建相应的 <code>ServiceMonitor</code> 来抓取指标数据，没什么好说的，自己看 yaml 文件：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">$ cat prometheus-serviceMonitorContour.yaml
+
+<span style="color:#66d9ef">apiVersion</span>: monitoring.coreos.com/v1
+<span style="color:#66d9ef">kind</span>: ServiceMonitor
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">labels</span>:
+    <span style="color:#66d9ef">app</span>: contour
+  <span style="color:#66d9ef">name</span>: contour
+  <span style="color:#66d9ef">namespace</span>: monitoring
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">endpoints</span>:
+  - <span style="color:#66d9ef">interval</span>: 30s
+    <span style="color:#66d9ef">port</span>: http-metrics
+  <span style="color:#66d9ef">jobLabel</span>: app
+  <span style="color:#66d9ef">namespaceSelector</span>:
+    <span style="color:#66d9ef">matchNames</span>:
+    - heptio-contour
+  <span style="color:#66d9ef">selector</span>:
+    <span style="color:#66d9ef">matchLabels</span>:
+      <span style="color:#66d9ef">app</span>: contour
+---
+<span style="color:#66d9ef">apiVersion</span>: monitoring.coreos.com/v1
+<span style="color:#66d9ef">kind</span>: ServiceMonitor
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">labels</span>:
+    <span style="color:#66d9ef">app</span>: envoy
+  <span style="color:#66d9ef">name</span>: envoy
+  <span style="color:#66d9ef">namespace</span>: monitoring
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">endpoints</span>:
+  - <span style="color:#66d9ef">interval</span>: 30s
+    <span style="color:#66d9ef">path</span>: /stats/prometheus
+    <span style="color:#66d9ef">port</span>: http-metrics
+  <span style="color:#66d9ef">namespaceSelector</span>:
+    <span style="color:#66d9ef">matchNames</span>:
+    - heptio-contour
+  <span style="color:#66d9ef">selector</span>:
+    <span style="color:#66d9ef">matchLabels</span>:
+      <span style="color:#66d9ef">app</span>: envoy
+</code></pre></div><h3 id="创建-ingressroute">创建 IngressRoute</h3>
+<p>为了查看 <code>Prometheus</code> 和 <code>Grafana</code> 的 Dashboard，我们需要为它们创建相应的 IngressRoute，yaml 文件内容如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#75715e"># ingressroute-prometheus.yaml</span>
+<span style="color:#66d9ef">apiVersion</span>: contour.heptio.com/v1beta1
+<span style="color:#66d9ef">kind</span>: IngressRoute
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">labels</span>:
+    <span style="color:#66d9ef">app</span>: grafana
+  <span style="color:#66d9ef">name</span>: grafana
+  <span style="color:#66d9ef">namespace</span>: monitoring
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">virtualhost</span>:
+    <span style="color:#66d9ef">fqdn</span>: grafana.sealos.io
+  <span style="color:#66d9ef">routes</span>:
+    - <span style="color:#66d9ef">match</span>: /
+      <span style="color:#66d9ef">services</span>:
+        - <span style="color:#66d9ef">name</span>: grafana
+          <span style="color:#66d9ef">port</span>: <span style="color:#ae81ff">3000</span>
+---
+<span style="color:#66d9ef">apiVersion</span>: contour.heptio.com/v1beta1
+<span style="color:#66d9ef">kind</span>: IngressRoute
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">labels</span>:
+    <span style="color:#66d9ef">app</span>: prometheus
+  <span style="color:#66d9ef">name</span>: prometheus
+  <span style="color:#66d9ef">namespace</span>: monitoring
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">virtualhost</span>:
+    <span style="color:#66d9ef">fqdn</span>: prometheus.sealos.io
+  <span style="color:#66d9ef">routes</span>:
+    - <span style="color:#66d9ef">match</span>: /
+      <span style="color:#66d9ef">services</span>:
+        - <span style="color:#66d9ef">name</span>: prometheus-k8s
+          <span style="color:#66d9ef">port</span>: <span style="color:#ae81ff">9090</span>
+</code></pre></div><p>直接 apply：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl apply -f ingressroute-prometheus.yaml
+</code></pre></div><p>将域名写入本地电脑的 hosts 中：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ echo <span style="color:#e6db74">&#34;</span>$INGRESS_HOST<span style="color:#e6db74"> grafana.sealos.io&#34;</span> &gt;&gt; /etc/hosts
+$ echo <span style="color:#e6db74">&#34;</span>$INGRESS_HOST<span style="color:#e6db74"> prometheus.sealos.io&#34;</span> &gt;&gt; /etc/hosts
+</code></pre></div><p>其中 <code>$INGRESS_HOST</code> 是任意运行 Envoy 节点的 IP。</p>
+<p>现在我们可以在浏览器中输入域名 <code>prometheus.sealos.io</code> 来查看 Prometheus Target 状态。</p>
+<p><img src="https://hugo-picture.oss-cn-beijing.aliyuncs.com/blog/2019-08-28-%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202019-08-29%20%E4%B8%8A%E5%8D%881.01.47.png" alt=""></p>
+<p>可以看到这两个 Target 已经被抓取到了。</p>
+<h3 id="导入-grafana-模板">导入 Grafana 模板</h3>
+<p>前面提到 Contour 官方仓库中提供了 Grafana Dashboard 模板，现在我们要做的事就是把这个模板导入到自己的 Grafana 中。官方的 Grafana Dashboard 模板定义在 <code>contour/examples/grafana</code> 目录下的 ConfigMap 文件中，可以先把它导出来：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># 假设 contour 项目在你的 $HOME 目录</span>
+$ sed <span style="color:#e6db74">&#39;/---/,$d&#39;</span> ~/contour/examples/grafana/02-grafana-configmap.yaml <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  sed <span style="color:#e6db74">&#39;s/grafana-dashs/grafana-dashboard-contour/&#39;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  sed <span style="color:#e6db74">&#39;s/contour-monitoring/monitoring/&#39;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  sed <span style="color:#e6db74">&#39;s/kubernetes_pod_name/pod/g&#39;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  sed <span style="color:#e6db74">&#39;s/ingress_http_update/update/g&#39;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  kubectl apply -f -
+  
+configmap/grafana-dashboard-contour created
+</code></pre></div><p>创建了 <code>ConfigMap</code> 后，还要再挂载到 Grafana 的 Dashboard 中，所以需要修改 Grafana Deployment 的 yaml 文件：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#75715e"># ~/kube-prometheus/manifests/grafana-deployment.yaml</span>
+        <span style="color:#66d9ef">volumeMounts</span>:
+        - <span style="color:#66d9ef">mountPath</span>: /var/lib/grafana
+          <span style="color:#66d9ef">name</span>: grafana-storage
+          <span style="color:#66d9ef">readOnly</span>: <span style="color:#66d9ef">false</span>
+        ...省略...
+        <span style="color:#75715e"># 新增挂载</span>
+        - <span style="color:#66d9ef">mountPath</span>: /grafana-dashboard-definitions/<span style="color:#ae81ff">0</span>/contour
+          <span style="color:#66d9ef">name</span>: grafana-dashboard-contour
+          <span style="color:#66d9ef">readOnly</span>: <span style="color:#66d9ef">false</span>
+        ...省略...
+      <span style="color:#66d9ef">volumes</span>:
+      - <span style="color:#66d9ef">emptyDir</span>: {}
+        <span style="color:#66d9ef">name</span>: grafana-storage
+      ...省略...
+      <span style="color:#75715e"># 新增 ConfigMap</span>
+      - <span style="color:#66d9ef">configMap</span>:
+          <span style="color:#66d9ef">name</span>: grafana-dashboard-contour
+        <span style="color:#66d9ef">name</span>: grafana-dashboard-contour
+</code></pre></div><p>重新 apply 一下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl apply -f grafana-deployment.yaml
+</code></pre></div><p>现在在浏览器中输入域名 <code>grafana.sealos.io</code>，就可以看到 Contour 和 Envoy 的 Dashboard 了。</p>
+<p><img src="https://hugo-picture.oss-cn-beijing.aliyuncs.com/blog/2019-08-29-060947.png" alt=""></p>
+<p><img src="https://hugo-picture.oss-cn-beijing.aliyuncs.com/blog/2019-08-29-061037.png" alt=""></p>
+<p>对接监控到这里就结束了，剩下的大家可以自己去探索，总体来说难度还是稍微有点大，希望我的细心讲解能够帮助到你。</p>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/kubernetes-1.16-crd-ga-preview/" data-toggle="tooltip" data-placement="top" title="全面进化：Kubernetes CRD 1.16 GA前瞻">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/201909-build-full-micro-service-platform-by-spring-boot-with-kubernetes/" data-toggle="tooltip" data-placement="top" title="使用spring boot&#43;kubernetes构建完整微服务平台">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/istio-service-and-traffic-model/"><i class="fa fa-link"></i>Istio中的服务和流量的抽象模型</a></li>
+         
+        <li><a href="/blog/guidance-for-building-a-control-plane-for-envoy-part-3-domain-specific-configuration/"><i class="fa fa-link"></i>为 Envoy 构建控制平面指南第3部分：领域特定配置</a></li>
+         
+        <li><a href="/blog/deepin-service-mesh-tech-details/"><i class="fa fa-link"></i>深入解读Service Mesh背后的技术细节</a></li>
+         
+        <li><a href="/blog/kubernetes-1.16-crd-ga-preview/"><i class="fa fa-link"></i>全面进化：Kubernetes CRD 1.16 GA前瞻</a></li>
+         
+        <li><a href="/blog/kubernetes-operator-in-python/"><i class="fa fa-link"></i>实现Kubernetes Operator的新方式：Python</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>

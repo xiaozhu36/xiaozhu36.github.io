@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="robots" content="all,follow">
+  <meta name="googlebot" content="index,follow,snippet,archive">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>熔断与异常检测在 Istio 中的应用 · Service Mesh|服务网格中文社区</title>
+  <meta name="author" content="Jimmy Song(宋净超)" />
+
+  
+  <meta name="keywords" content="service mesh, 服务网格, istio">
+  
+
+  <meta name="generator" content="Hugo 0.74.3" />
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  
+  <link href="/css/animate.css" rel="stylesheet">
+
+  
+  
+  <link href="/css/style.violet.css" rel="stylesheet" id="theme-stylesheet">
+  
+
+  
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/search.css" />
+
+  
+  
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  
+
+  
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  
+  <link href="/css/owl.carousel.css" rel="stylesheet">
+  <link href="/css/owl.theme.css" rel="stylesheet">
+  <link rel="alternate" href="/index.xml" type="application/rss+xml" title="ServiceMesher">
+
+  
+  <link rel="stylesheet" href="/css/prism.css" />
+
+  
+  <meta property="og:title" content="熔断与异常检测在 Istio 中的应用" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/blog/circuit-breaking-and-outlier-detection-in-istio//" />
+  <meta property="og:image" content="/img/servicemesher-avatar-banner-new.jpg" />
+  <meta property="og:image:alt" content="ServiceMesher Logo" />
+
+  
+  <meta name="description" content="通过 Istio 来窥探 Envoy 的熔断与异常检测机制。">
+  <meta property="og:description" content="通过 Istio 来窥探 Envoy 的熔断与异常检测机制。">
+  <meta name="twitter:description" content="通过 Istio 来窥探 Envoy 的熔断与异常检测机制。">
+  <meta property="og:description" content="通过 Istio 来窥探 Envoy 的熔断与异常检测机制。" />
+
+  
+  <meta name="referrer" content="never">
+
+  
+  
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?154337f0d95f0b110f98c1d5d7038895";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+
+
+  
+  
+
+</head>
+
+
+  <body>
+
+    <div id="all">
+
+        <header>
+
+          <div class="navbar-affixed-top" data-spy="affix" data-offset-top="200">
+
+    <div class="navbar navbar-default yamm" role="navigation" id="navbar">
+
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand home" href="/">
+                    <img src="/img/servicemesher-logo-new.png" alt="熔断与异常检测在 Istio 中的应用 logo" class="hidden-xs hidden-sm">
+                    <img src="/img/logosmall-new.png" alt="熔断与异常检测在 Istio 中的应用 logo" class="visible-xs visible-sm">
+                    <span class="sr-only">熔断与异常检测在 Istio 中的应用 - 跳到主页</span>
+                </a>
+                <div class="navbar-buttons">
+                    <button type="button" class="navbar-toggle btn-template-main" data-toggle="collapse" data-target="#navigation">
+                      <span class="sr-only">切换导航</span>
+                        <i class="fa fa-align-justify"></i>
+                    </button>
+                </div>
+            </div>
+            
+
+            <div class="navbar-collapse collapse" id="navigation">
+                <ul class="nav navbar-nav navbar-right">
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/">主页</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/blog/">博客</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">文档 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/awesome-servicemesh/">Service Mesh列表</a></li>
+                      
+                        <li><a href="/envoy/">Envoy官方文档中文版</a></li>
+                      
+                        <li><a href="https://istio.io/zh">Istio中文官网</a></li>
+                      
+                        <li><a href="/categories/practice/">实践汇总</a></li>
+                      
+                        <li><a href="/istio-handbook/">Istio Handbook</a></li>
+                      
+                        <li><a href="/getting-started-with-knative/">Knative入门</a></li>
+                      
+                        <li><a href="https://github.com/servicemesher/istio-knowledge-map">Istio知识图谱</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">社区 <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      
+                        <li><a href="/tags/meetup">Meetup</a></li>
+                      
+                        <li><a href="/authors/">作者排行</a></li>
+                      
+                        <li><a href="/translators/">译者排行</a></li>
+                      
+                        <li><a href="/istio-trans/">Istio文档汉化</a></li>
+                      
+                    </ul>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contributing-specification/">投稿</a>
+                    
+                  </li>
+                  
+                  <li class="dropdown">
+                    
+                    <a href="/contact/">关于</a>
+                    
+                  </li>
+                  
+                  
+                    <li>
+                        <a href="#modalSearch" data-toggle="modal" data-target="#modalSearch" style="outline: none;">
+                        <span class="hidden-sm hidden-md hidden-lg">搜索</span> <span id="searchGlyph" class="glyphicon glyphicon-search"></span>
+                    </a>
+                    </li>
+                  
+                </ul>
+            </div>
+            
+
+        </div>
+    </div>
+    
+
+</div>
+
+
+
+
+<div id="modalSearch" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">博客搜索</h4>
+      </div>
+      <div class="modal-body">
+          
+<div class="aa-input-container" id="aa-input-container">
+    <input type="search" id="aa-search-input" class="aa-input-search" placeholder="输入文章标题或摘要" name="search" autocomplete="off" autofocus="autofocus"/>
+    <svg class="aa-input-icon" viewBox="654 -372 1664 1664">
+        <path d="M1806,332c0-123.3-43.8-228.8-131.5-316.5C1586.8-72.2,1481.3-116,1358-116s-228.8,43.8-316.5,131.5  C953.8,103.2,910,208.7,910,332s43.8,228.8,131.5,316.5C1129.2,736.2,1234.7,780,1358,780s228.8-43.8,316.5-131.5  C1762.2,560.8,1806,455.3,1806,332z M2318,1164c0,34.7-12.7,64.7-38,90s-55.3,38-90,38c-36,0-66-12.7-90-38l-343-342  c-119.3,82.7-252.3,124-399,124c-95.3,0-186.5-18.5-273.5-55.5s-162-87-225-150s-113-138-150-225S654,427.3,654,332  s18.5-186.5,55.5-273.5s87-162,150-225s138-113,225-150S1262.7-372,1358-372s186.5,18.5,273.5,55.5s162,87,225,150s113,138,150,225  S2062,236.7,2062,332c0,146.7-41.3,279.7-124,399l343,343C2305.7,1098.7,2318,1128.7,2318,1164z" />
+    </svg>
+</div>
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+<script>
+var client = algoliasearch("X4YB3WOBNV", "d2134c5a8d250e6d3246594240c45201");
+var index = client.initIndex("servicemesher");
+
+autocomplete('#aa-search-input',
+{ hint: false}, {
+    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),
+    
+    displayKey: 'name',
+    
+    templates: {
+        
+        suggestion: function(suggestion) {
+            baseURL="https:\/\/www.servicemesher.com\/"
+            baseURL=baseURL.substring(0,baseURL.length-1)
+            return '<span>' + '<a href="' + baseURL + suggestion.url+ '">' +
+                suggestion._highlightResult.title.value + '</a></span>'+
+                '<span>'+suggestion._highlightResult.summary.value+'</span>';
+        }
+    }
+});
+</script>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        </header>
+
+        <div id="heading-breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>熔断与异常检测在 Istio 中的应用</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <div id="content">
+            <div class="container">
+
+                <div class="row">
+
+                    
+
+                    <div class="col-md-9" id="blog-post">
+                        <div class="well">
+                            <div class="author-category">
+                            <i class="fa fa-calendar-o">
+                            2019年3月31日
+                            </i>
+                            |
+                            
+                            作者 <a href="https://yangcs.net">杨传胜</a>
+                            
+                            
+                            
+                            | 审校者
+                            
+                            <a href="https://github.com/haiker2011"><i>孙海洲</i></a>
+                            
+                            
+                            |
+                            4700字 | 阅读大约需要10分钟
+                            </div>
+                            
+                            
+                            <div class="author-category">
+                            
+                            <a href="https://www.yangcs.net/posts/circuit_breaking-and-outlier-detection-in-istio/">查看原文</a>
+                            |
+                            
+                            
+                            归档于 <a href="/categories/istio">istio</a>
+                            
+                            |
+                            
+                            
+                            
+                            标签
+                            
+                            <a style="text-transform:capitalize" href="/tags/istio/"><i>#istio</i></a>
+                            
+                            </div>
+                            
+                            
+                        </div>
+                        <div id="post-content">
+                          <p>在微服务领域，各个服务需要在网络上执行大量的调用。而网络是很脆弱的，如果某个服务繁忙或者无法响应请求，将有可能引发集群的大规模级联故障，从而造成整个系统不可用，通常把这种现象称为 <!-- raw HTML omitted -->服务雪崩效应<!-- raw HTML omitted -->。为了使服务有一定的冗余，以便在系统故障期间能够保持服务能力，我们可以使用熔断机制。</p>
+<h2 id="什么是熔断">什么是熔断？</h2>
+<p>熔断（Circuit Breaking）这一概念来源于电子工程中的<strong>断路器</strong>（Circuit Breaker）。在互联网系统中，当下游服务因访问压力过大而响应变慢或失败，上游服务为了保护系统整体的可用性，可以暂时切断对下游服务的调用。这种牺牲局部，保全整体的措施就叫做<strong>熔断</strong>。</p>
+<p>如果不采取熔断措施，我们的系统会怎样呢？我们来看一个栗子。</p>
+<p>当前系统中有 A、B、C 三个服务，服务 A 是上游，服务 B 是中游，服务 C 是下游。它们的调用链如下：</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/circuit-breaking-and-outlier-detection-in-istio/006tKfTcgy1g126lbd2g3j304r07jq31.jpg" alt=""></p>
+<p>一旦下游服务 C 因某些原因变得不可用，积压了大量请求，服务 B 的请求线程也随之阻塞。线程资源逐渐耗尽，使得服务 B 也变得不可用。紧接着，服务 A 也变为不可用，整个调用链路被拖垮。</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/circuit-breaking-and-outlier-detection-in-istio/006tKfTcgy1g126mn4vnrj30kv07j3z8.jpg" alt=""></p>
+<p>像这种调用链路的连锁故障，就是上文所说的服务雪崩效应。</p>
+<p>正所谓刮骨疗毒，壮士断腕。在这种时候，就需要我们的熔断机制来挽救整个系统。熔断机制的大体流程如下：</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/circuit-breaking-and-outlier-detection-in-istio/006tKfTcgy1g126mv3s9fj30bf0fcgmd.jpg" alt=""></p>
+<p>这里需要解释两点：</p>
+<ul>
+<li>开启熔断：在固定时间窗口内，接口调用超时比率达到一个阈值，会开启熔断。进入熔断状态后，后续对该服务接口的调用不再经过网络，直接执行本地的默认方法，达到服务降级的效果。</li>
+<li>熔断恢复：熔断不可能是永久的，当经过了规定时间之后，服务将从熔断状态恢复过来，再次接受调用方的远程调用。</li>
+</ul>
+<h2 id="istio-中的熔断">Istio 中的熔断</h2>
+<p>Istio 是通过 Envoy Proxy 来实现熔断机制的，Envoy 强制在网络层面配置熔断策略，这样就不必为每个应用程序单独配置或重新编程。下面就通过一个示例来演示如何为 Istio 网格中的服务配置熔断的连接数、请求数和异常检测。</p>
+<p>该示例的架构如图所示：</p>
+<p><img src="https://raw.githubusercontent.com/servicemesher/website/master/content/blog/circuit-breaking-and-outlier-detection-in-istio/006tKfTcgy1g126o9utc8j30k208eaax.jpg" alt=""></p>
+<p>该示例由客户端和服务端组成，其中客户端是一个 Java HTTP 应用程序，被打包在镜像 <code>docker.io/ceposta/http-envoy-client-standalone:latest</code> 中，它用来模拟对后端服务 <code>httpbin</code> 发起 http 调用，所有的调用首先都会被 Envoy Proxy 拦截。</p>
+<blockquote>
+<p>假设你的集群中已经部署了 Istio，没有启用 Sidecar 的自动注入，并且没有启用双向 TLS 身份验证。</p>
+</blockquote>
+<h3 id="部署示例">部署示例</h3>
+<p>部署 <a href="https://github.com/istio/istio/tree/master/samples/httpbin">httpbin</a> 应用，该应用将会作为本示例的后端服务：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># 进入 istio 根目录</span>
+$ kubectl apply -f &lt;<span style="color:#f92672">(</span>istioctl kube-inject -f samples/httpbin/httpbin.yaml<span style="color:#f92672">)</span>
+</code></pre></div><p>创建一个 <code>DestinationRule</code>，针对 <code>httpbin</code> 服务设置熔断策略：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">$ kubectl apply -f - &lt;&lt;EOF
+<span style="color:#66d9ef">apiVersion</span>: networking.istio.io/v1alpha3
+<span style="color:#66d9ef">kind</span>: DestinationRule
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: httpbin
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">host</span>: httpbin
+  <span style="color:#66d9ef">trafficPolicy</span>:
+    <span style="color:#66d9ef">connectionPool</span>:
+      <span style="color:#66d9ef">tcp</span>:
+        <span style="color:#66d9ef">maxConnections</span>: <span style="color:#ae81ff">1</span>
+      <span style="color:#66d9ef">http</span>:
+        <span style="color:#66d9ef">http1MaxPendingRequests</span>: <span style="color:#ae81ff">1</span>
+        <span style="color:#66d9ef">maxRequestsPerConnection</span>: <span style="color:#ae81ff">1</span>
+    <span style="color:#66d9ef">outlierDetection</span>:
+      <span style="color:#66d9ef">consecutiveErrors</span>: <span style="color:#ae81ff">2</span>
+      <span style="color:#66d9ef">interval</span>: 1s
+      <span style="color:#66d9ef">baseEjectionTime</span>: 3m
+      <span style="color:#66d9ef">maxEjectionPercent</span>: <span style="color:#ae81ff">100</span>
+EOF
+</code></pre></div><p>查看该策略在 Envoy 中对应的 <code>Cluster</code> 配置：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get pod -l app<span style="color:#f92672">=</span>httpbin
+
+NAME                      READY     STATUS    RESTARTS   AGE
+httpbin-d6d68fb97-cswzc   2/2       Running   <span style="color:#ae81ff">0</span>          2m
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">$</span> <span style="color:#960050;background-color:#1e0010">istioctl</span> <span style="color:#960050;background-color:#1e0010">pc</span> <span style="color:#960050;background-color:#1e0010">cluster</span> <span style="color:#960050;background-color:#1e0010">httpbin-d</span><span style="color:#ae81ff">6</span><span style="color:#960050;background-color:#1e0010">d</span><span style="color:#ae81ff">68</span><span style="color:#960050;background-color:#1e0010">fb</span><span style="color:#ae81ff">97</span><span style="color:#960050;background-color:#1e0010">-cswzc</span> <span style="color:#960050;background-color:#1e0010">--fqdn</span> <span style="color:#960050;background-color:#1e0010">httpbin.default.svc.cluster.local</span> <span style="color:#960050;background-color:#1e0010">--direction</span> <span style="color:#960050;background-color:#1e0010">outbound</span> <span style="color:#960050;background-color:#1e0010">-o</span> <span style="color:#960050;background-color:#1e0010">json</span>
+
+[
+    {
+        <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;outbound|8000||httpbin.default.svc.cluster.local&#34;</span>,
+        <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;EDS&#34;</span>,
+        <span style="color:#f92672">&#34;edsClusterConfig&#34;</span>: {
+            <span style="color:#f92672">&#34;edsConfig&#34;</span>: {
+                <span style="color:#f92672">&#34;ads&#34;</span>: {}
+            },
+            <span style="color:#f92672">&#34;serviceName&#34;</span>: <span style="color:#e6db74">&#34;outbound|8000||httpbin.default.svc.cluster.local&#34;</span>
+        },
+        <span style="color:#f92672">&#34;connectTimeout&#34;</span>: <span style="color:#e6db74">&#34;1.000s&#34;</span>,
+        <span style="color:#f92672">&#34;maxRequestsPerConnection&#34;</span>: <span style="color:#ae81ff">1</span>,
+        <span style="color:#f92672">&#34;circuitBreakers&#34;</span>: {
+            <span style="color:#f92672">&#34;thresholds&#34;</span>: [
+                {
+                    <span style="color:#f92672">&#34;maxConnections&#34;</span>: <span style="color:#ae81ff">1</span>,
+                    <span style="color:#f92672">&#34;maxPendingRequests&#34;</span>: <span style="color:#ae81ff">1</span>
+                }
+            ]
+        },
+        <span style="color:#f92672">&#34;outlierDetection&#34;</span>: {
+            <span style="color:#f92672">&#34;interval&#34;</span>: <span style="color:#e6db74">&#34;1.000s&#34;</span>,
+            <span style="color:#f92672">&#34;baseEjectionTime&#34;</span>: <span style="color:#e6db74">&#34;180.000s&#34;</span>,
+            <span style="color:#f92672">&#34;maxEjectionPercent&#34;</span>: <span style="color:#ae81ff">100</span>,
+            <span style="color:#f92672">&#34;enforcingConsecutive5xx&#34;</span>: <span style="color:#ae81ff">0</span>,
+            <span style="color:#f92672">&#34;consecutiveGatewayFailure&#34;</span>: <span style="color:#ae81ff">2</span>,
+            <span style="color:#f92672">&#34;enforcingConsecutiveGatewayFailure&#34;</span>: <span style="color:#ae81ff">100</span>
+        }
+    }
+]
+</code></pre></div><p>上面的配置告诉我们：</p>
+<ul>
+<li><strong>maxConnections</strong> : 限制对后端服务发起的 <code>HTTP/1.1</code> 连接数，如果超过了这个限制，就会开启熔断。</li>
+<li><strong>maxPendingRequests</strong> : 限制待处理请求列表的长度， 如果超过了这个限制，就会开启熔断。</li>
+<li><strong>maxRequestsPerConnection</strong> : 在任何给定时间内限制对后端服务发起的 <code>HTTP/2</code> 请求数，如果超过了这个限制，就会开启熔断。</li>
+</ul>
+<p>下面分别对这几个参数做详细解释。</p>
+<ul>
+<li><strong>maxConnections</strong> : 表示在任何给定时间内， Envoy 与上游集群（这里指的是 httpbin 服务）建立的最大连接数。该配置仅适用于 <code>HTTP/1.1</code> 协议，因为 <code>HTTP/2</code> 协议可以在同一个 TCP 连接中发送多个请求，而 <code>HTTP/1.1</code> 协议在同一个连接中只能处理一个请求。如果超过了这个限制（即断路器溢出），集群的<a href="https://www.envoyproxy.io/docs/envoy/latest/configuration/cluster_manager/cluster_stats#config-cluster-manager-cluster-stats">upstream_cx_overflow</a> 计数器就会递增。</li>
+<li><strong>maxPendingRequests</strong> : 表示待处理请求队列的长度。因为 <code>HTTP/2</code> 是通过单个连接并发处理多个请求的，因此该熔断策略仅在创建初始 <code>HTTP/2</code> 连接时有用，之后的请求将会在同一个 TCP 连接上多路复用。对于 <code>HTTP/1.1</code> 协议，只要没有足够的上游连接可用于立即分派请求，就会将请求添加到待处理请求队列中，因此该断路器将在该进程的生命周期内保持有效。如果该断路器溢出，集群的 <a href="https://www.envoyproxy.io/docs/envoy/latest/configuration/cluster_manager/cluster_stats#config-cluster-manager-cluster-stats">upstream_rq_pending_overflow</a> 计数器就会递增。</li>
+<li><strong>maxRequestsPerConnection</strong> : 表示在任何给定时间内，上游集群中所有主机（这里指的是 httpbin 服务）可以处理的最大请求数。实际上，这适用于仅 <code>HTTP/2</code> 集群，因为 <code>HTTP/1.1</code> 集群由最大连接数断路器控制。如果该断路器溢出，集群的 <a href="https://www.envoyproxy.io/docs/envoy/latest/configuration/cluster_manager/cluster_stats#config-cluster-manager-cluster-stats">upstream_rq_pending_overflow</a> 计数器就会递增。</li>
+</ul>
+<p>Istio DestinationRule 与 Envoy 的熔断参数对照表如下所示：</p>
+<table>
+<thead>
+<tr>
+<th align="center">Envoy paramether</th>
+<th align="center">Envoy upon object</th>
+<th align="center">Istio parameter</th>
+<th align="center">Istio upon ojbect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">max_connections</td>
+<td align="center">cluster.circuit_breakers</td>
+<td align="center">maxConnections</td>
+<td align="center">TCPSettings</td>
+</tr>
+<tr>
+<td align="center">max_pending_requests</td>
+<td align="center">cluster.circuit_breakers</td>
+<td align="center">http1MaxPendingRequests</td>
+<td align="center">HTTPSettings</td>
+</tr>
+<tr>
+<td align="center">max_requests</td>
+<td align="center">cluster.circuit_breakers</td>
+<td align="center">http2MaxRequests</td>
+<td align="center">HTTPSettings</td>
+</tr>
+<tr>
+<td align="center">max_retries</td>
+<td align="center">cluster.circuit_breakers</td>
+<td align="center">maxRetries</td>
+<td align="center">HTTPSettings</td>
+</tr>
+<tr>
+<td align="center">connect_timeout_ms</td>
+<td align="center">cluster</td>
+<td align="center">connectTimeout</td>
+<td align="center">TCPSettings</td>
+</tr>
+<tr>
+<td align="center">max_requests_per_connection</td>
+<td align="center">cluster</td>
+<td align="center">maxRequestsPerConnection</td>
+<td align="center">HTTPSettings</td>
+</tr>
+</tbody>
+</table>
+<h3 id="最大连接数">最大连接数</h3>
+<p>现在我们已经为 <code>httpbin</code> 服务设置了熔断策略，接下来创建一个 Java 客户端，用来向后端服务发送请求，观察是否会触发熔断策略。这个客户端可以控制连接数量、并发数、待处理请求队列，使用这一客户端，能够有效的触发前面在目标规则中设置的熔断策略。该客户端的 deployment yaml 内容如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#75715e"># httpbin-client-deploy.yaml</span>
+<span style="color:#66d9ef">apiVersion</span>: extensions/v1beta1
+<span style="color:#66d9ef">kind</span>: Deployment
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: httpbin-client-v1
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">replicas</span>: <span style="color:#ae81ff">1</span>
+  <span style="color:#66d9ef">template</span>:
+    <span style="color:#66d9ef">metadata</span>:
+      <span style="color:#66d9ef">labels</span>:
+        <span style="color:#66d9ef">app</span>: httpbin-client
+        <span style="color:#66d9ef">version</span>: v1
+    <span style="color:#66d9ef">spec</span>:
+      <span style="color:#66d9ef">containers</span>:
+      - <span style="color:#66d9ef">image</span>: ceposta/http-envoy-client-standalone:latest
+        <span style="color:#66d9ef">imagePullPolicy</span>: IfNotPresent
+        <span style="color:#66d9ef">name</span>: httpbin-client
+        <span style="color:#66d9ef">command</span>: [<span style="color:#e6db74">&#34;/bin/sleep&#34;</span>,<span style="color:#e6db74">&#34;infinity&#34;</span>]
+</code></pre></div><p>这里我们会把给客户端也进行 Sidecar 的注入，以此保证 Istio 对网络交互的控制：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl apply -f &lt;<span style="color:#f92672">(</span>istioctl kube-inject -f httpbin-client-deploy.yaml<span style="color:#f92672">)</span>
+</code></pre></div><p>下面来观察一下当客户端试图使用太多线程与上游集群建立并发连接时，Envoy 会如何应对。</p>
+<p>在上面的熔断设置中指定了 <code>maxConnections: 1</code> 以及 <code>http1MaxPendingRequests: 1</code>。这意味着如果超过了一个连接同时发起请求，Istio 就会熔断，阻止后续的请求或连接。</p>
+<p>先尝试通过单线程（<code>NUM_THREADS=1</code>）创建一个连接，并进行 5 次调用（默认值：<code>NUM_CALLS_PER_CLIENT=5</code>）：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ CLIENT_POD<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>kubectl get pod | grep httpbin-client | awk <span style="color:#e6db74">&#39;{ print $1 }&#39;</span><span style="color:#66d9ef">)</span>
+$ kubectl exec -it $CLIENT_POD -c httpbin-client -- sh -c <span style="color:#e6db74">&#39;export URL_UNDER_TEST=http://httpbin:8000/get export NUM_THREADS=1 &amp;&amp; java -jar http-client.jar&#39;</span>
+
+using num threads: <span style="color:#ae81ff">1</span>
+Starting pool-1-thread-1 with numCalls<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span> delayBetweenCalls<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span> url<span style="color:#f92672">=</span>http://localhost:15001/get mixedRespTimes<span style="color:#f92672">=</span>false
+pool-1-thread-1: successes<span style="color:#f92672">=[</span>5<span style="color:#f92672">]</span>, failures<span style="color:#f92672">=[</span>0<span style="color:#f92672">]</span>, duration<span style="color:#f92672">=[</span>545ms<span style="color:#f92672">]</span>
+</code></pre></div><p>可以看到所有请求都通过了：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">successes<span style="color:#f92672">=[</span>5<span style="color:#f92672">]</span>
+</code></pre></div><p>我们可以查询 istio-proxy 的状态，获取更多相关信息：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl exec -it $CLIENT_POD  -c istio-proxy  -- sh -c <span style="color:#e6db74">&#39;curl localhost:15000/stats&#39;</span> | grep httpbin
+
+...
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.upstream_cx_http1_total: <span style="color:#ae81ff">5</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.upstream_cx_overflow: <span style="color:#ae81ff">0</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.upstream_rq_total: <span style="color:#ae81ff">5</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.upstream_rq_200: <span style="color:#ae81ff">5</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.upstream_rq_2xx: <span style="color:#ae81ff">5</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.upstream_rq_pending_overflow: <span style="color:#ae81ff">0</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.upstream_rq_retry: <span style="color:#ae81ff">0</span>
+...
+</code></pre></div><p>可以看出总共发送了 5 个 <code>HTTP/1.1</code> 连接，也就是 5 个请求，响应码均为 <code>200</code>。</p>
+<p>下面尝试把线程数提高到 2：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl exec -it $CLIENT_POD -c httpbin-client -- sh -c <span style="color:#e6db74">&#39;export URL_UNDER_TEST=http://httpbin:8000/get export NUM_THREADS=2 &amp;&amp; java -jar http-client.jar&#39;</span>
+
+using num threads: <span style="color:#ae81ff">2</span>
+Starting pool-1-thread-1 with numCalls<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span> parallelSends<span style="color:#f92672">=</span>false delayBetweenCalls<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span> url<span style="color:#f92672">=</span>http://httpbin:8000/get mixedRespTimes<span style="color:#f92672">=</span>false
+Starting pool-1-thread-2 with numCalls<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span> parallelSends<span style="color:#f92672">=</span>false delayBetweenCalls<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span> url<span style="color:#f92672">=</span>http://httpbin:8000/get mixedRespTimes<span style="color:#f92672">=</span>false
+pool-1-thread-1: successes<span style="color:#f92672">=[</span>3<span style="color:#f92672">]</span>, failures<span style="color:#f92672">=[</span>2<span style="color:#f92672">]</span>, duration<span style="color:#f92672">=[</span>96ms<span style="color:#f92672">]</span>
+pool-1-thread-2: successes<span style="color:#f92672">=[</span>4<span style="color:#f92672">]</span>, failures<span style="color:#f92672">=[</span>1<span style="color:#f92672">]</span>, duration<span style="color:#f92672">=[</span>87ms<span style="color:#f92672">]</span>
+</code></pre></div><p>再次查看 istio-proxy 的状态：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl exec -it $CLIENT_POD  -c istio-proxy  -- sh -c <span style="color:#e6db74">&#39;curl localhost:15000/stats&#39;</span> | grep httpbin
+
+...
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.upstream_cx_http1_total: <span style="color:#ae81ff">7</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.upstream_cx_overflow: <span style="color:#ae81ff">3</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.upstream_rq_total: <span style="color:#ae81ff">10</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.upstream_rq_200: <span style="color:#ae81ff">7</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.upstream_rq_2xx: <span style="color:#ae81ff">7</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.upstream_rq_503: <span style="color:#ae81ff">3</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.upstream_rq_5xx: <span style="color:#ae81ff">3</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.upstream_rq_pending_overflow: <span style="color:#ae81ff">3</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.upstream_rq_retry: <span style="color:#ae81ff">0</span>
+...
+</code></pre></div><p>总共发送了 10 个 <code>HTTP/1</code> 连接，只有 7 个 被允许通过，剩余请求被断路器拦截了。其中 <code>upstream_cx_overflow</code> 的值为 3，表明 <code>maxConnections</code> 断路器起作用了。<code>Istio-proxy</code> 允许一定的冗余，你可以将线程数提高到 3，熔断的效果会更明显。</p>
+<h3 id="待处理请求队列">待处理请求队列</h3>
+<p>测试完 <code>maxConnections</code> 断路器之后，我们再来测试一下 <code>maxPendingRequests</code> 断路器。前面已经将 <code>maxPendingRequests</code> 的值设置为 1，现在按照预想，我们只需要模拟在单个 <code>HTTP/1.1</code> 连接中同时发送多个请求，就可以触发该断路器开启熔断。由于 <code>HTTP/1.1</code> 同一个连接只能处理一个请求，剩下的请求只能放到待处理请求队列中。通过限制待处理请求队列的长度，可以对恶意请求、DoS 和系统中的级联错误起到一定的缓解作用。</p>
+<p>现在尝试通过单线程（<code>NUM_THREADS=1</code>）创建一个连接，并同时发送 20 个请求（<code>PARALLEL_SENDS=true</code>，<code>NUM_CALLS_PER_CLIENT=20</code>）：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl exec -it $CLIENT_POD -c httpbin-client -- sh -c <span style="color:#e6db74">&#39;export URL_UNDER_TEST=http://httpbin:8000/get export NUM_THREADS=1 export PARALLEL_SENDS=true export NUM_CALLS_PER_CLIENT=20 &amp;&amp; java -jar http-client.jar&#39;</span>
+
+using num threads: <span style="color:#ae81ff">1</span>
+Starting pool-1-thread-1 with numCalls<span style="color:#f92672">=</span><span style="color:#ae81ff">20</span> parallelSends<span style="color:#f92672">=</span>true delayBetweenCalls<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span> url<span style="color:#f92672">=</span>http://httpbin:8000/get mixedRespTimes<span style="color:#f92672">=</span>false
+finished batch <span style="color:#ae81ff">0</span>
+finished batch <span style="color:#ae81ff">5</span>
+finished batch <span style="color:#ae81ff">10</span>
+finished batch <span style="color:#ae81ff">15</span>
+pool-1-thread-1: successes<span style="color:#f92672">=[</span>16<span style="color:#f92672">]</span>, failures<span style="color:#f92672">=[</span>4<span style="color:#f92672">]</span>, duration<span style="color:#f92672">=[</span>116ms<span style="color:#f92672">]</span>
+</code></pre></div><p>查询 istio-proxy 的状态：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl exec -it $CLIENT_POD  -c istio-proxy  -- sh -c <span style="color:#e6db74">&#39;curl localhost:15000/stats&#39;</span> | grep httpbin | grep pending
+
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.upstream_rq_pending_active: <span style="color:#ae81ff">0</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.upstream_rq_pending_failure_eject: <span style="color:#ae81ff">0</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.upstream_rq_pending_overflow: <span style="color:#ae81ff">4</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.upstream_rq_pending_total: <span style="color:#ae81ff">16</span>
+</code></pre></div><p><code>upstream_rq_pending_overflow</code> 的值是 <code>4</code>，说明有 <code>4</code> 次调用触发了 <code>maxPendingRequests</code> 断路器的熔断策略，被标记为熔断。</p>
+<h3 id="如果服务完全崩溃怎么办">如果服务完全崩溃怎么办？</h3>
+<p>现在我们知道 Envoy 的熔断策略对集群中压力过大的上游服务起到一定的保护作用，但还有一种极端的情况需要我们考虑，如果集群中的某些节点完全崩溃（或者即将完全崩溃）该怎么办？</p>
+<p>为了专门应对这种情况，Envoy 中引入了<strong>异常检测</strong>的功能，通过周期性的异常检测来动态确定上游集群中的某些主机是否异常，如果发现异常，就将该主机从连接池中隔离出去。异常检测是<strong>被动</strong>健康检查的一种形式，Envoy 同时支持<a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/health_checking#arch-overview-health-checking">主动健康检查</a>和被动健康检查，它们可以同时启用，联合决定上游主机的健康状况。</p>
+<h4 id="异常检测的隔离算法">异常检测的隔离算法</h4>
+<p>根据异常检测的类型，对主机的隔离可以连续执行（例如连续返回 <code>5xx</code> 状态码），也可以周期性执行（例如配置了周期性成功率检测）。隔离算法的工作流程如下：</p>
+<ol>
+<li>检测到了某个主机异常。</li>
+<li>如果到目前为止负载均衡池中还没有主机被隔离出去，Envoy 将会立即隔离该异常主机；如果已经有主机被隔离出去，就会检查当前隔离的主机数是否低于设定的阈值（通过 <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cluster/outlier_detection.proto#envoy-api-field-cluster-outlierdetection-max-ejection-percent">outlier_detection.max_ejection_percent</a> 指定），如果当前被隔离的主机数量不超过该阈值，就将该主机隔离出去，否则不隔离。</li>
+<li>隔离不是永久的，会有一个时间限制。当主机被隔离后，该主机就会被标记为不健康，并且不会被加入到负载均衡池中，除非负载均衡处于<a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/load_balancing/panic_threshold#arch-overview-load-balancing-panic-threshold">恐慌</a>模式。隔离时间等于 <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cluster/outlier_detection.proto#envoy-api-field-cluster-outlierdetection-base-ejection-time">outlier_detection.base_ejection_time_ms</a> 的值乘以主机被隔离的次数。所以如果某个主机连续出现故障，会导致它被隔离的时间越来越长。</li>
+<li>经过了规定的隔离时间之后，被隔离的主机将会自动恢复过来，重新接受调用方的远程调用。通常异常检测会与主动健康检查一起用于全面的健康检查解决方案。</li>
+</ol>
+<blockquote>
+<p>恐慌模式指的是：在这种情况下，代理服务器会无视负载均衡池的健康标记，重新向所有主机发送数据。这是一个非常棒的机制。在分布式系统中，必须了解到的一点是，有时候“理论上”的东西可能不是正常情况，最好能降低一点要求来防止扩大故障影响。另外一方面，可以对这一比例进行控制（缺省情况下超过 50% 的驱逐就会进入恐慌状态），可以提高，也可以禁止这一阈值。</p>
+</blockquote>
+<h4 id="异常检测类型">异常检测类型</h4>
+<p>Envoy 支持以下几种异常检测类型：</p>
+<ul>
+<li><strong>连续 <code>5xx</code> 响应</strong>：如果上游主机连续返回一定数量的 <code>5xx</code> 响应，该主机就会被驱逐。注意，这里的 <code>5xx</code> 响应不仅包括返回的 <code>5xx</code> 状态码（包括 <code>500</code>），也包括 HTTP 路由返回的一个事件（如连接超时和连接错误）。隔离主机所需的 <code>5xx</code> 响应数量由 <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cluster/outlier_detection.proto#envoy-api-field-cluster-outlierdetection-consecutive-5xx">outlier_detection.consecutive_5xx</a> 的值控制。</li>
+<li><strong>连续网关故障</strong>：如果上游主机连续返回一定数量的 <code>&quot;gateway errors&quot;</code>（<code>502</code>，<code>503</code> 或 <code>504</code> 状态码，但不包括 <code>500</code>），该主机就会被驱逐。这里同样也包括 HTTP 路由返回的一个事件（如连接超时和连接错误）。隔离主机所需的连续网关故障数量由 <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cluster/outlier_detection.proto#envoy-api-field-cluster-outlierdetection-consecutive-gateway-failure">outlier_detection.consecutive_gateway_failure</a> 的值控制。</li>
+<li><strong>调用成功率</strong>：基于调用成功率的异常检测类型会聚合集群中每个主机的调用成功率，然后根据统计的数据以给定的周期来隔离主机。如果该主机的请求数量小于 <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cluster/outlier_detection.proto#envoy-api-field-cluster-outlierdetection-success-rate-request-volume">outlier_detection.success_rate_request_volume</a> 指定的值，则不会为该主机计算调用成功率，因此聚合的统计数据中不会包括该主机的调用成功率。如果在给定的周期内具有最小所需请求量的主机数小于 <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cluster/outlier_detection.proto#envoy-api-field-cluster-outlierdetection-success-rate-minimum-hosts">outlier_detection.success_rate_minimum_hosts</a> 指定的值，则不会对该集群执行调用成功率检测。</li>
+</ul>
+<p>Istio DestinationRule 与 Envoy 的异常检测参数对照表如下所示：</p>
+<table>
+<thead>
+<tr>
+<th align="center">Envoy paramether</th>
+<th align="center">Envoy upon object</th>
+<th align="center">Istio parameter</th>
+<th align="center">Istio upon ojbect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">consecutive_gateway_failure</td>
+<td align="center">cluster.outlier_detection</td>
+<td align="center">consecutiveErrors</td>
+<td align="center">outlierDetection</td>
+</tr>
+<tr>
+<td align="center">interval</td>
+<td align="center">cluster.outlier_detection</td>
+<td align="center">interval</td>
+<td align="center">outlierDetection</td>
+</tr>
+<tr>
+<td align="center">baseEjectionTime</td>
+<td align="center">cluster.outlier_detection</td>
+<td align="center">baseEjectionTime</td>
+<td align="center">outlierDetection</td>
+</tr>
+<tr>
+<td align="center">maxEjectionPercent</td>
+<td align="center">cluster.outlier_detection</td>
+<td align="center">maxEjectionPercent</td>
+<td align="center">outlierDetection</td>
+</tr>
+</tbody>
+</table>
+<p>Envoy 中还有一些其他参数在 Istio 中暂时是不支持的，具体参考 Envoy 官方文档 <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cluster/outlier_detection.proto#cluster-outlierdetection">Outlier detection</a>。</p>
+<p>现在我们回头再来看一下本文最初创建的 DestinationRule 中关于异常检测的配置：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">    <span style="color:#66d9ef">outlierDetection</span>:
+      <span style="color:#66d9ef">consecutiveErrors</span>: <span style="color:#ae81ff">2</span>
+      <span style="color:#66d9ef">interval</span>: 1s
+      <span style="color:#66d9ef">baseEjectionTime</span>: 3m
+      <span style="color:#66d9ef">maxEjectionPercent</span>: <span style="color:#ae81ff">100</span>
+</code></pre></div><p>该配置表示每秒钟扫描一次上游主机，连续失败 <code>1</code> 次返回 5xx 错误码的所有主机会被移出连接池 3 分钟。</p>
+<h4 id="异常检测示例">异常检测示例</h4>
+<p>下面我们通过调用一个 URL 来指定 httpbin 服务返回 <code>502</code> 状态码，以此来触发连续网关故障异常检测。总共发起 3 次调用，因为 DestinationRule 中的配置要求 Envoy 的异常检测机制必须检测到两个连续的网关故障才会将 httpbin 服务移除负载均衡池。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl exec -it $CLIENT_POD -c httpbin-client -- sh -c <span style="color:#e6db74">&#39;export URL_UNDER_TEST=http://httpbin:8000/status/502 export NUM_CALLS_PER_CLIENT=3 &amp;&amp; java -jar http-client.jar&#39;</span>
+
+using num threads: <span style="color:#ae81ff">1</span>
+Starting pool-1-thread-1 with numCalls<span style="color:#f92672">=</span><span style="color:#ae81ff">3</span> parallelSends<span style="color:#f92672">=</span>false delayBetweenCalls<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span> url<span style="color:#f92672">=</span>http://httpbin:8000/status/502 mixedRespTimes<span style="color:#f92672">=</span>false
+pool-1-thread-1: successes<span style="color:#f92672">=[</span>0<span style="color:#f92672">]</span>, failures<span style="color:#f92672">=[</span>3<span style="color:#f92672">]</span>, duration<span style="color:#f92672">=[</span>99ms<span style="color:#f92672">]</span>
+</code></pre></div><p>查看 istio-proxy 的状态：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl exec -it $CLIENT_POD  -c istio-proxy  -- sh -c <span style="color:#e6db74">&#39;curl localhost:15000/stats&#39;</span> | grep httpbin | grep outlier
+
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.outlier_detection.ejections_active: <span style="color:#ae81ff">1</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.outlier_detection.ejections_consecutive_5xx: <span style="color:#ae81ff">0</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.outlier_detection.ejections_detected_consecutive_5xx: <span style="color:#ae81ff">0</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.outlier_detection.ejections_detected_consecutive_gateway_failure: <span style="color:#ae81ff">1</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.outlier_detection.ejections_detected_success_rate: <span style="color:#ae81ff">0</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.outlier_detection.ejections_enforced_consecutive_5xx: <span style="color:#ae81ff">0</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.outlier_detection.ejections_enforced_consecutive_gateway_failure: <span style="color:#ae81ff">1</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.outlier_detection.ejections_enforced_success_rate: <span style="color:#ae81ff">0</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.outlier_detection.ejections_enforced_total: <span style="color:#ae81ff">1</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.outlier_detection.ejections_overflow: <span style="color:#ae81ff">0</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.outlier_detection.ejections_success_rate: <span style="color:#ae81ff">0</span>
+cluster.outbound|8000<span style="color:#f92672">||</span>httpbin.default.svc.cluster.local.outlier_detection.ejections_total: <span style="color:#ae81ff">0</span>
+</code></pre></div><p>确实检测到了连续网关故障，<code>consecutive_gateway_failure</code> 的值为 1。但是我通过查看 EDS，发现 Envoy 并没有将 httpbin 服务移出负载均衡池：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ export PILOT_SVC_IP<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>kubectl -n istio-system get svc istio-pilot -o go-template<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{{.spec.clusterIP}}&#39;</span><span style="color:#66d9ef">)</span>
+$ curl -s http://$PILOT_SVC_IP:8080/debug/edsz|grep <span style="color:#e6db74">&#34;outbound|8000||httpbin.default.svc.cluster.local&#34;</span> -B <span style="color:#ae81ff">1</span> -A <span style="color:#ae81ff">15</span>
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+  <span style="color:#f92672">&#34;clusterName&#34;</span>: <span style="color:#e6db74">&#34;outbound|8000||httpbin.default.svc.cluster.local&#34;</span>,
+  <span style="color:#f92672">&#34;endpoints&#34;</span>: [
+    {
+      <span style="color:#f92672">&#34;locality&#34;</span>: {
+
+      },
+      <span style="color:#f92672">&#34;lbEndpoints&#34;</span>: [
+        {
+          <span style="color:#f92672">&#34;endpoint&#34;</span>: {
+            <span style="color:#f92672">&#34;address&#34;</span>: {
+              <span style="color:#f92672">&#34;socketAddress&#34;</span>: {
+                <span style="color:#f92672">&#34;address&#34;</span>: <span style="color:#e6db74">&#34;172.30.104.27&#34;</span>,
+                <span style="color:#f92672">&#34;portValue&#34;</span>: <span style="color:#ae81ff">8000</span>
+              }
+            }
+          },
+</code></pre></div><p>回去重新看了一下 Envoy 的配置，<code>enforcingConsecutiveGatewayFailure</code> 的值为 100，理论上 outlierDetection 应该是生效的。但这里我疏忽了 Envoy 的恐慌模式，Envoy 默认的恐慌阈值是 <code>50%</code>，而 httpbin 应用只有一个 upstream，所以没有被移除。当然这只是个人猜测，暂时也没时间验证，大家可以自己验证一下。</p>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li><a href="https://preliminary.istio.io/zh/docs/reference/config/istio.networking.v1alpha3/#outlierdetection">istio.networking.v1alpha3 OutlierDetection</a></li>
+<li><a href="https://preliminary.istio.io/zh/docs/tasks/traffic-management/circuit-breaking/">Istio 流量管理之熔断</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/33490531">Envoy Proxy和Netflix Hystrix，究竟谁才是熔断王者？</a></li>
+<li><a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/outlier#arch-overview-outlier-detection">Envoy Outlier detection</a></li>
+<li><a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/load_balancing/panic_threshold#">Envoy Panic threshold</a></li>
+<li><a href="https://blog.christianposta.com/microservices/01-microservices-patterns-with-envoy-proxy-part-i-circuit-breaking/">Microservices Patterns With Envoy Sidecar Proxy, Part I: Circuit Breaking</a></li>
+</ul>
+
+                        </div>
+                        
+                        
+                        
+                        
+                        <ul class="pager blog-pager">
+                        
+                        <li class="previous">
+                        <a href="https://www.servicemesher.com/blog/prometheus-monitor-k8s-1/" data-toggle="tooltip" data-placement="top" title="Prometheus监控Kubernetes系列1——监控框架">&larr; 更旧</a>
+                        </li>
+                         
+                        <li class="next">
+                        <a href="https://www.servicemesher.com/blog/microprofile-the-microservice-programming-model-made-for-istio/" data-toggle="tooltip" data-placement="top" title="MicroProfile——为Istio创建的微服务编程模型">更新 &rarr;</a>
+                        </li>
+                        
+                        </ul>
+                        
+                        
+                        
+
+<div id="gitalk-container"></div>
+<link rel="stylesheet" href="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.css">
+<script src="https://cdn.bootcss.com/gitalk/1.5.2/gitalk.min.js"></script>
+<script src="/js/md5.min.js"></script>
+<script>
+	const gitalk = new Gitalk({
+	  clientID: 'dd2e2e19dd8835a4c6c4',
+	  clientSecret: 'f5bb37514a092a909908881495fb0132ab073bc1',
+	  repo: 'gitalk',
+	  owner: 'servicemesher',
+	  admin: ['rootsongjc'],
+	  id: md5(location.pathname),      
+	  distractionFreeMode: false  
+	})
+
+	gitalk.render('gitalk-container')
+</script>
+
+
+
+                    </div>
+                    
+
+                    
+
+                    
+
+                    <div class="col-md-3">
+
+                        
+
+                        <div class="panel panel-default sidebar-menu">
+     
+    <div class="panel-heading">
+     <h3 class="panel-title">相关文章</h3>
+    </div>
+    <div class="panel-body">
+     <ul class="nav nav-pills nav-stacked">
+        
+        <li><a href="/blog/building-a-control-plane-for-envoy/"><i class="fa fa-link"></i>为 Envoy 赋能——如何基于 Envoy 构建一个多用途控制平面</a></li>
+         
+        <li><a href="/blog/istio-rbac-quick-start/"><i class="fa fa-link"></i>Istio安全之服务间访问控制RBAC</a></li>
+         
+        <li><a href="/blog/back-to-microservices-with-istio-part-2-authentication-authorization/"><i class="fa fa-link"></i>使用Istio打造微服务（第2部分）——认证和授权</a></li>
+         
+        <li><a href="/blog/istio-11/"><i class="fa fa-link"></i>Istio 1.1发布，中文文档同时释出</a></li>
+         
+        <li><a href="/blog/istio-service-visibility/"><i class="fa fa-link"></i>Istio1.1新特性之限制服务可见性</a></li>
+         
+     </ul>
+    </div>
+     
+</div>
+
+
+
+
+
+<div class="panel panel-default sidebar-menu">
+
+    <div class="panel-heading">
+      <h3 class="panel-title">分类</h3>
+    </div>
+
+    <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+            
+            <li><a href="/categories/api-gateway"><i class="fa fa-navicon"></i>api-gateway (1)</a>
+            </li>
+            
+            <li><a href="/categories/cilium"><i class="fa fa-navicon"></i>cilium (3)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native"><i class="fa fa-navicon"></i>cloud-native (4)</a>
+            </li>
+            
+            <li><a href="/categories/cloud-native-weekly"><i class="fa fa-navicon"></i>cloud-native-weekly (3)</a>
+            </li>
+            
+            <li><a href="/categories/consul"><i class="fa fa-navicon"></i>consul (1)</a>
+            </li>
+            
+            <li><a href="/categories/container"><i class="fa fa-navicon"></i>container (1)</a>
+            </li>
+            
+            <li><a href="/categories/culture"><i class="fa fa-navicon"></i>culture (6)</a>
+            </li>
+            
+            <li><a href="/categories/devops"><i class="fa fa-navicon"></i>devops (4)</a>
+            </li>
+            
+            <li><a href="/categories/envoy"><i class="fa fa-navicon"></i>envoy (26)</a>
+            </li>
+            
+            <li><a href="/categories/gitops"><i class="fa fa-navicon"></i>gitops (2)</a>
+            </li>
+            
+            <li><a href="/categories/grpc"><i class="fa fa-navicon"></i>grpc (2)</a>
+            </li>
+            
+            <li><a href="/categories/istio"><i class="fa fa-navicon"></i>istio (98)</a>
+            </li>
+            
+            <li><a href="/categories/istio-mixer-cache"><i class="fa fa-navicon"></i>istio-mixer-cache (4)</a>
+            </li>
+            
+            <li><a href="/categories/istio-source-deepin"><i class="fa fa-navicon"></i>istio-source-deepin (6)</a>
+            </li>
+            
+            <li><a href="/categories/knative"><i class="fa fa-navicon"></i>knative (6)</a>
+            </li>
+            
+            <li><a href="/categories/kubernetes"><i class="fa fa-navicon"></i>kubernetes (17)</a>
+            </li>
+            
+            <li><a href="/categories/linkerd"><i class="fa fa-navicon"></i>linkerd (5)</a>
+            </li>
+            
+            <li><a href="/categories/meetup"><i class="fa fa-navicon"></i>meetup (11)</a>
+            </li>
+            
+            <li><a href="/categories/microprofile"><i class="fa fa-navicon"></i>microprofile (1)</a>
+            </li>
+            
+            <li><a href="/categories/microservices"><i class="fa fa-navicon"></i>microservices (7)</a>
+            </li>
+            
+            <li><a href="/categories/monitoring"><i class="fa fa-navicon"></i>monitoring (4)</a>
+            </li>
+            
+            <li><a href="/categories/mosn"><i class="fa fa-navicon"></i>mosn (2)</a>
+            </li>
+            
+            <li><a href="/categories/practice"><i class="fa fa-navicon"></i>practice (16)</a>
+            </li>
+            
+            <li><a href="/categories/serverless"><i class="fa fa-navicon"></i>serverless (7)</a>
+            </li>
+            
+            <li><a href="/categories/service-mesh"><i class="fa fa-navicon"></i>service-mesh (76)</a>
+            </li>
+            
+            <li><a href="/categories/sofamesh"><i class="fa fa-navicon"></i>sofamesh (9)</a>
+            </li>
+            
+            <li><a href="/categories/translation"><i class="fa fa-navicon"></i>translation (1)</a>
+            </li>
+            
+            <li><a href="/categories/tutorial"><i class="fa fa-navicon"></i>tutorial (3)</a>
+            </li>
+            
+        </ul>
+    </div>
+</div>
+
+
+
+
+
+
+
+                        
+
+                    </div>
+                    
+
+                    
+
+                </div>
+                
+
+            </div>
+            
+        </div>
+        
+
+        <footer id="footer">
+    <div class="container">
+
+        
+        <div class="col-md-4 col-sm-6">
+            <h4>关于我们</h4>
+
+            <!-- raw HTML omitted -->
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+        <div class="col-md-4 col-sm-6">
+
+             
+            <h4>最新博客</h4>
+
+            <div class="blog-entries">
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/20200818-google-cloud-mesh/">
+                          
+                          <img src="/img/blog/banners/006tNbRwly1fxozxiskekj31400u07bb.jpg" class="img-responsive" alt="Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/20200818-google-cloud-mesh/">Google Cloud 服务网格：Traffic Director 与 Anthos Service Mesh 的左右互搏</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/istio-1-7-explanation/">
+                          
+                          <img src="/img/blog/banners/006tKfTcly1g17wqrniy0j31400u0b2d.jpg" class="img-responsive" alt="Istio 1.7 发布——进击的追风少年">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/istio-1-7-explanation/">Istio 1.7 发布——进击的追风少年</a></h5>
+                    </div>
+                </div>
+                
+                <div class="item same-height-row clearfix">
+                    <div class="image same-height-always">
+                        <a href="/blog/thoughts-to-envoy-from-adn-perspective/">
+                          
+                          <img src="/img/blog/banners/thoughts-to-envoy-from-ADN-perspective.jpg" class="img-responsive" alt="应用交付老兵眼中的 Envoy, 云原生时代下的思考">
+                          
+                        </a>
+                    </div>
+                    <div class="name same-height-always">
+                        <h5><a href="/blog/thoughts-to-envoy-from-adn-perspective/">应用交付老兵眼中的 Envoy, 云原生时代下的思考</a></h5>
+                    </div>
+                </div>
+                
+            </div>
+
+            <hr class="hidden-md hidden-lg">
+             
+
+        </div>
+        
+
+        
+        <div class="col-md-4 col-sm-6">
+
+          <h4>联系</h4>
+
+            <!-- raw HTML omitted -->
+
+            <a href="/contact" class="btn btn-small btn-template-main">更多</a>
+
+            <hr class="hidden-md hidden-lg hidden-sm">
+
+        </div>
+        
+        
+
+    </div>
+    
+</footer>
+
+
+
+
+
+
+
+<div id="copyright">
+    <div class="container">
+        <div class="col-md-12">
+            
+            <p class="pull-left">Copyright ©️ 2018 - 2020, ServiceMesher all rights reserved.</p>
+            
+            
+            <p class="pull-left">&nbsp;<a href="http://beian.miit.gov.cn/"> 京ICP备15032932号-5</a></p>
+            
+            <p class="pull-right">
+              模板来自 <a href="http://bootstrapious.com/free-templates">Bootstrapious</a>.
+              
+              移植到 Hugo 来自 <a href="https://github.com/devcows/hugo-universal-theme">DevCows</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+    
+
+    <script src="/js/jquery-3.1.1.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Counter-Up/1.0/jquery.counterup.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-parallax/1.1.3/jquery-parallax.js"></script>
+<script src="/js/front.js"></script>
+
+
+<script src="/js/owl.carousel.min.js"></script>
+
+<script src="/js/prism.js"></script>
+
+<script src="/js/algoliasearch.min.js"></script>
+<script src="/js/autocomplete.min.js"></script>
+
+
+  </body>
+</html>
